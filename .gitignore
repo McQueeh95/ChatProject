@@ -1,0 +1,14 @@
+# Visual Studio
+.vs/
+*.vcxproj*
+*.sln
+*.ipch/
+*.db
+*.obj
+*.exe
+*.log
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+build/
+out/
