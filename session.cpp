@@ -1,6 +1,8 @@
 #pragma once
 
 #include "session.h"
+#include "sessions_manager.h"
+#include "message.h"
 
 void session::run()
 {
@@ -41,7 +43,6 @@ void session::on_accept(beast::error_code ec)
 {
 	if (ec)
 		return fail(ec, "accept");
-
 	do_read();
 }
 
@@ -67,8 +68,21 @@ void session::on_read(
 
 	if (ec)
 		return fail(ec, "read");
-
-	std::cout << beast::make_printable(buffer_.data()) << std::endl;
+	//Transforming received data from Json
+	std::string string_data = beast::buffers_to_string(buffer_.data());
+	message msg(json::parse(string_data));
+	//Depending on message type handles connection or forwarding
+	switch (msg.get_type())
+	{
+		case message::message_type::Connect:
+			sessions_manager::instance().add_session(msg.get_uuid_from(), 
+				shared_from_this());
+			std::cout << "User: " << msg.get_uuid_from() << " connected!" << std::endl;
+			break;
+		case message::message_type::Forward:
+			std::cout << "Sending message to: " << msg.get_uuid_to();
+			break;
+	}
 	//TODO: Here's logic for sending message to client
 	ws_.text(ws_.got_text());
 	ws_.async_write(
