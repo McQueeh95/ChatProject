@@ -14,6 +14,9 @@ project ("server")
 include_directories("C:/Users/nezna/libraries/boost_1.88/boost_1_88_0")
 link_directories("C:/Users/nezna/libraries/boost_1.88/boost_1_88_0/stage/lib")
 # Add source to this project's executable.
+if(MSVC)
+    add_compile_options(/bigobj)
+endif()
 add_executable (server "server.cpp" "server.h" "session.cpp" "session.h" "listener.cpp" "listener.h" "dependencies.h" "sessions_manager.cpp" "sessions_manager.h" "message.h" "message.cpp")
 
 
