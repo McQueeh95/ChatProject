@@ -17,3 +17,9 @@ std::shared_ptr<session> sessions_manager::get_client(const std::string& user_na
 		return sessions_list[user_name];
 	return nullptr;
 }
+
+void sessions_manager::remove_session(const std::string& uuid)
+{
+	if (sessions_list.count(uuid))
+		sessions_list.erase(uuid);
+}

@@ -16,4 +16,5 @@ public:
 	static sessions_manager& instance();
 	void add_session(std::string user_name, std::shared_ptr<session> session);
 	std::shared_ptr<session> get_client(const std::string& user_name);
+	void remove_session(const std::string& uuid);
 };
