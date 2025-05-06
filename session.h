@@ -1,6 +1,8 @@
 #pragma once
 
 #include "dependencies.h"
+#include "message.h"
+#include <queue>
 
 
 class session : public std::enable_shared_from_this<session>
@@ -9,6 +11,9 @@ class session : public std::enable_shared_from_this<session>
 	websocket::stream<beast::tcp_stream> ws_;
 	//Buffer for saving incoming message
 	beast::flat_buffer buffer_;
+	beast::flat_buffer write_buffer_;
+	bool is_writing = false;
+	std::queue<std::string> message_queue_;
 public:
 	// Passing ownership of the socket
 		explicit session(tcp::socket && socket)
@@ -26,5 +31,11 @@ public:
 	//Handles logic with messages
 	void on_read(beast::error_code ec, std::size_t bytes_transferd);
 	void on_write(beast::error_code ec, std::size_t bytes_transferred);
+	void send_message(const std::string& message, std::function<void()> on_sent);
+	void on_close(beast::error_code ec);
+	void handle_connect(const message &msg);
+	void handle_disconnect(const message &msg);
+	void handle_forward(const message &msg);
+	//void send_message(const std::string& message);
 };
 
