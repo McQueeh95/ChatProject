@@ -1,0 +1,39 @@
+# CMake build directory
+/build/
+/data/
+
+# Qt Creator user-specific config files
+*.user
+*.user.*
+
+# Qt auto-generated files
+*.autosave
+*.pro.user
+*.qbs.user
+*.creator.*
+*.swp
+
+# Compiled object files and cache
+*.o
+*.obj
+*.so
+*.dll
+*.exe
+*.a
+*.lib
+*.lo
+*.la
+*.pyc
+*.pyo
+*.class
+
+# CMake-generated files (in case cmake was accidentally run outside build/)
+CMakeCache.txt
+CMakeFiles/
+Makefile
+cmake_install.cmake
+install_manifest.txt
+
+# macOS / Windows system files
+.DS_Store
+Thumbs.db
