@@ -9,8 +9,16 @@ message::message(const json::value& v)
 	const auto& obj = v.as_object();
 	type = json::value_to<int>(obj.at("type"));
 	uuid_from = json::value_to<std::string>(obj.at("uuid_from"));
-	if (type == Forward)
+	if (type == Forward) 
+	{
 		uuid_to = json::value_to<std::string>(obj.at("uuid_to"));
+		text = json::value_to<std::string>(obj.at("text"));
+	}
+	if (type == AddContact)
+	{
+		uuid_to = json::value_to<std::string>(obj.at("uuid_to"));
+		username = json::value_to<std::string>(obj.at("username"));
+	}
 }
 
 //Json doesn't work with enum so it's better to perform 
@@ -21,6 +29,7 @@ message::message_type message::get_type() const
 	case 0: return Forward;
 	case 1: return Connect;
 	case 2: return Disconnect;
+	case 3: return AddContact;
 	default: 
 		throw std::invalid_argument(
 		"Unknown message type received from the JSON: " +
@@ -36,4 +45,9 @@ std::string message::get_uuid_from() const
 std::string message::get_uuid_to() const
 {
 	return uuid_to;
+}
+
+std::string message::get_username() const
+{
+	return username;
 }

@@ -13,7 +13,9 @@ class session : public std::enable_shared_from_this<session>
 	beast::flat_buffer buffer_;
 	beast::flat_buffer write_buffer_;
 	bool is_writing = false;
+	bool is_reading = false;
 	std::queue<std::string> message_queue_;
+	std::queue<message> message_queue_m;
 public:
 	// Passing ownership of the socket
 		explicit session(tcp::socket && socket)
@@ -35,7 +37,10 @@ public:
 	void on_close(beast::error_code ec);
 	void handle_connect(const message &msg);
 	void handle_disconnect(const message &msg);
-	void handle_forward(const message &msg);
+	void handle_forward(const message &msg, std::shared_ptr<session> receiver);
+	void handle_add_contact(const message &msg, std::shared_ptr<session> receiver);
+	void send_request(const std::string& msg);
+	void send_message_test(const std::string & message);
 	//void send_message(const std::string& message);
 };
 
