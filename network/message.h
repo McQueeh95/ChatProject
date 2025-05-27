@@ -11,13 +11,25 @@ private:
     QString uuidTo;
     QString text;
     QString time;
+    QString usernameFrom;
+    Message(int type, const QString &uuidFrom, const QString &uuidTo, const QString &text, const QString &time, const QString &usernameFrom);
 public:
     Message() = default;
-    Message(int type, QString uuidFrom);
-    Message(int type, QString uuidFrom, QString uuidTo, QString text, QString time);
+    static Message createTextMessage(const QString &uuidFrom, const QString &uuidTo, const QString &text, const QString &time);
+    static Message createConnectionMessage(const QString &uuidFrom);
+    static Message createDisconnectMessage(const QString &uuidFrom);
+    static Message createFriendRequestMessage(const QString &uuidFrom, const QString &uuidTo, const QString &time, const QString &usernameFrom);
+    //Message(int type, QString uuidFrom);
+    //Message(int type, QString uuidFrom, QString uuidTo, QString text, QString time);
+    //Message(int type, QString uuidFrom, QString uuidTo, QString usernameFrom, QString time);
     //Parsing from json to Message format
     Message(const QJsonObject &obj);
+    int getType() const;
     QString getUuidFrom() const;
+    QString getUUidTo() const;
+    QString getText() const;
+    QString getUsernameFrom() const;
+    QString getTime() const;
     //Parsing Message to json
     QString toJsonString();
 };

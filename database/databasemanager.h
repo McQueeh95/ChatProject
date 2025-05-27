@@ -15,7 +15,9 @@ public:
     //Adding uuid and username to DB
     static void registerUser(const QString& uuid, const QString& username);
     //If uuid is not present in DB returns nullopt
-    static std::optional<QString> getUuid();
+    static std::optional<std::pair<QString, QString>> getUuid();
+    static void addRequest(const QString& uuid, const QString& username, const QString& time);
+    static QList<QString> getRequests();
 };
 
 #endif // DATABASEMANAGER_H

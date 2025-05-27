@@ -47,21 +47,61 @@ void DataBaseManager::registerUser(const QString &uuid, const QString &username)
     }
 }
 
-std::optional<QString> DataBaseManager::getUuid()
+std::optional<std::pair<QString, QString>> DataBaseManager::getUuid()
 {
     if(!db.isOpen()){
         qDebug() << "Was not able to open DB";
         return std::nullopt;
     }
     QSqlQuery query;
-    query.exec("SELECT uuid FROM user_data LIMIT 1");
+    query.exec("SELECT uuid, username FROM user_data LIMIT 1");
     QString uuid;
+    QString username;
     if(query.next())
     {
         uuid = query.value(0).toString();
+        username = query.value(1).toString();
         qDebug() << uuid;
-        return uuid;
+        return std::pair(uuid, username);
     }
     return std::nullopt;
+}
+
+void DataBaseManager::addRequest(const QString &uuid, const QString &username, const QString &time)
+{
+    if(!db.isOpen())
+    {
+        qDebug() << "Was not able to open DB";
+        return;
+    }
+
+    QSqlQuery query;
+    query.prepare("INSERT INTO contact_requests (uuid, username, status, timestamp) VALUES (:uuid, :username, :status, :timestamp)");
+    query.bindValue(":uuid", uuid);
+    query.bindValue(":username", username);
+    query.bindValue(":status", "pending");
+    query.bindValue(":timestamp", time);
+    if(!query.exec())
+    {
+        qDebug() << "Error adding uuid and username to DB";
+        return;
+    }
+}
+
+QList<QString> DataBaseManager::getRequests()
+{
+    QList<QString> requestes;
+    if(!db.isOpen())
+    {
+        qDebug() << "Was not able to open DB";
+        return requestes;
+    }
+    QSqlQuery query;
+    query.exec("SELECT username FROM contact_requests WHERE status = 'pending'");
+    while(query.next())
+    {
+        requestes.append(query.value(0).toString());
+    }
+    return requestes;
 }
 

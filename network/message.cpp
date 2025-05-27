@@ -1,11 +1,35 @@
 #include "message.h"
 
-Message::Message(int type, QString uuidFrom): type(type), uuidFrom(uuidFrom)
+/*Message::Message(int type, QString uuidFrom): type(type), uuidFrom(uuidFrom)
 {}
 
 Message::Message(int type, QString uuidFrom, QString uuidTo, QString text, QString time)
     :type(type), uuidFrom(uuidFrom), uuidTo(uuidTo), text(text)
+{}*/
+
+Message::Message(int type, const QString &uuidFrom, const QString &uuidTo, const QString &text, const QString &time, const QString &usernameFrom)
+    :type(type), uuidFrom(uuidFrom), uuidTo(uuidTo), text(text), time(time), usernameFrom(usernameFrom)
 {}
+
+Message Message::createTextMessage(const QString &uuidFrom, const QString &uuidTo, const QString &text, const QString &time)
+{
+    return Message(0, uuidFrom, uuidTo, text, time, "");
+}
+
+Message Message::createConnectionMessage(const QString &uuidFrom)
+{
+    return Message(1, uuidFrom, "", "", "", "");
+}
+
+Message Message::createDisconnectMessage(const QString &uuidFrom)
+{
+    return Message(2, uuidFrom, "", "", "", "");
+}
+
+Message Message::createFriendRequestMessage(const QString &uuidFrom, const QString &uuidTo, const QString &time, const QString &usernameFrom)
+{
+    return Message(3, uuidFrom, uuidTo, "", time, usernameFrom);
+}
 
 Message::Message(const QJsonObject &obj)
 {
@@ -17,11 +41,33 @@ Message::Message(const QJsonObject &obj)
         text = obj["text"].toString();
     if(obj.contains("time"))
         time = obj["time"].toString();
+    if(obj.contains("username"))
+        usernameFrom = obj["username"].toString();
+}
+
+int Message::getType() const
+{
+    return type;
 }
 
 QString Message::getUuidFrom() const
 {
     return uuidFrom;
+}
+
+QString Message::getText() const
+{
+    return text;
+}
+
+QString Message::getUsernameFrom() const
+{
+    return usernameFrom;
+}
+
+QString Message::getTime() const
+{
+    return time;
 }
 
 QString Message::toJsonString()
@@ -36,5 +82,7 @@ QString Message::toJsonString()
         json["text"] = text;
     if(!time.isEmpty())
         json["time"] = time;
+    if(!usernameFrom.isEmpty())
+        json["username"] = usernameFrom;
     return QJsonDocument(json).toJson(QJsonDocument::Compact);
 }

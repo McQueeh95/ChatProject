@@ -14,12 +14,17 @@ void NetworkClient::setUuid(const QString &uuid)
     this->uuid = uuid;
 }
 
+void NetworkClient::setUsername(const QString &username)
+{
+    this->username = username;
+}
+
 bool NetworkClient::sendMessage(const QString &msgText, const QString &uuidTo)
 {
     if(mWebSocket.state() == QAbstractSocket::ConnectedState)
     {
         QString timeStamp = QDateTime::currentDateTimeUtc().toString(Qt::ISODate);
-        Message msg(0, uuid, uuidTo, msgText, timeStamp);
+        Message msg = Message::createTextMessage(uuid, uuidTo, msgText, timeStamp);
         QString toSend = msg.toJsonString();
         mWebSocket.sendTextMessage(toSend);
         return true;
@@ -31,17 +36,35 @@ bool NetworkClient::sendMessage(const QString &msgText, const QString &uuidTo)
     }
 }
 
+bool NetworkClient::sendAddContactRequest(const QString &uuidTo)
+{
+    if(mWebSocket.state() == QAbstractSocket::ConnectedState)
+    {
+        QString timeStamp = QDateTime::currentDateTimeUtc().toString(Qt::ISODate);
+        Message msg = Message::createFriendRequestMessage(this->uuid, uuidTo, timeStamp, this->username);
+        qDebug() << uuidTo << " " << msg.getUuidFrom() << " " << msg.getUsernameFrom();
+        QString jsonString = msg.toJsonString();
+        qDebug() << jsonString;
+        mWebSocket.sendTextMessage(jsonString);
+        return true;
+    }
+    return false;
+}
+
 void NetworkClient::onConnected()
 {
     connect(&mWebSocket, &QWebSocket::textMessageReceived, this, &NetworkClient::onMessageReceived);
-    Message msg(1, this->uuid);
+
+    Message msg = Message::createConnectionMessage(this->uuid);
     QString jsonString = msg.toJsonString();
     mWebSocket.sendTextMessage(jsonString);
 }
 
-void NetworkClient::onMessageReceived()
+void NetworkClient::onMessageReceived(const QString &message)
 {
-
+    QJsonObject obj = QJsonDocument::fromJson(message.toUtf8()).object();
+    Message msg(obj);
+    emit messageReceived(msg);
 }
 
 void NetworkClient::onDisconnected()

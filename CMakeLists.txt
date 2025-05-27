@@ -33,6 +33,9 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         models/chatstructuremodel.h models/chatstructuremodel.cpp
         network/networkclient.h network/networkclient.cpp
         network/message.h network/message.cpp
+        ui/addcontactpopup.h ui/addcontactpopup.cpp ui/addcontactpopup.ui
+        ui/requestlistoverlay.h ui/requestlistoverlay.cpp ui/requestlistoverlay.ui
+        ui/requestitemwidget.h ui/requestitemwidget.cpp ui/requestitemwidget.ui
 
 
     )
