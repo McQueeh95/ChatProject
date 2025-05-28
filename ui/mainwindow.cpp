@@ -62,9 +62,13 @@ void MainWindow::userHasUuid(const QString &uuid, const QString& username)
     connect(mainPageWidget, &MainPageWidget::sendUuidToMainWindow, this, &MainWindow::sendAddContactRequest);
     connect(mainPageWidget, &MainPageWidget::requestForAddContactRequests, this, &MainWindow::onRequestForRequests);
     connect(this, &MainWindow::sendRequestsToMainWidget, mainPageWidget, &MainPageWidget::onRequestsReceived);
+    connect(mainPageWidget, &MainPageWidget::requestAction, this, &MainWindow::onRequestAction);
     ui->stackedWidget->addWidget(mainPageWidget);
     ui->stackedWidget->setCurrentWidget(mainPageWidget);
     removeRegisterWidget();
+    connect(this, &MainWindow::sendContactsToMainWidget, mainPageWidget, &MainPageWidget::onContactsListReceived);
+    QList<Contact> contacts = db->getContactList();
+    emit sendContactsToMainWidget(contacts);
 }
 
 void MainWindow::removeRegisterWidget()
@@ -77,12 +81,13 @@ void MainWindow::removeRegisterWidget()
     }
 }
 
-void MainWindow::sendMessage(const QString &text)
+void MainWindow::sendMessage(int contactId, const QString &text)
 {
     if(!text.isEmpty())
     {
+        QString uuid = db->getContactById(contactId);
         //Just for testing purposes
-        client->sendMessage(text, "abe40c5a-a764-4499-8d6a-955fd43d8e54");
+        client->sendMessage(text, uuid);
     }
 }
 
@@ -96,8 +101,17 @@ void MainWindow::sendAddContactRequest(const QString &contactUuid)
 
 void MainWindow::onRequestForRequests()
 {
-    QList<QString> requests = db->getRequests();
+    QList<std::pair<int, QString>> requests = db->getRequests();
     emit sendRequestsToMainWidget(requests);
+}
+
+void MainWindow::onRequestAction(int requestId, const QString &action)
+{
+    if(action == "accepted")
+        db->acceptRequest(requestId);
+    else if(action == "rejected")
+        db->rejectRequest(requestId);
+    onRequestForRequests();
 }
 
 void MainWindow::onMessageReceived(const Message &message)

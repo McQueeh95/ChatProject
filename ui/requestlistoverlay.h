@@ -18,9 +18,11 @@ public:
 private:
     Ui::RequestListOverlay *ui;
 private slots:
-
+    void onRequestAccepted(int requestId, const QString &action);
 public slots:
-    void onRequestsListReceived(const QList<QString> &requests);
+    void onRequestsListReceived(const QList<std::pair<int, QString>> &requests);
+signals:
+    void requestAccepted(int requestId, const QString &action);
 };
 
 #endif // REQUESTLISTOVERLAY_H

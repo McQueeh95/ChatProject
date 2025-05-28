@@ -34,9 +34,9 @@ Message Message::createFriendRequestMessage(const QString &uuidFrom, const QStri
 Message::Message(const QJsonObject &obj)
 {
     type = obj["type"].toInt();
-    uuidFrom = obj["uuidFrom"].toString();
+    uuidFrom = obj["uuid_from"].toString();
     if(obj.contains("uuid_to"))
-        uuidTo = obj["uuidTo"].toString();
+        uuidTo = obj["uuid_to"].toString();
     if(obj.contains("text"))
         text = obj["text"].toString();
     if(obj.contains("time"))

@@ -12,11 +12,17 @@ class RequestItemWidget : public QWidget
     Q_OBJECT
 
 public:
-    explicit RequestItemWidget(const QString &name, QWidget *parent = nullptr);
+    explicit RequestItemWidget(int requestId, const QString &name, QWidget *parent = nullptr);
     ~RequestItemWidget();
 
 private:
     Ui::RequestItemWidget *ui;
+    int requestId;
+private slots:
+    void onAcceptButtonPushed();
+    void onRejectButtonPushed();
+signals:
+    void requestAction(int requestId, const QString& action);
 };
 
 #endif // REQUESTITEMWIDGET_H

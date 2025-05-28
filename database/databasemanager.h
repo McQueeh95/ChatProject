@@ -4,6 +4,7 @@
 #include <QUuid>
 #include <QtSql/QSqlError>
 #include <optional>
+#include "../models/contact.h"
 
 class DataBaseManager
 {
@@ -17,7 +18,11 @@ public:
     //If uuid is not present in DB returns nullopt
     static std::optional<std::pair<QString, QString>> getUuid();
     static void addRequest(const QString& uuid, const QString& username, const QString& time);
-    static QList<QString> getRequests();
+    static QList<std::pair<int, QString>> getRequests();
+    static bool acceptRequest(int requestId);
+    static bool rejectRequest(int requestId);
+    static QList<Contact> getContactList();
+    static QString getContactById(int id);
 };
 
 #endif // DATABASEMANAGER_H

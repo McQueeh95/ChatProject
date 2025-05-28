@@ -4,6 +4,9 @@
 #include <QWidget>
 #include <QMouseEvent>
 #include "requestlistoverlay.h"
+#include "../models/contact.h"
+//#include "../models/contactlistmodel.h"
+#include "../models/contactlistmodel1.h"
 
 namespace Ui {
 class MainPageWidget;
@@ -20,19 +23,25 @@ public:
 private:
     Ui::MainPageWidget *ui;
     RequestListOverlay *requestListOverlay;
+    ContactListModel1 *contactModel;
+    int currentContactId = -1;
     void mousePressEvent(QMouseEvent *event);
 private slots:
     void onSendMessageButtonClicked();
     void onAddContactButtonClicked();
     void onUuidReceived(const QString& contactUuid);
     void onShowRequestListButton();
+    void onRequestAction(int requestId, const QString &action);
+    void onChatSelected(const QModelIndex &current, const QModelIndex &previous);
 public slots:
-    void onRequestsReceived(const QList<QString> requests);
+    void onRequestsReceived(const QList<std::pair<int, QString>> &requests);
+    void onContactsListReceived(const QList<Contact> &contacts);
 signals:
-    void messageToSend(const QString& text);
+    void messageToSend(int contactId, const QString& text);
     void sendUuidToMainWindow(const QString& contactUuid);
     void requestForAddContactRequests();
-    void sendRequestsToList(const QList<QString>& requests);
+    void sendRequestsToList(const QList<std::pair<int, QString>> &requests);
+    void requestAction(int requestId, const QString &action);
 };
 
 #endif // MAINPAGEWIDGET_H

@@ -39,13 +39,15 @@ private:
     //We create registration widget only one time, so better to delete
     //Possible to change logic for deleting other window just add passing value
     void removeRegisterWidget();
-    void sendMessage(const QString& text);
+    void sendMessage(int contactId, const QString& text);
 private slots:
     void onMessageReceived(const Message& message);
     void sendAddContactRequest(const QString& contactUuid);
     void onRequestForRequests();
+    void onRequestAction(int requestId, const QString &action);
 signals:
-    QList<QString> sendRequestsToMainWidget(const QList<QString> &requests);
+    void sendRequestsToMainWidget(const QList<std::pair<int, QString>> &requests);
+    void sendContactsToMainWidget(const QList<Contact> &contacts);
 
 };
 #endif // MAINWINDOW_H

@@ -17,15 +17,24 @@ RequestListOverlay::~RequestListOverlay()
     delete ui;
 }
 
-void RequestListOverlay::onRequestsListReceived(const QList<QString> &requests)
+
+void RequestListOverlay::onRequestAccepted(int requestId, const QString &action)
 {
-    for(const QString &name : requests)
+    emit requestAccepted(requestId, action);
+}
+
+void RequestListOverlay::onRequestsListReceived(const QList<std::pair<int, QString>> &requests)
+{
+    ui->requestListView->clear();
+    for(const std::pair<int, QString> &pair : requests)
     {
         QListWidgetItem* item = new QListWidgetItem(ui->requestListView);
-        RequestItemWidget* widget = new RequestItemWidget(name);
+        RequestItemWidget* widget = new RequestItemWidget(pair.first, pair.second);
+        connect(widget, &RequestItemWidget::requestAction, this, &RequestListOverlay::onRequestAccepted);
 
         item->setSizeHint(widget->sizeHint());
         ui->requestListView->addItem(item);
         ui->requestListView->setItemWidget(item, widget);
+
     }
 }
