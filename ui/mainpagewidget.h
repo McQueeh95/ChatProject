@@ -7,6 +7,9 @@
 #include "../models/contact.h"
 //#include "../models/contactlistmodel.h"
 #include "../models/contactlistmodel.h"
+#include "../network/message.h"
+#include "../models/messageslistmodel.h"
+#include "../database/databasemessage.h"
 
 namespace Ui {
 class MainPageWidget;
@@ -24,6 +27,7 @@ private:
     Ui::MainPageWidget *ui;
     RequestListOverlay *requestListOverlay;
     ContactListModel *contactModel;
+    MessagesListModel *messagesModel;
     int currentContactId = -1;
     void mousePressEvent(QMouseEvent *event);
 private slots:
@@ -36,12 +40,15 @@ private slots:
 public slots:
     void onRequestsReceived(const QList<std::pair<int, QString>> &requests);
     void onContactsListReceived(const QList<Contact> &contacts);
+    void onMessagesReceived(const QList<DatabaseMessage> &messages);
 signals:
     void messageToSend(int contactId, const QString& text);
     void sendUuidToMainWindow(const QString& contactUuid);
     void requestForAddContactRequests();
     void sendRequestsToList(const QList<std::pair<int, QString>> &requests);
     void requestAction(int requestId, const QString &action);
+    void insertMessagesInChat(const QList<DatabaseMessage> messages);
+    void getMessagesForContact(int contactId);
 };
 
 #endif // MAINPAGEWIDGET_H

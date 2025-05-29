@@ -6,6 +6,7 @@
 #include <optional>
 #include "../models/contact.h"
 #include "../network/message.h"
+#include "databasemessage.h"
 
 class DataBaseManager
 {
@@ -25,6 +26,7 @@ public:
     static QList<Contact> getContactList();
     static QString getContactById(int id);
     static bool insertMessage(const Message& message);
+    static QList<DatabaseMessage> getMessagesForContact(int contactId);
 };
 
 #endif // DATABASEMANAGER_H

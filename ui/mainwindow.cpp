@@ -63,12 +63,14 @@ void MainWindow::userHasUuid(const QString &uuid, const QString& username)
     connect(mainPageWidget, &MainPageWidget::requestForAddContactRequests, this, &MainWindow::onRequestForRequests);
     connect(this, &MainWindow::sendRequestsToMainWidget, mainPageWidget, &MainPageWidget::onRequestsReceived);
     connect(mainPageWidget, &MainPageWidget::requestAction, this, &MainWindow::onRequestAction);
+    connect(mainPageWidget, &MainPageWidget::getMessagesForContact, this, &MainWindow::onGetMessages);
     ui->stackedWidget->addWidget(mainPageWidget);
     ui->stackedWidget->setCurrentWidget(mainPageWidget);
     removeRegisterWidget();
     connect(this, &MainWindow::sendContactsToMainWidget, mainPageWidget, &MainPageWidget::onContactsListReceived);
     QList<Contact> contacts = db->getContactList();
     emit sendContactsToMainWidget(contacts);
+    connect(this, &MainWindow::sendMessagesToMainWidget, mainPageWidget, &MainPageWidget::onMessagesReceived);
 }
 
 void MainWindow::removeRegisterWidget()
@@ -86,7 +88,6 @@ void MainWindow::sendMessage(int contactId, const QString &text)
     if(!text.isEmpty())
     {
         QString uuid = db->getContactById(contactId);
-        //Just for testing purposes
         client->sendMessage(text, uuid);
     }
 }
@@ -123,6 +124,11 @@ void MainWindow::onRequestAction(int requestId, const QString &action)
 void MainWindow::onWindowClosing()
 {
     client->disconnectFromServer();
+}
+
+void MainWindow::onGetMessages(int contactId)
+{
+    emit sendMessagesToMainWidget(db->getMessagesForContact(contactId));
 }
 
 void MainWindow::onMessageReceived(const Message &message)

@@ -1,7 +1,6 @@
 #include "ui_mainpagewidget.h"
 #include "addcontactpopup.h"
 #include "mainpagewidget.h"
-#include "contactmodelwidget.h"
 
 MainPageWidget::MainPageWidget(QWidget *parent)
     : QWidget(parent)
@@ -15,6 +14,8 @@ MainPageWidget::MainPageWidget(QWidget *parent)
     ui->chatList->setModel(contactModel);
     connect(ui->chatList->selectionModel(), &QItemSelectionModel::currentChanged,
             this, &MainPageWidget::onChatSelected);
+    messagesModel = new MessagesListModel(this);
+    ui->messageArea->setModel(messagesModel);
 }
 
 MainPageWidget::~MainPageWidget()
@@ -83,10 +84,9 @@ void MainPageWidget::onChatSelected(const QModelIndex &current, const QModelInde
 
     if(!current.isValid())
         return;
-
     currentContactId = current.data(Qt::UserRole).toInt();
+    emit getMessagesForContact(currentContactId);
     qDebug() << "Selected contact id: " << currentContactId;
-
     /*QList<Message> messages = db->getMessagesForContact(contactId);
     messageModel->setMessages(messages);*/
 }
@@ -100,5 +100,10 @@ void MainPageWidget::onRequestsReceived(const QList<std::pair<int, QString>> &re
 void MainPageWidget::onContactsListReceived(const QList<Contact> &contacts)
 {
     contactModel->setContacts(contacts);
+}
+
+void MainPageWidget::onMessagesReceived(const QList<DatabaseMessage> &messages)
+{
+    messagesModel->setMessages(messages);
 }
 

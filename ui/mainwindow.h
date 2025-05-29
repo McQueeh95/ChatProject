@@ -48,9 +48,11 @@ private slots:
     void onRequestForRequests();
     void onRequestAction(int requestId, const QString &action);
     void onWindowClosing();
+    void onGetMessages(int contactId);
 signals:
     void sendRequestsToMainWidget(const QList<std::pair<int, QString>> &requests);
     void sendContactsToMainWidget(const QList<Contact> &contacts);
+    void sendMessagesToMainWidget(const QList<DatabaseMessage> &messages);
 
 
 };

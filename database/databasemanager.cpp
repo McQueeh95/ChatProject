@@ -271,4 +271,30 @@ bool DataBaseManager::insertMessage(const Message &message)
     return true;
 }
 
+QList<DatabaseMessage> DataBaseManager::getMessagesForContact(int contactId)
+{
+    QList<DatabaseMessage> messages;
+    if(!db.isOpen())
+    {
+        qDebug() << "Was not able to open DB";
+        return messages;
+    }
+
+    QSqlQuery query;
+    query.prepare("SELECT id, content, timestamp "
+                  "FROM messages WHERE contact_id = :id;");
+    query.bindValue(":id", contactId);
+    if(!query.exec())
+    {
+        qCritical() << "Failed to get messages from DB" << query.lastError();
+        return messages;
+    }
+    while(query.next())
+    {
+        const DatabaseMessage msg(query);
+        messages.push_back(msg);
+    }
+    return messages;
+}
+
 

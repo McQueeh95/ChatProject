@@ -40,6 +40,9 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         models/contact.h
         ui/contactmodelwidget.h ui/contactmodelwidget.cpp ui/contactmodelwidget.ui
         models/contactlistmodel.h models/contactlistmodel.cpp
+        models/messageslistmodel.h models/messageslistmodel.cpp
+        database/databasemessage.h database/databasemessage.cpp
+        ui/messageitemwidget.h ui/messageitemwidget.cpp ui/messageitemwidget.ui
 
 
 
