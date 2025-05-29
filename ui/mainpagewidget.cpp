@@ -11,7 +11,7 @@ MainPageWidget::MainPageWidget(QWidget *parent)
     connect(ui->sendMessage, &QPushButton::clicked, this, &MainPageWidget::onSendMessageButtonClicked);
     connect(ui->addContactButton, &QPushButton::clicked, this, &MainPageWidget::onAddContactButtonClicked);
     connect(ui->showRequestListButton, &QPushButton::clicked, this, &MainPageWidget::onShowRequestListButton);
-    contactModel = new ContactListModel1(this);
+    contactModel = new ContactListModel(this);
     ui->chatList->setModel(contactModel);
     connect(ui->chatList->selectionModel(), &QItemSelectionModel::currentChanged,
             this, &MainPageWidget::onChatSelected);

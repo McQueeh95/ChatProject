@@ -91,6 +91,12 @@ void MainWindow::sendMessage(int contactId, const QString &text)
     }
 }
 
+void MainWindow::closeEvent(QCloseEvent *event)
+{
+    onWindowClosing();
+    event->accept();
+}
+
 void MainWindow::sendAddContactRequest(const QString &contactUuid)
 {
     if(!contactUuid.isEmpty())
@@ -114,6 +120,11 @@ void MainWindow::onRequestAction(int requestId, const QString &action)
     onRequestForRequests();
 }
 
+void MainWindow::onWindowClosing()
+{
+    client->disconnectFromServer();
+}
+
 void MainWindow::onMessageReceived(const Message &message)
 {
     if(message.getType() == 3)
@@ -122,7 +133,7 @@ void MainWindow::onMessageReceived(const Message &message)
     }
     if(message.getType() == 0)
     {
-
+        db->insertMessage(message);
     }
 }
 

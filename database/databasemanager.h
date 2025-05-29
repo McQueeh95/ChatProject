@@ -5,6 +5,7 @@
 #include <QtSql/QSqlError>
 #include <optional>
 #include "../models/contact.h"
+#include "../network/message.h"
 
 class DataBaseManager
 {
@@ -23,6 +24,7 @@ public:
     static bool rejectRequest(int requestId);
     static QList<Contact> getContactList();
     static QString getContactById(int id);
+    static bool insertMessage(const Message& message);
 };
 
 #endif // DATABASEMANAGER_H

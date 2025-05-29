@@ -6,7 +6,7 @@
 #include "requestlistoverlay.h"
 #include "../models/contact.h"
 //#include "../models/contactlistmodel.h"
-#include "../models/contactlistmodel1.h"
+#include "../models/contactlistmodel.h"
 
 namespace Ui {
 class MainPageWidget;
@@ -23,7 +23,7 @@ public:
 private:
     Ui::MainPageWidget *ui;
     RequestListOverlay *requestListOverlay;
-    ContactListModel1 *contactModel;
+    ContactListModel *contactModel;
     int currentContactId = -1;
     void mousePressEvent(QMouseEvent *event);
 private slots:

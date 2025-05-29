@@ -17,6 +17,7 @@ public:
     void setUsername(const QString &username);
     bool sendMessage(const QString &msgText, const QString &uuidTo);
     bool sendAddContactRequest(const QString &uuidTo);
+    void disconnectFromServer();
 private slots:
     void onConnected();
     void onMessageReceived(const QString &message);

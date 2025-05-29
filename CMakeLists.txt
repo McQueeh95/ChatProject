@@ -36,10 +36,10 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         ui/addcontactpopup.h ui/addcontactpopup.cpp ui/addcontactpopup.ui
         ui/requestlistoverlay.h ui/requestlistoverlay.cpp ui/requestlistoverlay.ui
         ui/requestitemwidget.h ui/requestitemwidget.cpp ui/requestitemwidget.ui
-        models/contactlistmodel.h models/contactlistmodel.cpp
+
         models/contact.h
         ui/contactmodelwidget.h ui/contactmodelwidget.cpp ui/contactmodelwidget.ui
-        models/contactlistmodel1.h models/contactlistmodel1.cpp
+        models/contactlistmodel.h models/contactlistmodel.cpp
 
 
 

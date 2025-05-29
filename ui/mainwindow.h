@@ -40,14 +40,18 @@ private:
     //Possible to change logic for deleting other window just add passing value
     void removeRegisterWidget();
     void sendMessage(int contactId, const QString& text);
+protected:
+    void closeEvent(QCloseEvent *event) override;
 private slots:
     void onMessageReceived(const Message& message);
     void sendAddContactRequest(const QString& contactUuid);
     void onRequestForRequests();
     void onRequestAction(int requestId, const QString &action);
+    void onWindowClosing();
 signals:
     void sendRequestsToMainWidget(const QList<std::pair<int, QString>> &requests);
     void sendContactsToMainWidget(const QList<Contact> &contacts);
+
 
 };
 #endif // MAINWINDOW_H

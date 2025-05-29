@@ -51,6 +51,14 @@ bool NetworkClient::sendAddContactRequest(const QString &uuidTo)
     return false;
 }
 
+void NetworkClient::disconnectFromServer()
+{
+    Message message = Message::createDisconnectMessage(this->uuid);
+    QString toSend = message.toJsonString();
+    mWebSocket.sendTextMessage(toSend);
+    mWebSocket.close();
+}
+
 void NetworkClient::onConnected()
 {
     connect(&mWebSocket, &QWebSocket::textMessageReceived, this, &NetworkClient::onMessageReceived);
