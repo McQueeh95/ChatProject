@@ -327,23 +327,25 @@ QString DataBaseManager::getContactById(int id)
 
 }
 
+//SMT WRONG HERE
+
+
 QString DataBaseManager::getRequestById(int id)
 {
     QString requestUuid;
-    if(!checkConnection()){
-        return requestUuid;
-    }
+
     QSqlQuery query;
+    qDebug() << "Id to find in contcats requests table: " << requestUuid;
 
     query.prepare("SELECT uuid FROM contact_requests WHERE id = :id");
     query.bindValue(":id", id);
     if(!query.exec())
     {
-        qCritical() << "Failed to insert into contacts table: " << query.lastError();
+        qCritical() << "Failed to insert into contact_request table: " << query.lastError();
         return requestUuid;
     }
 
-    while (query.next())
+    if(query.next())
     {
         requestUuid = query.value(0).toString();
         qDebug() << "Found UUID:" << requestUuid;

@@ -118,11 +118,13 @@ void MainWindow::onRequestAction(int contactId, const QString &action)
     if(action == "accepted")
     {
         qDebug() << "on request Action ID FROM MAIN WINDOW: " << contactId;
+
         db->acceptRequest(contactId);
         QList<Contact> contacts = db->getContactList();
         emit sendContactsToMainWidget(contacts);
-        db->getContactById(contactId)
-        client->sendContactAccepted(db->getContactById(contactId));
+        //Here smth wrong with this db operation
+        qDebug() << "ID OF CONTACT REQ FROM DB MAINWINDOW"<< db->getRequestById(contactId);
+        client->sendContactAccepted(db->getRequestById(contactId));
     }
     else if(action == "rejected")
         db->rejectRequest(contactId);
