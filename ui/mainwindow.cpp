@@ -122,7 +122,6 @@ void MainWindow::onRequestAction(int contactId, const QString &action)
         db->acceptRequest(contactId);
         QList<Contact> contacts = db->getContactList();
         emit sendContactsToMainWidget(contacts);
-        //Here smth wrong with this db operation
         qDebug() << "ID OF CONTACT REQ FROM DB MAINWINDOW"<< db->getRequestById(contactId);
         client->sendContactAccepted(db->getRequestById(contactId));
     }
@@ -157,6 +156,7 @@ void MainWindow::onMessageReceived(const Message &message)
     }
     if(message.getType() == 4)
     {
+        qDebug() << "REQUEST CONFIRMED BY: " << message.getUuidFrom();
         db->requestAccepted(message.getUuidFrom(), message.getUsernameFrom());
     }
 }

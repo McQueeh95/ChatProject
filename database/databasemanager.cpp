@@ -232,7 +232,7 @@ bool DataBaseManager::rejectRequest(int requestId)
 
 bool DataBaseManager::requestAccepted(const QString &uuid, const QString &username)
 {
-    checkConnection();
+    //checkConnection();
     QSqlQuery query;
 
     if (!query.exec(
