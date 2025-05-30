@@ -28,6 +28,7 @@ public:
     static bool requestAccepted(const QString& uuid, const QString& username);
     static QList<Contact> getContactList();
     static QString getContactById(int id);
+    static QString getRequestById(int id);
     static bool insertMessage(const Message& message);
     static QList<DatabaseMessage> getMessagesForContact(int contactId);
 };

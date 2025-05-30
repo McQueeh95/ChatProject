@@ -46,7 +46,7 @@ private slots:
     void onMessageReceived(const Message& message);
     void sendAddContactRequest(const QString& contactUuid);
     void onRequestForRequests();
-    void onRequestAction(int requestId, const QString &action);
+    void onRequestAction(int contactId, const QString &action);
     void onWindowClosing();
     void onGetMessages(int contactId);
     void onAddContactRequestSent(const Message &message);

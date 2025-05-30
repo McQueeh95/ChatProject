@@ -113,17 +113,19 @@ void MainWindow::onRequestForRequests()
     emit sendRequestsToMainWidget(requests);
 }
 
-void MainWindow::onRequestAction(int requestId, const QString &action)
+void MainWindow::onRequestAction(int contactId, const QString &action)
 {
     if(action == "accepted")
     {
-        db->acceptRequest(requestId);
+        qDebug() << "on request Action ID FROM MAIN WINDOW: " << contactId;
+        db->acceptRequest(contactId);
         QList<Contact> contacts = db->getContactList();
         emit sendContactsToMainWidget(contacts);
-        client->sendContactAccepted(db->getContactById(requestId));
+        db->getContactById(contactId)
+        client->sendContactAccepted(db->getContactById(contactId));
     }
     else if(action == "rejected")
-        db->rejectRequest(requestId);
+        db->rejectRequest(contactId);
 }
 
 void MainWindow::onWindowClosing()

@@ -18,9 +18,9 @@ RequestListOverlay::~RequestListOverlay()
 }
 
 
-void RequestListOverlay::onRequestAccepted(int requestId, const QString &action)
+void RequestListOverlay::onRequestActionReceived(int contactId, const QString &action)
 {
-    emit requestAccepted(requestId, action);
+    emit requestActionReceived(contactId, action);
 }
 
 void RequestListOverlay::onRequestsListReceived(const QList<std::pair<int, QString>> &requests)
@@ -30,7 +30,7 @@ void RequestListOverlay::onRequestsListReceived(const QList<std::pair<int, QStri
     {
         QListWidgetItem* item = new QListWidgetItem(ui->requestListView);
         RequestItemWidget* widget = new RequestItemWidget(pair.first, pair.second);
-        connect(widget, &RequestItemWidget::requestAction, this, &RequestListOverlay::onRequestAccepted);
+        connect(widget, &RequestItemWidget::requestAction, this, &RequestListOverlay::onRequestActionReceived);
 
         item->setSizeHint(widget->sizeHint());
         ui->requestListView->addItem(item);

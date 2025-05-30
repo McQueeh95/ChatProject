@@ -63,8 +63,8 @@ void MainPageWidget::onShowRequestListButton()
         requestListOverlay = new RequestListOverlay(this);
         emit requestForAddContactRequests();
         //connect(requestListOverlay, &RequestListOverlay::uuid)
-        connect(requestListOverlay, &RequestListOverlay::requestAccepted, this, &MainPageWidget::onRequestAction);
-        connect(requestListOverlay, &RequestListOverlay::requestAccepted, this, &MainPageWidget::onShowRequestListButton);
+        connect(requestListOverlay, &RequestListOverlay::requestActionReceived, this, &MainPageWidget::onRequestAction);
+        connect(requestListOverlay, &RequestListOverlay::requestActionReceived, this, &MainPageWidget::onShowRequestListButton);
         requestListOverlay->raise();
         requestListOverlay->show();
 
@@ -73,9 +73,10 @@ void MainPageWidget::onShowRequestListButton()
     requestListOverlay->show();
 }
 
-void MainPageWidget::onRequestAction(int requestId, const QString &action)
+void MainPageWidget::onRequestAction(int contactId, const QString &action)
 {
-    emit requestAction(requestId, action);
+    qDebug() << "on request action id: " << contactId;
+    emit requestAction(contactId, action);
 }
 
 void MainPageWidget::onChatSelected(const QModelIndex &current, const QModelIndex &previous)

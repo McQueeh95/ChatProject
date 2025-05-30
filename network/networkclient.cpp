@@ -97,6 +97,7 @@ void NetworkClient::onMessageReceived(const QString &message)
 {
     QJsonObject obj = QJsonDocument::fromJson(message.toUtf8()).object();
     Message msg(obj);
+    qDebug() << "Got a message from " << msg.getUsernameFrom() << " type: " << msg.getType();
     emit messageReceived(msg);
 }
 

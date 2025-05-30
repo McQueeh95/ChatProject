@@ -17,12 +17,12 @@ public:
 
 private:
     Ui::RequestItemWidget *ui;
-    int requestId;
+    int contactId;
 private slots:
     void onAcceptButtonPushed();
     void onRejectButtonPushed();
 signals:
-    void requestAction(int requestId, const QString& action);
+    void requestAction(int contactId, const QString& action);
 };
 
 #endif // REQUESTITEMWIDGET_H

@@ -35,7 +35,7 @@ private slots:
     void onAddContactButtonClicked();
     void onUuidReceived(const QString& contactUuid);
     void onShowRequestListButton();
-    void onRequestAction(int requestId, const QString &action);
+    void onRequestAction(int contactId, const QString &action);
     void onChatSelected(const QModelIndex &current, const QModelIndex &previous);
 public slots:
     void onRequestsReceived(const QList<std::pair<int, QString>> &requests);
@@ -46,7 +46,7 @@ signals:
     void sendUuidToMainWindow(const QString& contactUuid);
     void requestForAddContactRequests();
     void sendRequestsToList(const QList<std::pair<int, QString>> &requests);
-    void requestAction(int requestId, const QString &action);
+    void requestAction(int contactId, const QString &action);
     void insertMessagesInChat(const QList<DatabaseMessage> messages);
     void getMessagesForContact(int contactId);
 };

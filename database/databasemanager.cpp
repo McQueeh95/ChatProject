@@ -246,8 +246,9 @@ bool DataBaseManager::requestAccepted(const QString &uuid, const QString &userna
         qCritical() << "Failed to create contacts table: " << query.lastError();
         return false;
     }
-
-    query.prepare("UPDATE contact_requests SET username = :username "
+    qDebug() << "Updating req added username: " << username;
+    qDebug() << "UUID to add contact" << uuid;
+    query.prepare("UPDATE contact_requests SET username = :username, status = 'accepted' "
                   "WHERE uuid = :uuid");
     query.bindValue(":username", username);
     query.bindValue(":uuid", uuid);
@@ -256,12 +257,12 @@ bool DataBaseManager::requestAccepted(const QString &uuid, const QString &userna
         qCritical() << "Failed to update username into contacts table: " << query.lastError();
         return false;
     }
-
     query.prepare(
         "INSERT INTO contacts (uuid, username, timestamp) "
         "SELECT uuid, username, timestamp "
         "FROM contact_requests WHERE uuid = :uuid"
         );
+    qDebug() << "Inserted contact with UUID: " << uuid;
     query.bindValue(":uuid", uuid);
     if(!query.exec())
     {
@@ -323,6 +324,32 @@ QString DataBaseManager::getContactById(int id)
     }
 
     return contactUuid;
+
+}
+
+QString DataBaseManager::getRequestById(int id)
+{
+    QString requestUuid;
+    if(!checkConnection()){
+        return requestUuid;
+    }
+    QSqlQuery query;
+
+    query.prepare("SELECT uuid FROM contact_requests WHERE id = :id");
+    query.bindValue(":id", id);
+    if(!query.exec())
+    {
+        qCritical() << "Failed to insert into contacts table: " << query.lastError();
+        return requestUuid;
+    }
+
+    while (query.next())
+    {
+        requestUuid = query.value(0).toString();
+        qDebug() << "Found UUID:" << requestUuid;
+    }
+
+    return requestUuid;
 
 }
 bool DataBaseManager::insertMessage(const Message &message)
