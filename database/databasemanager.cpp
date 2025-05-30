@@ -273,6 +273,22 @@ bool DataBaseManager::requestAccepted(const QString &uuid, const QString &userna
 
 }
 
+bool DataBaseManager::requestRejected(const QString &uuid, const QString &username)
+{
+    QSqlQuery query;
+
+    query.prepare("UPDATE contact_requests SET username = :username, status = 'rejected' "
+                  "WHERE uuid = :uuid");
+    query.bindValue(":username", username);
+    query.bindValue(":uuid", uuid);
+    if(!query.exec())
+    {
+        qCritical() << "Failed to reject request: " << query.lastError();
+        return false;
+    }
+    return true;
+}
+
 QList<Contact> DataBaseManager::getContactList()
 {
     QList<Contact> contacts;

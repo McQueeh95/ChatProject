@@ -36,9 +36,9 @@ Message Message::createContactAcceptedMessage(const QString &uuidFrom, const QSt
     return Message(4, uuidFrom, uuidTo, "", time, usernameFrom);
 }
 
-Message Message::createContactRejectedMessage(const QString &uuidFrom, const QString &uuidTo, const QString &time)
+Message Message::createContactRejectedMessage(const QString &uuidFrom, const QString &uuidTo, const QString &time, const QString &usernameFrom)
 {
-    return Message(5, uuidFrom, uuidTo, "", time, "");
+    return Message(5, uuidFrom, uuidTo, "", time, usernameFrom);
 }
 
 

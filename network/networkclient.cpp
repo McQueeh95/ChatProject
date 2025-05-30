@@ -66,6 +66,19 @@ bool NetworkClient::sendContactAccepted(const QString &uuidTo)
     return false;
 }
 
+bool NetworkClient::sendContactRejected(const QString &uuidTo)
+{
+    if(mWebSocket.state() == QAbstractSocket::ConnectedState)
+    {
+        QString timeStamp = QDateTime::currentDateTimeUtc().toString(Qt::ISODate);
+        Message msg = Message::createContactRejectedMessage(this->uuid, uuidTo, timeStamp, this->getUsername());
+        QString jsonString = msg.toJsonString();
+        mWebSocket.sendTextMessage(jsonString);
+        return true;
+    }
+    return false;
+}
+
 void NetworkClient::disconnectFromServer()
 {
     Message message = Message::createDisconnectMessage(this->uuid);

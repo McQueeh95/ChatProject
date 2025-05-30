@@ -26,6 +26,7 @@ public:
     static bool acceptRequest(int requestId);
     static bool rejectRequest(int requestId);
     static bool requestAccepted(const QString& uuid, const QString& username);
+    static bool requestRejected(const QString& uuid, const QString& username);
     static QList<Contact> getContactList();
     static QString getContactById(int id);
     static QString getRequestById(int id);

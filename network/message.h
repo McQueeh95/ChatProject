@@ -20,7 +20,7 @@ public:
     static Message createDisconnectMessage(const QString &uuidFrom);
     static Message createFriendRequestMessage(const QString &uuidFrom, const QString &uuidTo, const QString &time, const QString &usernameFrom);
     static Message createContactAcceptedMessage(const QString &uuidFrom, const QString &uuidTo, const QString &time, const QString &usernameFrom);
-    static Message createContactRejectedMessage(const QString &uuidFrom, const QString &uuidTo, const QString &time);
+    static Message createContactRejectedMessage(const QString &uuidFrom, const QString &uuidTo, const QString &time, const QString &usernameFrom);
     //Message(int type, QString uuidFrom);
     //Message(int type, QString uuidFrom, QString uuidTo, QString text, QString time);
     //Message(int type, QString uuidFrom, QString uuidTo, QString usernameFrom, QString time);

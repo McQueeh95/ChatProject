@@ -126,7 +126,10 @@ void MainWindow::onRequestAction(int contactId, const QString &action)
         client->sendContactAccepted(db->getRequestById(contactId));
     }
     else if(action == "rejected")
+    {
         db->rejectRequest(contactId);
+        client->sendContactRejected(db->getRequestById(contactId));
+    }
 }
 
 void MainWindow::onWindowClosing()
@@ -158,6 +161,11 @@ void MainWindow::onMessageReceived(const Message &message)
     {
         qDebug() << "REQUEST CONFIRMED BY: " << message.getUuidFrom();
         db->requestAccepted(message.getUuidFrom(), message.getUsernameFrom());
+    }
+    if(message.getType() == 5)
+    {
+        qDebug() << "Request decline by: " << message.getUuidFrom();
+        db->requestRejected(message.getUuidFrom(), message.getUsernameFrom());
     }
 }
 
