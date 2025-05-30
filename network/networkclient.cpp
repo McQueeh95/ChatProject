@@ -19,7 +19,7 @@ void NetworkClient::setUsername(const QString &username)
     this->username = username;
 }
 
-bool NetworkClient::sendMessage(const QString &msgText, const QString &uuidTo)
+Message NetworkClient::sendMessage(const QString &msgText, const QString &uuidTo)
 {
     if(mWebSocket.state() == QAbstractSocket::ConnectedState)
     {
@@ -28,12 +28,12 @@ bool NetworkClient::sendMessage(const QString &msgText, const QString &uuidTo)
         QString toSend = msg.toJsonString();
         mWebSocket.sendTextMessage(toSend);
         //emit addContactRequestSent(msg);
-        return true;
+        return msg;
     }
     else
     {
         qDebug() << "Error sending message";
-        return false;
+        return Message();
     }
 }
 

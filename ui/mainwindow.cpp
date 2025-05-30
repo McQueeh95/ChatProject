@@ -89,7 +89,10 @@ void MainWindow::sendMessage(int contactId, const QString &text)
     if(!text.isEmpty())
     {
         QString uuid = db->getContactById(contactId);
-        client->sendMessage(text, uuid);
+        Message msg = client->sendMessage(text, uuid);
+        qDebug() << msg.getText() << msg.getUuidFrom() << msg.getUuidTo() << msg.getTime() << msg.getType();
+        db->insertOwnMessage(msg);
+        onGetMessages(this->mainPageWidget->getCurrentContactId());
     }
 }
 
@@ -130,6 +133,7 @@ void MainWindow::onRequestAction(int contactId, const QString &action)
         db->rejectRequest(contactId);
         client->sendContactRejected(db->getRequestById(contactId));
     }
+    onRequestForRequests();
 }
 
 void MainWindow::onWindowClosing()
@@ -156,11 +160,14 @@ void MainWindow::onMessageReceived(const Message &message)
     if(message.getType() == 0)
     {
         db->insertMessage(message);
+        onGetMessages(this->mainPageWidget->getCurrentContactId());
     }
     if(message.getType() == 4)
     {
         qDebug() << "REQUEST CONFIRMED BY: " << message.getUuidFrom();
         db->requestAccepted(message.getUuidFrom(), message.getUsernameFrom());
+        QList<Contact> contacts = db->getContactList();
+        emit sendContactsToMainWidget(contacts);
     }
     if(message.getType() == 5)
     {

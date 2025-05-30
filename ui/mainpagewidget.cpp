@@ -23,6 +23,11 @@ MainPageWidget::~MainPageWidget()
     delete ui;
 }
 
+int MainPageWidget::getCurrentContactId() const
+{
+    return currentContactId;
+}
+
 void MainPageWidget::mousePressEvent(QMouseEvent *event)
 {
 

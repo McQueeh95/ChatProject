@@ -15,7 +15,7 @@ public:
     NetworkClient(const QUrl &url, QObject *parent = nullptr);
     void setUuid(const QString &uuid);
     void setUsername(const QString &username);
-    bool sendMessage(const QString &msgText, const QString &uuidTo);
+    Message sendMessage(const QString &msgText, const QString &uuidTo);
     bool sendAddContactRequest(const QString &uuidTo);
     bool sendContactAccepted(const QString &uuidTo);
     bool sendContactRejected(const QString &uuidTo);

@@ -7,6 +7,7 @@ class DatabaseMessage
 {
 private:
     int id;
+    QString senderUuid;
     QString content;
     QString timestamp;
 public:

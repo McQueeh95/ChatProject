@@ -22,6 +22,7 @@ class MainPageWidget : public QWidget
 public:
     explicit MainPageWidget(QWidget *parent = nullptr);
     ~MainPageWidget();
+    int getCurrentContactId() const;
 
 private:
     Ui::MainPageWidget *ui;

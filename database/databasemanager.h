@@ -31,6 +31,7 @@ public:
     static QString getContactById(int id);
     static QString getRequestById(int id);
     static bool insertMessage(const Message& message);
+    static bool insertOwnMessage(const Message &message);
     static QList<DatabaseMessage> getMessagesForContact(int contactId);
 };
 

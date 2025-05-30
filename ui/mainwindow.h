@@ -44,8 +44,13 @@ protected:
     void closeEvent(QCloseEvent *event) override;
 private slots:
     void onMessageReceived(const Message& message);
+
+    //REQUEST LIST METHODS
+    //GET WHOLE
     void sendAddContactRequest(const QString& contactUuid);
     void onRequestForRequests();
+
+
     void onRequestAction(int contactId, const QString &action);
     void onWindowClosing();
     void onGetMessages(int contactId);

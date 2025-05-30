@@ -370,6 +370,8 @@ QString DataBaseManager::getRequestById(int id)
     return requestUuid;
 
 }
+
+//SMT WRONG HERE OR NOT BUT WITH INSERTING MESSAGES
 bool DataBaseManager::insertMessage(const Message &message)
 {
     if(!db.isOpen())
@@ -379,9 +381,11 @@ bool DataBaseManager::insertMessage(const Message &message)
     }
 
     QSqlQuery query;
+    qDebug() <<  "Msg database" <<message.getText() << message.getUuidFrom() << message.getUuidTo() << message.getTime() << message.getType();
     if(!query.exec("CREATE TABLE IF NOT EXISTS messages("
                    "id INTEGER PRIMARY KEY AUTOINCREMENT,"
                    "contact_id INTEGER NOT NULL,"
+                   "sender_uuid TEXT NOT NULL,"
                    "content TEXT NOT NULL,"
                    "timestamp TEXT NOT NULL,"
                    "FOREIGN KEY(contact_id) REFERENCES contacts(id)"
@@ -390,12 +394,50 @@ bool DataBaseManager::insertMessage(const Message &message)
         qCritical() << "Failed to create messages table" << query.lastError();
     }
 
-    query.prepare("INSERT INTO messages(contact_id, content, timestamp) "
-                  "SELECT id, :content, :timestamp FROM contacts WHERE uuid = :uuid;"
+    query.prepare("INSERT INTO messages (contact_id, sender_uuid, content, timestamp) "
+                  "SELECT id, :sender_uuid, :content, :timestamp FROM contacts WHERE uuid = :uuid;"
                   );
+    query.bindValue(":sender_uuid", message.getUuidFrom());
     query.bindValue(":content", message.getText());
     query.bindValue(":timestamp", message.getTime());
     query.bindValue(":uuid", message.getUuidFrom());
+    if(!query.exec())
+    {
+        qCritical() << "Failed to insert message into DB" << query.lastError();
+        return false;
+    }
+    return true;
+}
+
+bool DataBaseManager::insertOwnMessage(const Message &message)
+{
+    if(!db.isOpen())
+    {
+        qDebug() << "Was not able to open DB";
+        return false;
+    }
+
+    QSqlQuery query;
+    qDebug() <<  "Msg database" <<message.getText() << message.getUuidFrom() << message.getUuidTo() << message.getTime() << message.getType();
+    if(!query.exec("CREATE TABLE IF NOT EXISTS messages("
+                    "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+                    "contact_id INTEGER NOT NULL,"
+                    "sender_uuid TEXT NOT NULL,"
+                    "content TEXT NOT NULL,"
+                    "timestamp TEXT NOT NULL,"
+                    "FOREIGN KEY(contact_id) REFERENCES contacts(id)"
+                    ");"))
+    {
+        qCritical() << "Failed to create messages table" << query.lastError();
+    }
+
+    query.prepare("INSERT INTO messages (contact_id, sender_uuid, content, timestamp) "
+                  "SELECT id, :sender_uuid, :content, :timestamp FROM contacts WHERE uuid = :uuid;"
+                  );
+    query.bindValue(":sender_uuid", message.getUuidFrom());
+    query.bindValue(":content", message.getText());
+    query.bindValue(":timestamp", message.getTime());
+    query.bindValue(":uuid", message.getUuidTo());
     if(!query.exec())
     {
         qCritical() << "Failed to insert message into DB" << query.lastError();
@@ -414,7 +456,7 @@ QList<DatabaseMessage> DataBaseManager::getMessagesForContact(int contactId)
     }
 
     QSqlQuery query;
-    query.prepare("SELECT id, content, timestamp "
+    query.prepare("SELECT id, sender_uuid,content, timestamp "
                   "FROM messages WHERE contact_id = :id;");
     query.bindValue(":id", contactId);
     if(!query.exec())
