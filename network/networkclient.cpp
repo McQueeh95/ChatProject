@@ -27,6 +27,7 @@ bool NetworkClient::sendMessage(const QString &msgText, const QString &uuidTo)
         Message msg = Message::createTextMessage(uuid, uuidTo, msgText, timeStamp);
         QString toSend = msg.toJsonString();
         mWebSocket.sendTextMessage(toSend);
+        //emit addContactRequestSent(msg);
         return true;
     }
     else
@@ -46,6 +47,20 @@ bool NetworkClient::sendAddContactRequest(const QString &uuidTo)
         QString jsonString = msg.toJsonString();
         qDebug() << jsonString;
         mWebSocket.sendTextMessage(jsonString);
+        emit addContactRequestSent(msg);
+        return true;
+    }
+    return false;
+}
+
+bool NetworkClient::sendContactAccepted(const QString &uuidTo)
+{
+    if(mWebSocket.state() == QAbstractSocket::ConnectedState)
+    {
+        QString timeStamp = QDateTime::currentDateTimeUtc().toString(Qt::ISODate);
+        Message msg = Message::createContactAcceptedMessage(this->uuid, uuidTo, timeStamp, this->getUsername());
+        QString jsonString = msg.toJsonString();
+        mWebSocket.sendTextMessage(jsonString);
         return true;
     }
     return false;
@@ -57,6 +72,16 @@ void NetworkClient::disconnectFromServer()
     QString toSend = message.toJsonString();
     mWebSocket.sendTextMessage(toSend);
     mWebSocket.close();
+}
+
+QString NetworkClient::getUuid() const
+{
+    return uuid;
+}
+
+QString NetworkClient::getUsername() const
+{
+    return username;
 }
 
 void NetworkClient::onConnected()

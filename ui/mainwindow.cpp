@@ -64,6 +64,7 @@ void MainWindow::userHasUuid(const QString &uuid, const QString& username)
     connect(this, &MainWindow::sendRequestsToMainWidget, mainPageWidget, &MainPageWidget::onRequestsReceived);
     connect(mainPageWidget, &MainPageWidget::requestAction, this, &MainWindow::onRequestAction);
     connect(mainPageWidget, &MainPageWidget::getMessagesForContact, this, &MainWindow::onGetMessages);
+    connect(client, &NetworkClient::addContactRequestSent, this, &MainWindow::onAddContactRequestSent);
     ui->stackedWidget->addWidget(mainPageWidget);
     ui->stackedWidget->setCurrentWidget(mainPageWidget);
     removeRegisterWidget();
@@ -115,10 +116,14 @@ void MainWindow::onRequestForRequests()
 void MainWindow::onRequestAction(int requestId, const QString &action)
 {
     if(action == "accepted")
+    {
         db->acceptRequest(requestId);
+        QList<Contact> contacts = db->getContactList();
+        emit sendContactsToMainWidget(contacts);
+        client->sendContactAccepted(db->getContactById(requestId));
+    }
     else if(action == "rejected")
         db->rejectRequest(requestId);
-    onRequestForRequests();
 }
 
 void MainWindow::onWindowClosing()
@@ -131,6 +136,11 @@ void MainWindow::onGetMessages(int contactId)
     emit sendMessagesToMainWidget(db->getMessagesForContact(contactId));
 }
 
+void MainWindow::onAddContactRequestSent(const Message &message)
+{
+    db->addRequestFromCurrent(message.getUuidTo(), message.getTime());
+}
+
 void MainWindow::onMessageReceived(const Message &message)
 {
     if(message.getType() == 3)
@@ -140,6 +150,10 @@ void MainWindow::onMessageReceived(const Message &message)
     if(message.getType() == 0)
     {
         db->insertMessage(message);
+    }
+    if(message.getType() == 4)
+    {
+        db->requestAccepted(message.getUuidFrom(), message.getUsernameFrom());
     }
 }
 

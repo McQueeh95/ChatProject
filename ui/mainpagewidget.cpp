@@ -86,9 +86,6 @@ void MainPageWidget::onChatSelected(const QModelIndex &current, const QModelInde
         return;
     currentContactId = current.data(Qt::UserRole).toInt();
     emit getMessagesForContact(currentContactId);
-    qDebug() << "Selected contact id: " << currentContactId;
-    /*QList<Message> messages = db->getMessagesForContact(contactId);
-    messageModel->setMessages(messages);*/
 }
 
 void MainPageWidget::onRequestsReceived(const QList<std::pair<int, QString>> &requests)

@@ -31,6 +31,18 @@ Message Message::createFriendRequestMessage(const QString &uuidFrom, const QStri
     return Message(3, uuidFrom, uuidTo, "", time, usernameFrom);
 }
 
+Message Message::createContactAcceptedMessage(const QString &uuidFrom, const QString &uuidTo, const QString &time, const QString &usernameFrom)
+{
+    return Message(4, uuidFrom, uuidTo, "", time, usernameFrom);
+}
+
+Message Message::createContactRejectedMessage(const QString &uuidFrom, const QString &uuidTo, const QString &time)
+{
+    return Message(5, uuidFrom, uuidTo, "", time, "");
+}
+
+
+
 Message::Message(const QJsonObject &obj)
 {
     type = obj["type"].toInt();
@@ -55,6 +67,10 @@ QString Message::getUuidFrom() const
     return uuidFrom;
 }
 
+QString Message::getUuidTo() const
+{
+    return uuidTo;
+}
 QString Message::getText() const
 {
     return text;

@@ -12,6 +12,7 @@ DataBaseManager::DataBaseManager(const QString& path) {
     }
 }
 
+
 bool DataBaseManager::connectToDB(const QString &path)
 {
     db = QSqlDatabase::addDatabase("QSQLITE");
@@ -26,6 +27,16 @@ bool DataBaseManager::connectToDB(const QString &path)
     qDebug() << "Seccessfully connected to db";
     return true;
 }
+
+bool DataBaseManager::checkConnection()
+{
+    if (!db.open()) {
+        qCritical() << "Was not able to open DB" << db.lastError().text();
+        return false;
+    }
+    return true;
+}
+
 
 void DataBaseManager::registerUser(const QString &uuid, const QString &username)
 {
@@ -82,7 +93,7 @@ void DataBaseManager::addRequest(const QString &uuid, const QString &username, c
             "id INTEGER PRIMARY KEY AUTOINCREMENT,"
             "uuid TEXT NOT NULL,"
             "username TEXT,"
-            "status TEXT NOT NULL CHECK (status IN ('pending', 'accepted', 'rejected')),"
+            "status TEXT NOT NULL CHECK (status IN ('pending', 'accepted', 'rejected', 'sent')),"
             "timestamp TEXT"
             ")"
             ))
@@ -102,6 +113,41 @@ void DataBaseManager::addRequest(const QString &uuid, const QString &username, c
     }
 }
 
+void DataBaseManager::addRequestFromCurrent(const QString &uuid, const QString &time)
+{
+    if(!db.isOpen())
+    {
+        qDebug() << "Was not able to open DB";
+        return;
+    }
+
+    QSqlQuery query;
+
+    if (!query.exec(
+            "CREATE TABLE IF NOT EXISTS contact_requests ("
+            "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+            "uuid TEXT NOT NULL,"
+            "username TEXT,"
+            "status TEXT NOT NULL CHECK (status IN ('pending', 'accepted', 'rejected', 'sent')),"
+            "timestamp TEXT"
+            ")"
+            ))
+    {
+        qCritical() << "Failed to create table:" << query.lastError().text();
+    }
+
+    query.prepare("INSERT INTO contact_requests (uuid, status, timestamp) VALUES (:uuid, :status, :timestamp)");
+    query.bindValue(":uuid", uuid);
+    query.bindValue(":status", "sent");
+    query.bindValue(":timestamp", time);
+    qDebug() << "Added request from local: ";
+    if(!query.exec())
+    {
+        qCritical() << "Failed to create table:" << query.lastError().text();
+        return;
+    }
+}
+
 QList<std::pair<int, QString>> DataBaseManager::getRequests()
 {
     QList<std::pair<int, QString>> requestes;
@@ -111,7 +157,7 @@ QList<std::pair<int, QString>> DataBaseManager::getRequests()
         return requestes;
     }
     QSqlQuery query;
-    query.exec("SELECT id, username FROM contact_requests WHERE status = 'pending'");
+    query.exec("SELECT id, username FROM contact_requests WHERE status = 'pending';");
     while(query.next())
     {
         requestes.append({query.value(0).toInt(), query.value(1).toString()});
@@ -182,6 +228,48 @@ bool DataBaseManager::rejectRequest(int requestId)
         return false;
     }
     return true;
+}
+
+bool DataBaseManager::requestAccepted(const QString &uuid, const QString &username)
+{
+    checkConnection();
+    QSqlQuery query;
+
+    if (!query.exec(
+            "CREATE TABLE IF NOT EXISTS contacts ("
+            "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+            "uuid TEXT NOT NULL,"
+            "username TEXT,"
+            "timestamp TEXT);"
+            ))
+    {
+        qCritical() << "Failed to create contacts table: " << query.lastError();
+        return false;
+    }
+
+    query.prepare("UPDATE contact_requests SET username = :username "
+                  "WHERE uuid = :uuid");
+    query.bindValue(":username", username);
+    query.bindValue(":uuid", uuid);
+    if(!query.exec())
+    {
+        qCritical() << "Failed to update username into contacts table: " << query.lastError();
+        return false;
+    }
+
+    query.prepare(
+        "INSERT INTO contacts (uuid, username, timestamp) "
+        "SELECT uuid, username, timestamp "
+        "FROM contact_requests WHERE uuid = :uuid"
+        );
+    query.bindValue(":uuid", uuid);
+    if(!query.exec())
+    {
+        qCritical() << "Failed to insert into contacts table after accepted: " << query.lastError();
+        return false;
+    }
+    return true;
+
 }
 
 QList<Contact> DataBaseManager::getContactList()

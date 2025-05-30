@@ -17,13 +17,17 @@ public:
     void setUsername(const QString &username);
     bool sendMessage(const QString &msgText, const QString &uuidTo);
     bool sendAddContactRequest(const QString &uuidTo);
+    bool sendContactAccepted(const QString &uuidTo);
     void disconnectFromServer();
+    QString getUuid() const;
+    QString getUsername() const;
 private slots:
     void onConnected();
     void onMessageReceived(const QString &message);
     void onDisconnected();
 signals:
     Message messageReceived(const Message &message);
+    void addContactRequestSent(const Message &message);
 };
 
 #endif // NETWORKCLIENT_H
