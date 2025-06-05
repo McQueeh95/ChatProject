@@ -40,6 +40,7 @@ private:
     //Possible to change logic for deleting other window just add passing value
     void removeRegisterWidget();
     void sendMessage(int contactId, const QString& text);
+    void connectSlotForMainPage();
 protected:
     void closeEvent(QCloseEvent *event) override;
 private slots:

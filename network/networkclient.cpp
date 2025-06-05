@@ -32,7 +32,6 @@ Message NetworkClient::sendMessage(const QString &msgText, const QString &uuidTo
     }
     else
     {
-        qDebug() << "Error sending message";
         return Message();
     }
 }
@@ -43,9 +42,7 @@ bool NetworkClient::sendAddContactRequest(const QString &uuidTo)
     {
         QString timeStamp = QDateTime::currentDateTimeUtc().toString(Qt::ISODate);
         Message msg = Message::createFriendRequestMessage(this->uuid, uuidTo, timeStamp, this->username);
-        qDebug() << uuidTo << " " << msg.getUuidFrom() << " " << msg.getUsernameFrom();
         QString jsonString = msg.toJsonString();
-        qDebug() << jsonString;
         mWebSocket.sendTextMessage(jsonString);
         emit addContactRequestSent(msg);
         return true;
@@ -110,11 +107,9 @@ void NetworkClient::onMessageReceived(const QString &message)
 {
     QJsonObject obj = QJsonDocument::fromJson(message.toUtf8()).object();
     Message msg(obj);
-    qDebug() << "Got a message from " << msg.getUsernameFrom() << " type: " << msg.getType();
     emit messageReceived(msg);
 }
 
 void NetworkClient::onDisconnected()
 {
-    qDebug() << "WebSocket disconnected";
 }

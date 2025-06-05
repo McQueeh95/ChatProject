@@ -24,16 +24,6 @@ bool DataBaseManager::connectToDB(const QString &path)
         return false;
     }
 
-    qDebug() << "Seccessfully connected to db";
-    return true;
-}
-
-bool DataBaseManager::checkConnection()
-{
-    if (!db.open()) {
-        qCritical() << "Was not able to open DB" << db.lastError().text();
-        return false;
-    }
     return true;
 }
 
@@ -41,7 +31,6 @@ bool DataBaseManager::checkConnection()
 void DataBaseManager::registerUser(const QString &uuid, const QString &username)
 {
     if(!db.isOpen()){
-        qDebug() << "Was not able to open DB";
         return;
     }
 

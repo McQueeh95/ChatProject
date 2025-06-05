@@ -74,21 +74,10 @@ void MainWindow::userHasUuid(const QString &uuid, const QString& username)
     mainPageWidget->getContactsListView()->setItemDelegate(contactDelegate);
 
     //Connecting signal from MainWidget for receiving text and give to client
-    connect(mainPageWidget, &MainPageWidget::messageToSend, this, &MainWindow::sendMessage);
-    connect(mainPageWidget, &MainPageWidget::sendUuidToMainWindow, this, &MainWindow::sendAddContactRequest);
-    connect(mainPageWidget, &MainPageWidget::requestForAddContactRequests, this, &MainWindow::onRequestForRequests);
-    connect(this, &MainWindow::sendRequestsToMainWidget, mainPageWidget, &MainPageWidget::onRequestsReceived);
-    connect(mainPageWidget, &MainPageWidget::requestAction, this, &MainWindow::onRequestAction);
-    connect(mainPageWidget, &MainPageWidget::getMessagesForContact, this, &MainWindow::onGetMessages);
-    connect(client, &NetworkClient::addContactRequestSent, this, &MainWindow::onAddContactRequestSent);
-    connect(mainPageWidget, &MainPageWidget::insertSelfUuidIntoClipboard, this, &MainWindow::onInsertSelfUuidIntoClipboard);
+
     ui->stackedWidget->addWidget(mainPageWidget);
     ui->stackedWidget->setCurrentWidget(mainPageWidget);
     removeRegisterWidget();
-
-
-
-
 
     connect(this, &MainWindow::sendContactsToMainWidget, mainPageWidget, &MainPageWidget::onContactsListReceived);
     QList<Contact> contacts = db->getContactList();
@@ -112,10 +101,21 @@ void MainWindow::sendMessage(int contactId, const QString &text)
     {
         QString uuid = db->getContactById(contactId);
         Message msg = client->sendMessage(text, uuid);
-        qDebug() << msg.getText() << msg.getUuidFrom() << msg.getUuidTo() << msg.getTime() << msg.getType();
         db->insertOwnMessage(msg);
         onGetMessages(this->mainPageWidget->getCurrentContactId());
     }
+}
+
+void MainWindow::connectSlotForMainPage()
+{
+    connect(mainPageWidget, &MainPageWidget::messageToSend, this, &MainWindow::sendMessage);
+    connect(mainPageWidget, &MainPageWidget::sendUuidToMainWindow, this, &MainWindow::sendAddContactRequest);
+    connect(mainPageWidget, &MainPageWidget::requestForAddContactRequests, this, &MainWindow::onRequestForRequests);
+    connect(this, &MainWindow::sendRequestsToMainWidget, mainPageWidget, &MainPageWidget::onRequestsReceived);
+    connect(mainPageWidget, &MainPageWidget::requestAction, this, &MainWindow::onRequestAction);
+    connect(mainPageWidget, &MainPageWidget::getMessagesForContact, this, &MainWindow::onGetMessages);
+    connect(client, &NetworkClient::addContactRequestSent, this, &MainWindow::onAddContactRequestSent);
+    connect(mainPageWidget, &MainPageWidget::insertSelfUuidIntoClipboard, this, &MainWindow::onInsertSelfUuidIntoClipboard);
 }
 
 void MainWindow::closeEvent(QCloseEvent *event)
@@ -142,12 +142,10 @@ void MainWindow::onRequestAction(int contactId, const QString &action)
 {
     if(action == "accepted")
     {
-        qDebug() << "on request Action ID FROM MAIN WINDOW: " << contactId;
 
         db->acceptRequest(contactId);
         QList<Contact> contacts = db->getContactList();
         emit sendContactsToMainWidget(contacts);
-        qDebug() << "ID OF CONTACT REQ FROM DB MAINWINDOW"<< db->getRequestById(contactId);
         client->sendContactAccepted(db->getRequestById(contactId));
     }
     else if(action == "rejected")
@@ -175,11 +173,9 @@ void MainWindow::onAddContactRequestSent(const Message &message)
 
 void MainWindow::onInsertSelfUuidIntoClipboard()
 {
-    qDebug() << "MainWindow";
     QClipboard *clipboard = QGuiApplication::clipboard();
     clipboard->setText(client->getUuid());
     ui->statusbar->showMessage("Uuid copied into clipboard");
-
 }
 
 void MainWindow::onMessageReceived(const Message &message)
@@ -195,14 +191,12 @@ void MainWindow::onMessageReceived(const Message &message)
     }
     if(message.getType() == 4)
     {
-        qDebug() << "REQUEST CONFIRMED BY: " << message.getUuidFrom();
         db->requestAccepted(message.getUuidFrom(), message.getUsernameFrom());
         QList<Contact> contacts = db->getContactList();
         emit sendContactsToMainWidget(contacts);
     }
     if(message.getType() == 5)
     {
-        qDebug() << "Request decline by: " << message.getUuidFrom();
         db->requestRejected(message.getUuidFrom(), message.getUsernameFrom());
     }
 }

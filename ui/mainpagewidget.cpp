@@ -50,7 +50,6 @@ QListView *MainPageWidget::getContactsListView()
 
 void MainPageWidget::setMessageSendingUi()
 {
-    qDebug() << currentContactId;
     ui->splitter->setStretchFactor(0, 0);
     ui->splitter->setStretchFactor(1, 1);
     if(currentContactId == -1)

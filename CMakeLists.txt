@@ -30,7 +30,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         database/databasemanager.h database/databasemanager.cpp
         ui/registerwidget.h ui/registerwidget.cpp ui/registerwidget.ui
         ui/mainpagewidget.h ui/mainpagewidget.cpp ui/mainpagewidget.ui
-        models/chatstructuremodel.h models/chatstructuremodel.cpp
+
         network/networkclient.h network/networkclient.cpp
         network/message.h network/message.cpp
         ui/addcontactpopup.h ui/addcontactpopup.cpp ui/addcontactpopup.ui
