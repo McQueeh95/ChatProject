@@ -63,7 +63,6 @@ void session::on_read(
 	std::size_t bytes_transferd)
 {
 	is_reading = false;
-	//std::cout << "Received: " << beast::buffers_to_string(buffer_.data()) << std::endl;
 	//Skips if message is empty
 	boost::ignore_unused(bytes_transferd);
 
@@ -74,9 +73,7 @@ void session::on_read(
 		return fail(ec, "read");
 	//Transforming received data from Json
 	std::string string_data = beast::buffers_to_string(buffer_.data());
-	std::cout << "Received: " << string_data << std::endl;
 	message msg(json::parse(string_data));
-	std::cout << "Receieved JSON id: " << msg.get_type() << std::endl;
 	//Depending on message type handles connection or forwarding or disconnecting
 	switch(msg.get_type())
 	{
@@ -87,14 +84,11 @@ void session::on_read(
 			std::queue<std::string>& queue_to_send = sessions_manager::instance().get_undelieverd(msg.get_uuid_from());
 			while (!queue_to_send.empty())
 			{
-				//std::string raw_msg;
-				
 				message to_send(json::parse(queue_to_send.front()));
 				std::cout << "Sending unsent: " << to_send.get_text() << std::endl;
 				queue_to_send.pop();
 				handle_forward(to_send, shared_from_this());
 			}
-			
 			break;
 		}
 		//Remove session from hashmap close ws 
@@ -105,70 +99,12 @@ void session::on_read(
 		}
 		//Get uuid of receiver, get receiver write in his ws and send it to read state again
 		case message::message_type::Forward:
-		{
-			std::shared_ptr<session> receiver = sessions_manager::instance().get_client(msg.get_uuid_to());
-			if (receiver == nullptr)
-			{
-				sessions_manager::instance().add_message(msg.get_uuid_to(), string_data);
-				buffer_.consume(buffer_.size());
-				do_read();
-			}
-			else
-				handle_forward(msg, receiver);
-			break;
-		}
 		case message::message_type::AddContact:
-		{
-			std::cout << "Add contact" << std::endl;
-			std::shared_ptr<session> receiver = sessions_manager::instance().get_client(msg.get_uuid_to());
-			if (receiver == nullptr)
-			{
-				sessions_manager::instance().add_message(msg.get_uuid_to(), string_data);
-				buffer_.consume(buffer_.size());
-				do_read();
-			}
-			else
-				handle_forward(msg, receiver);
-			break;
-		}
 		case message::message_type::ContactAdded:
-		{
-			std::cout << "Confirm contact" << std::endl;
-			std::shared_ptr<session> receiver = sessions_manager::instance().get_client(msg.get_uuid_to());
-			std::cout << "Sending confirmation to: " << msg.get_uuid_to() << std::endl;
-			if (receiver == nullptr)
-			{
-				sessions_manager::instance().add_message(msg.get_uuid_to(), string_data);
-				buffer_.consume(buffer_.size());
-				do_read();
-			}
-			else
-				handle_forward(msg, receiver);
-			break;
-		}
 		case message::message_type::ContactRejected:
-		{
-			std::cout << "Confirm contact" << std::endl;
-			std::shared_ptr<session> receiver = sessions_manager::instance().get_client(msg.get_uuid_to());
-			std::cout << "Sending confirmation to: " << msg.get_uuid_to() << std::endl;
-			if (receiver == nullptr)
-			{
-				sessions_manager::instance().add_message(msg.get_uuid_to(), string_data);
-				buffer_.consume(buffer_.size());
-				do_read();
-			}
-			else
-				handle_forward(msg, receiver);
+			handle_message_before_forwarding(msg, string_data);
 			break;
-		}
 	}
-	//TODO: Here's logic for sending message to client
-	/*ws_.text(ws_.got_text());
-	ws_.async_write(
-		buffer_.data(),
-		beast::bind_front_handler(
-			&session::on_write,
-			shared_from_this()));*/
 
 }
 
@@ -181,7 +117,6 @@ void session::on_write(
 	if (ec)
 		return fail(ec, "write");
 	// Clear the buffer
-	//buffer_.consume(buffer_.size());
 	write_buffer_.consume(buffer_.size());
 	is_writing = false;
 	// Do another read
@@ -189,26 +124,6 @@ void session::on_write(
 		do_read();
 }
 
-
-
-//Fix sending messages, it sends but after crashes
-//It's curently reading probably cuz of that crash
-//void session::send_message(const std::string &message, std::function<void()> on_sent)
-//{
-//	std::shared_ptr<std::string> msg_shared = std::make_shared<std::string>(message);
-//	ws_.text(ws_.got_text());
-//	ws_.async_write(
-//		boost::asio::buffer(*msg_shared),
-//		[self = shared_from_this(), msg_shared, on_sent](beast::error_code ec, std::size_t bytes_transferred)
-//		{
-//			boost::ignore_unused(bytes_transferred);
-//			if (ec)
-//				return fail(ec, "write");
-//			if (on_sent)
-//				on_sent();
-//		}
-//	);
-//}
 
 void session::send_message(const std::string& message, std::function<void()> on_sent)
 {
@@ -311,23 +226,15 @@ void session::send_request(const std::string& msg)
 		write_buffer_.data(), beast::bind_front_handler(&session::on_write, shared_from_this()));
 }
 
-
-
-void session::send_message_test(const std::string& message)
+void session::handle_message_before_forwarding(const message& msg, const std::string& string_data)
 {
-	if (is_writing == true)
+	std::shared_ptr<session> receiver = sessions_manager::instance().get_client(msg.get_uuid_to());
+	if (receiver == nullptr)
 	{
-		message_queue_.push(message);
-		return;
+		sessions_manager::instance().add_message(msg.get_uuid_to(), string_data);
+		buffer_.consume(buffer_.size());
+		do_read();
 	}
-
-	is_writing = true;
-
-	write_buffer_.clear();
-
-	beast::ostream(write_buffer_) << message;
-
-	ws_.async_write(
-		write_buffer_.data(), beast::bind_front_handler(&session::on_write, shared_from_this()));
+	else
+		handle_forward(msg, receiver);
 }
-

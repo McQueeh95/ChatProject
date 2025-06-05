@@ -15,7 +15,6 @@ class session : public std::enable_shared_from_this<session>
 	bool is_writing = false;
 	bool is_reading = false;
 	std::queue<std::string> message_queue_;
-	std::queue<message> message_queue_m;
 public:
 	// Passing ownership of the socket
 		explicit session(tcp::socket && socket)
@@ -40,7 +39,6 @@ public:
 	void handle_forward(const message &msg, std::shared_ptr<session> receiver);
 	void handle_add_contact(const message &msg, std::shared_ptr<session> receiver);
 	void send_request(const std::string& msg);
-	void send_message_test(const std::string & message);
-	//void send_message(const std::string& message);
+	void handle_message_before_forwarding(const message &msg, const std::string &string_data);
 };
 
