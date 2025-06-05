@@ -55,6 +55,7 @@ private slots:
     void onWindowClosing();
     void onGetMessages(int contactId);
     void onAddContactRequestSent(const Message &message);
+    void onInsertSelfUuidIntoClipboard();
 signals:
     void sendRequestsToMainWidget(const QList<std::pair<int, QString>> &requests);
     void sendContactsToMainWidget(const QList<Contact> &contacts);

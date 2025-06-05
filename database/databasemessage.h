@@ -14,6 +14,7 @@ public:
     DatabaseMessage();
     DatabaseMessage(const QSqlQuery &query);
     QString getContent() const;
+    QString getSenderUuid() const;
 };
 
 #endif // DATABASEMESSAGE_H

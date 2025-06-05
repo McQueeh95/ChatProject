@@ -19,10 +19,12 @@ private:
     Ui::RequestListOverlay *ui;
 private slots:
     void onRequestActionReceived(int contactId, const QString &action);
+    void onInsertSelfUuidClicked();
 public slots:
     void onRequestsListReceived(const QList<std::pair<int, QString>> &requests);
 signals:
     void requestActionReceived(int contactId, const QString &action);
+    void insertSelfUuidIntoClipboard();
 };
 
 #endif // REQUESTLISTOVERLAY_H

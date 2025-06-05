@@ -14,3 +14,8 @@ QString DatabaseMessage::getContent() const
 {
     return this->content;
 }
+
+QString DatabaseMessage::getSenderUuid() const
+{
+    return this->senderUuid;
+}

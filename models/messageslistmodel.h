@@ -23,8 +23,11 @@ public:
 
     void setMessages(const QList<DatabaseMessage> &messages);
 
+    void setUuid(const QString &localUuid);
+
 private:
     QList<DatabaseMessage> mMessages;
+    QString localUuid;
 };
 
 #endif // MESSAGESLISTMODEL_H

@@ -43,6 +43,8 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         models/messageslistmodel.h models/messageslistmodel.cpp
         database/databasemessage.h database/databasemessage.cpp
         ui/messageitemwidget.h ui/messageitemwidget.cpp ui/messageitemwidget.ui
+        models/messageitemdelegate.h models/messageitemdelegate.cpp
+        models/contactiemdelegate.h models/contactiemdelegate.cpp
 
 
 

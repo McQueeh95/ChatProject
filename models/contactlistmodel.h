@@ -3,6 +3,7 @@
 
 #include <QAbstractListModel>
 #include "contact.h"
+//#include "ui_contactmodelwidget.h"
 
 class ContactListModel : public QAbstractListModel
 {

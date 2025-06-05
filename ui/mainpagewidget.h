@@ -10,6 +10,7 @@
 #include "../network/message.h"
 #include "../models/messageslistmodel.h"
 #include "../database/databasemessage.h"
+#include <QListView>
 
 namespace Ui {
 class MainPageWidget;
@@ -20,9 +21,12 @@ class MainPageWidget : public QWidget
     Q_OBJECT
 
 public:
-    explicit MainPageWidget(QWidget *parent = nullptr);
+    MainPageWidget(ContactListModel *contactModel, MessagesListModel *messagModel, QWidget *parent = nullptr);
     ~MainPageWidget();
     int getCurrentContactId() const;
+    QListView* getMessageListView();
+    QListView* getContactsListView();
+    void setMessageSendingUi();
 
 private:
     Ui::MainPageWidget *ui;
@@ -42,6 +46,7 @@ public slots:
     void onRequestsReceived(const QList<std::pair<int, QString>> &requests);
     void onContactsListReceived(const QList<Contact> &contacts);
     void onMessagesReceived(const QList<DatabaseMessage> &messages);
+    void onInsertUuidIntoClipboard();
 signals:
     void messageToSend(int contactId, const QString& text);
     void sendUuidToMainWindow(const QString& contactUuid);
@@ -50,6 +55,7 @@ signals:
     void requestAction(int contactId, const QString &action);
     void insertMessagesInChat(const QList<DatabaseMessage> messages);
     void getMessagesForContact(int contactId);
+    void insertSelfUuidIntoClipboard();
 };
 
 #endif // MAINPAGEWIDGET_H

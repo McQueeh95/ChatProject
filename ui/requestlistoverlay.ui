@@ -26,6 +26,13 @@
      <item>
       <widget class="QListWidget" name="requestListView"/>
      </item>
+     <item>
+      <widget class="QPushButton" name="getOwnUuidButton">
+       <property name="text">
+        <string>Copy your uuid to clipboard</string>
+       </property>
+      </widget>
+     </item>
     </layout>
    </item>
   </layout>

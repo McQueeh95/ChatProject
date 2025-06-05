@@ -1,6 +1,9 @@
 #include <QUuid>
+#include <QClipboard>
 #include "mainwindow.h"
 #include "./ui_mainwindow.h"
+#include "../models/messageitemdelegate.h"
+#include "../models/contactiemdelegate.h"
 
 
 MainWindow::MainWindow(const QString& dbPath, QWidget *parent)
@@ -42,9 +45,13 @@ NetworkClient &MainWindow::getClient()
 
 void MainWindow::handleUserRegistration(const QString &username)
 {
+    while(!username.isEmpty())
+    {
     QString uuid = QUuid::createUuid().toString(QUuid::WithoutBraces);
     db->registerUser(uuid, username);
     userHasUuid(uuid, username);
+    break;
+    }
 }
 
 void MainWindow::userHasUuid(const QString &uuid, const QString& username)
@@ -56,7 +63,16 @@ void MainWindow::userHasUuid(const QString &uuid, const QString& username)
 
     connect(client, &NetworkClient::messageReceived, this, &MainWindow::onMessageReceived);
 
-    mainPageWidget = new MainPageWidget(this);
+    MessagesListModel *messagesModel = new MessagesListModel(this);
+    messagesModel->setUuid(client->getUuid());
+    ContactListModel *contactModel = new ContactListModel(this);
+    MessageItemDelegate *messageDelegate = new MessageItemDelegate(client->getUuid());
+    ContactIemDelegate *contactDelegate = new ContactIemDelegate();
+
+    mainPageWidget = new MainPageWidget(contactModel, messagesModel, this);
+    mainPageWidget->getMessageListView()->setItemDelegate(messageDelegate);
+    mainPageWidget->getContactsListView()->setItemDelegate(contactDelegate);
+
     //Connecting signal from MainWidget for receiving text and give to client
     connect(mainPageWidget, &MainPageWidget::messageToSend, this, &MainWindow::sendMessage);
     connect(mainPageWidget, &MainPageWidget::sendUuidToMainWindow, this, &MainWindow::sendAddContactRequest);
@@ -65,9 +81,15 @@ void MainWindow::userHasUuid(const QString &uuid, const QString& username)
     connect(mainPageWidget, &MainPageWidget::requestAction, this, &MainWindow::onRequestAction);
     connect(mainPageWidget, &MainPageWidget::getMessagesForContact, this, &MainWindow::onGetMessages);
     connect(client, &NetworkClient::addContactRequestSent, this, &MainWindow::onAddContactRequestSent);
+    connect(mainPageWidget, &MainPageWidget::insertSelfUuidIntoClipboard, this, &MainWindow::onInsertSelfUuidIntoClipboard);
     ui->stackedWidget->addWidget(mainPageWidget);
     ui->stackedWidget->setCurrentWidget(mainPageWidget);
     removeRegisterWidget();
+
+
+
+
+
     connect(this, &MainWindow::sendContactsToMainWidget, mainPageWidget, &MainPageWidget::onContactsListReceived);
     QList<Contact> contacts = db->getContactList();
     emit sendContactsToMainWidget(contacts);
@@ -149,6 +171,15 @@ void MainWindow::onGetMessages(int contactId)
 void MainWindow::onAddContactRequestSent(const Message &message)
 {
     db->addRequestFromCurrent(message.getUuidTo(), message.getTime());
+}
+
+void MainWindow::onInsertSelfUuidIntoClipboard()
+{
+    qDebug() << "MainWindow";
+    QClipboard *clipboard = QGuiApplication::clipboard();
+    clipboard->setText(client->getUuid());
+    ui->statusbar->showMessage("Uuid copied into clipboard");
+
 }
 
 void MainWindow::onMessageReceived(const Message &message)

@@ -34,6 +34,10 @@ QVariant MessagesListModel::data(const QModelIndex &index, int role) const
     {
         return message.getContent();
     }
+    if(role == Qt::UserRole)
+    {
+        return message.getSenderUuid();
+    }
 
     return QVariant();
 }
@@ -43,4 +47,9 @@ void MessagesListModel::setMessages(const QList<DatabaseMessage> &messages)
     beginResetModel();
     mMessages = messages;
     endResetModel();
+}
+
+void MessagesListModel::setUuid(const QString &localUuid)
+{
+    this->localUuid = localUuid;
 }

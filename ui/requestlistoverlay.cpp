@@ -10,6 +10,7 @@ RequestListOverlay::RequestListOverlay(QWidget *parent)
     setAttribute(Qt::WA_TransparentForMouseEvents, false);
     setWindowFlags(Qt::FramelessWindowHint | Qt::Tool);
     ui->setupUi(this);
+    connect(ui->getOwnUuidButton, &QAbstractButton::clicked, this, &RequestListOverlay::onInsertSelfUuidClicked);
 }
 
 RequestListOverlay::~RequestListOverlay()
@@ -22,6 +23,13 @@ void RequestListOverlay::onRequestActionReceived(int contactId, const QString &a
 {
     emit requestActionReceived(contactId, action);
 }
+
+void RequestListOverlay::onInsertSelfUuidClicked()
+{
+    qDebug() << "Overlay";
+    emit insertSelfUuidIntoClipboard();
+}
+
 
 void RequestListOverlay::onRequestsListReceived(const QList<std::pair<int, QString>> &requests)
 {
