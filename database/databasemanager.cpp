@@ -288,6 +288,18 @@ QList<Contact> DataBaseManager::getContactList()
     }
     QSqlQuery query;
 
+    if (!query.exec(
+            "CREATE TABLE IF NOT EXISTS contacts ("
+            "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+            "uuid TEXT NOT NULL,"
+            "username TEXT,"
+            "timestamp TEXT);"
+            ))
+    {
+        qCritical() << "Failed to create contacts table: " << query.lastError();
+        return contacts;
+    }
+
     if(!query.exec("SELECT id, username FROM contacts"))
     {
         qCritical() << "Failed to insert into contacts table: " << query.lastError();

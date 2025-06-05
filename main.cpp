@@ -5,7 +5,7 @@
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
-    const QString DB_PATH = "C:/Users/nezna/chatProject/client/data/client_database.sqlite";
+    const QString DB_PATH = "C:/Users/nezna/chatCourseProjectCopiesClients/client1/data/client_database.sqlite";
     //Creating window
     MainWindow w(DB_PATH);
     w.show();

@@ -72,7 +72,7 @@ void MainWindow::userHasUuid(const QString &uuid, const QString& username)
     mainPageWidget = new MainPageWidget(contactModel, messagesModel, this);
     mainPageWidget->getMessageListView()->setItemDelegate(messageDelegate);
     mainPageWidget->getContactsListView()->setItemDelegate(contactDelegate);
-
+    connectSlotForMainPage();
     //Connecting signal from MainWidget for receiving text and give to client
 
     ui->stackedWidget->addWidget(mainPageWidget);
