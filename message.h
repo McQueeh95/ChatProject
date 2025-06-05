@@ -15,7 +15,9 @@ public:
 		Forward,
 		Connect,
 		Disconnect,
-		AddContact
+		AddContact,
+		ContactAdded,
+		ContactRejected
 	};
 private:
 	int type;

@@ -123,10 +123,43 @@ void session::on_read(
 			std::shared_ptr<session> receiver = sessions_manager::instance().get_client(msg.get_uuid_to());
 			if (receiver == nullptr)
 			{
-
+				sessions_manager::instance().add_message(msg.get_uuid_to(), string_data);
+				buffer_.consume(buffer_.size());
+				do_read();
 			}
 			else
 				handle_forward(msg, receiver);
+			break;
+		}
+		case message::message_type::ContactAdded:
+		{
+			std::cout << "Confirm contact" << std::endl;
+			std::shared_ptr<session> receiver = sessions_manager::instance().get_client(msg.get_uuid_to());
+			std::cout << "Sending confirmation to: " << msg.get_uuid_to() << std::endl;
+			if (receiver == nullptr)
+			{
+				sessions_manager::instance().add_message(msg.get_uuid_to(), string_data);
+				buffer_.consume(buffer_.size());
+				do_read();
+			}
+			else
+				handle_forward(msg, receiver);
+			break;
+		}
+		case message::message_type::ContactRejected:
+		{
+			std::cout << "Confirm contact" << std::endl;
+			std::shared_ptr<session> receiver = sessions_manager::instance().get_client(msg.get_uuid_to());
+			std::cout << "Sending confirmation to: " << msg.get_uuid_to() << std::endl;
+			if (receiver == nullptr)
+			{
+				sessions_manager::instance().add_message(msg.get_uuid_to(), string_data);
+				buffer_.consume(buffer_.size());
+				do_read();
+			}
+			else
+				handle_forward(msg, receiver);
+			break;
 		}
 	}
 	//TODO: Here's logic for sending message to client
@@ -245,11 +278,11 @@ void session::handle_forward(const message& msg, std::shared_ptr<session> receiv
 	std::cout << "Sending message to: " << msg.get_uuid_to() << std::endl;
 	std::string string_from_buffer = beast::buffers_to_string(buffer_.data());
 	buffer_.consume(buffer_.size());
-	/*receiver->send_message(string_from_buffer, [self = shared_from_this()]()
+	receiver->send_message(string_from_buffer, [self = shared_from_this()]()
 		{
 			self->do_read();
-		});*/
-	receiver->send_message_test(string_from_buffer);
+		});
+	//receiver->send_message_test(string_from_buffer);
 }
 
 void session::handle_add_contact(const message& msg, std::shared_ptr<session> receiver)
