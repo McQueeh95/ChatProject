@@ -238,7 +238,7 @@ bool DataBaseManager::requestAccepted(const QString &uuid, const QString &userna
     qDebug() << "Updating req added username: " << username;
     qDebug() << "UUID to add contact" << uuid;
     query.prepare("UPDATE contact_requests SET username = :username, status = 'accepted' "
-                  "WHERE uuid = :uuid");
+                  "WHERE uuid = :uuid AND status != 'rejected'");
     query.bindValue(":username", username);
     query.bindValue(":uuid", uuid);
     if(!query.exec())
@@ -249,7 +249,7 @@ bool DataBaseManager::requestAccepted(const QString &uuid, const QString &userna
     query.prepare(
         "INSERT INTO contacts (uuid, username, timestamp) "
         "SELECT uuid, username, timestamp "
-        "FROM contact_requests WHERE uuid = :uuid"
+        "FROM contact_requests WHERE uuid = :uuid AND status != 'rejected'"
         );
     qDebug() << "Inserted contact with UUID: " << uuid;
     query.bindValue(":uuid", uuid);

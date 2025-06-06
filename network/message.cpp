@@ -46,7 +46,9 @@ Message Message::createContactRejectedMessage(const QString &uuidFrom, const QSt
 Message::Message(const QJsonObject &obj)
 {
     type = obj["type"].toInt();
+    qDebug() << "msg type: " << type;
     uuidFrom = obj["uuid_from"].toString();
+    qDebug() << "msg from: " << uuidFrom;
     if(obj.contains("uuid_to"))
         uuidTo = obj["uuid_to"].toString();
     if(obj.contains("text"))
@@ -90,8 +92,7 @@ QString Message::toJsonString()
 {
     QJsonObject json;
     json["type"] = type;
-    json["uuid_from"] = uuidFrom;
-
+    json["uuid_from"] = uuidFrom; 
     if(!uuidTo.isEmpty())
         json["uuid_to"] = uuidTo;
     if(!text.isEmpty())
