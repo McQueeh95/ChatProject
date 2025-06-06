@@ -25,10 +25,12 @@ private:
 	std::string uuid_to;
 	std::string text;
 	std::string username;
+	std::string time;
 public:
 	message() = default;
 	//On receiving to json
 	message(const json::value& v);
+	json::value to_json() const;
 	message_type get_type() const;
 	std::string get_uuid_from() const;
 	std::string get_uuid_to() const;
@@ -37,6 +39,7 @@ public:
 		return text;
 	}
 	std::string get_username() const;
+	std::string get_time() const;
 	
 
 };

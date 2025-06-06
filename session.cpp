@@ -74,6 +74,9 @@ void session::on_read(
 	//Transforming received data from Json
 	std::string string_data = beast::buffers_to_string(buffer_.data());
 	message msg(json::parse(string_data));
+	std::cout << "MSG: " << string_data << std::endl;
+	std::cout << "MSG PARSED: " << msg.get_text() << " " << msg.get_time() << std::endl;
+	//message msg1(string_data);
 	//Depending on message type handles connection or forwarding or disconnecting
 	switch(msg.get_type())
 	{
@@ -81,12 +84,21 @@ void session::on_read(
 		case message::message_type::Connect:
 		{
 			handle_connect(msg);
-			std::queue<std::string>& queue_to_send = sessions_manager::instance().get_undelieverd(msg.get_uuid_from());
-			while (!queue_to_send.empty())
+			//std::queue<std::string>& queue_to_send = sessions_manager::instance().get_undelieverd(msg.get_uuid_from());
+			std::queue<message>& queue_to_send1 = sessions_manager::instance().get_undelieverd(msg.get_uuid_from());
+			/*while (!queue_to_send.empty())
 			{
 				message to_send(json::parse(queue_to_send.front()));
 				std::cout << "Sending unsent: " << to_send.get_text() << std::endl;
 				queue_to_send.pop();
+				handle_forward(to_send, shared_from_this());
+			}*/
+			while (!queue_to_send1.empty())
+			{
+				message to_send(queue_to_send1.front());
+				
+				std::cout << "Sending unsent: " << to_send.get_text() << std::endl;
+				queue_to_send1.pop();
 				handle_forward(to_send, shared_from_this());
 			}
 			break;
@@ -191,7 +203,14 @@ void session::handle_forward(const message& msg, std::shared_ptr<session> receiv
 {
 	//Sending unreceived doesn't work because we sending str from buff but msg is in queue not in buff
 	std::cout << "Sending message to: " << msg.get_uuid_to() << std::endl;
+	std::cout << "Message from: " << msg.get_uuid_from() << std::endl;
+	std::cout << "Time: " << msg.get_time() << std::endl;
 	std::string string_from_buffer = beast::buffers_to_string(buffer_.data());
+	if (string_from_buffer.empty())
+	{
+		string_from_buffer = json::serialize(msg.to_json());
+		std::cout << "Sending message with time: " << string_from_buffer << std::endl;
+	}
 	buffer_.consume(buffer_.size());
 	receiver->send_message(string_from_buffer, [self = shared_from_this()]()
 		{
@@ -231,7 +250,8 @@ void session::handle_message_before_forwarding(const message& msg, const std::st
 	std::shared_ptr<session> receiver = sessions_manager::instance().get_client(msg.get_uuid_to());
 	if (receiver == nullptr)
 	{
-		sessions_manager::instance().add_message(msg.get_uuid_to(), string_data);
+		//sessions_manager::instance().add_message(msg.get_uuid_to(), string_data, msg);
+		sessions_manager::instance().add_message(msg);
 		buffer_.consume(buffer_.size());
 		do_read();
 	}

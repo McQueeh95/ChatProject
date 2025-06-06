@@ -24,12 +24,23 @@ void sessions_manager::remove_session(const std::string& uuid)
 		sessions_list.erase(uuid);
 }
 
-void sessions_manager::add_message(const std::string& uuid, const std::string& message)
+//void sessions_manager::add_message(const std::string& uuid, const std::string& message_str, const message &msg)
+//{
+//	undeliverd_messages[uuid].push(message_str);
+//}
+
+void sessions_manager::add_message(const message& msg)
 {
-	undeliverd_messages[uuid].push(message);
+	undeliverd_messages[msg.get_uuid_to()].push(msg);
+	std::cout << "Pushed into queue msg: " << msg.get_text() << " " << msg.get_time() << std::endl;
 }
 
-std::queue<std::string>& sessions_manager::get_undelieverd(const std::string& uuid)
+//std::queue<std::string>& sessions_manager::get_undelieverd(const std::string& uuid)
+//{
+//	return undeliverd_messages[uuid];
+//}
+
+std::queue<message>& sessions_manager::get_undelieverd(const std::string& uuid)
 {
 	return undeliverd_messages[uuid];
 }

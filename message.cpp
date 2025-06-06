@@ -13,11 +13,13 @@ message::message(const json::value& v)
 	{
 		uuid_to = json::value_to<std::string>(obj.at("uuid_to"));
 		text = json::value_to<std::string>(obj.at("text"));
+		time = json::value_to <std::string>(obj.at("time"));
 	}
 	if (type == AddContact || type == ContactAdded || type == ContactRejected)
 	{
 		uuid_to = json::value_to<std::string>(obj.at("uuid_to"));
 		username = json::value_to<std::string>(obj.at("username"));
+		time = json::value_to<std::string>(obj.at("time"));
 	}
 	/*if (type == ContactAdded)
 	{
@@ -28,6 +30,29 @@ message::message(const json::value& v)
 	{
 		uui
 	}*/
+}
+
+json::value message::to_json() const
+{
+	json::object obj;
+	obj["type"] = type;
+	obj["uuid_from"] = uuid_from;
+
+	if (type == Forward)
+	{
+		obj["uuid_to"] = uuid_to;
+		obj["text"] = text;
+		obj["time"] = time;
+	}
+
+	if (type == AddContact || type == ContactAdded || type == ContactRejected)
+	{
+		obj["uuid_to"] = uuid_to;
+		obj["username"] = username;
+		obj["time"] = time;
+	}
+
+	return obj;
 }
 
 //Json doesn't work with enum so it's better to perform 
@@ -61,4 +86,9 @@ std::string message::get_uuid_to() const
 std::string message::get_username() const
 {
 	return username;
+}
+
+std::string message::get_time() const
+{
+	return time;
 }
