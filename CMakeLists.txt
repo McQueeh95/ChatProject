@@ -1,27 +1,29 @@
 ﻿# CMakeList.txt : CMake project for server, include source and define
 # project specific logic here.
 #
-cmake_minimum_required (VERSION 3.8)
-
-# Enable Hot Reload for MSVC compilers if supported.
-if (POLICY CMP0141)
-  cmake_policy(SET CMP0141 NEW)
-  set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT "$<IF:$<AND:$<C_COMPILER_ID:MSVC>,$<CXX_COMPILER_ID:MSVC>>,$<$<CONFIG:Debug,RelWithDebInfo>:EditAndContinue>,$<$<CONFIG:Debug,RelWithDebInfo>:ProgramDatabase>>")
-endif()
+cmake_minimum_required (VERSION 3.10)
 
 project ("server")
 
-include_directories("C:/Users/nezna/libraries/boost_1.88/boost_1_88_0")
-link_directories("C:/Users/nezna/libraries/boost_1.88/boost_1_88_0/stage/lib")
-# Add source to this project's executable.
-if(MSVC)
-    add_compile_options(/bigobj)
-endif()
-add_executable (server "server.cpp" "server.h" "session.cpp" "session.h" "listener.cpp" "listener.h" "dependencies.h" "sessions_manager.cpp" "sessions_manager.h" "message.h" "message.cpp")
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+find_package(Boost REQUIRED COMPONENTS system json)
+find_package(libpqxx REQUIRED)
+add_executable (server "src/server.cpp" "src/server.h" 
+"src/session.cpp" "src/session.h" 
+"src/listener.cpp" "src/listener.h" 
+"src/dependencies.h" 
+"src/sessions_manager.cpp" "src/sessions_manager.h" 
+"src/message.h" "src/message.cpp" 
+"src/database.h" "src/database.cpp"
+"src/dbworker.h" "src/dbworker.cpp"
+"src/server_protocol.h" "src/server_protocol.cpp")
 
-if (CMAKE_VERSION VERSION_GREATER 3.12)
-  set_property(TARGET server PROPERTY CXX_STANDARD 20)
-endif()
+target_link_libraries(server PRIVATE 
+                    Boost::system
+                    Boost::json
+                    pqxx)
 
 # TODO: Add tests and install targets if needed.

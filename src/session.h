@@ -2,6 +2,7 @@
 
 #include "dependencies.h"
 #include "message.h"
+#include "server_protocol.h"
 #include <queue>
 
 
@@ -40,5 +41,6 @@ public:
 	void handle_add_contact(const message &msg, std::shared_ptr<session> receiver);
 	void send_request(const std::string& msg);
 	void handle_message_before_forwarding(const message &msg, const std::string &string_data);
+	void deleiver(const server_protocol::message& msg);
 };
 

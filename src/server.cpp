@@ -2,8 +2,12 @@
 //
 
 #include "server.h"
-#include "session.h"
+#include "dbworker.h"
 #include "listener.h"
+#include "database.h"
+#include <boost/asio/io_context.hpp>
+#include <memory>
+#include <thread>
 
 using namespace std;
 
@@ -18,12 +22,20 @@ int main(int argc, char* argv[])
             "    websocket-server-async 0.0.0.0 8080 1\n";
         return EXIT_FAILURE;
     }*/
+    std::string conn_string{"dbname=serverdb user=postgres password=1234 host=localhost port=5432"};
+    auto db = std::make_unique<Database>(conn_string);
+
+
+    std::cout << "Server is running" << std::endl;
     auto const address = net::ip::make_address("0.0.0.0");
     auto const port = static_cast<unsigned short>(8080);
-    auto const threads = std::max<int>(1, 4);
+    //auto const threads = std::max<int>(1, 4);
 
     // The io_context is required for all I/O
-    net::io_context ioc{ threads };
+    net::io_context ioc;
+    std::make_shared<listener>(ioc, tcp::endpoint{address, port})->run();
+    ioc.run();
+    /*net::io_context ioc{ threads };
 
     // Create and launch a listening port
     std::make_shared<listener>(ioc, tcp::endpoint{ address, port })->run();
@@ -37,7 +49,7 @@ int main(int argc, char* argv[])
             {
                 ioc.run();
             });
-    ioc.run();
+    ioc.run();*/
 
     return EXIT_SUCCESS;
 }
