@@ -27,5 +27,5 @@ public:
 	void add_message(const message& msg);
 	//std::queue<std::string>& get_undelieverd(const std::string& uuid); 
 	std::queue<message>& get_undelieverd(const std::string& uuid);
-	void send_message(const server_protocol::message& m);
+	//void send_message(const server_protocol::message& m);
 };

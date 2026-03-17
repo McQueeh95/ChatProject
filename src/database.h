@@ -4,6 +4,7 @@
 #include <boost/asio/io_context.hpp>
 #include <thread>
 #include "dependencies.h"
+#include "db_protocol.h"
 
 class Database
 {
@@ -19,5 +20,6 @@ class Database
     Database& operator= (const Database&) = delete;
     void post_task(std::function<void()> task);
     void save_msg();
+    db_protocol::message get_msg();
 
 };

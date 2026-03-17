@@ -1,48 +1,75 @@
 #include "server_protocol.h"
 #include <boost/json.hpp>
+#include <boost/json/conversion.hpp>
+#include <boost/json/detail/value_to.hpp>
 #include <boost/json/object.hpp>
 #include <boost/json/value_to.hpp>
-#include <stdexcept>
 
+namespace json = boost::json;
 
-
-server_protocol::message server_protocol::parse_message(const boost::json::value &v)
+namespace server_protocol
 {
-   	if (!v.is_object())
-	{
-		throw std::invalid_argument("Invalid JSON: not an object");
-	}
-    message m;
-    const auto& obj = v.as_object();
-    m.type = parse_message_type(boost::json::value_to<std::string>(obj.at("type")));
-    m.sender_id = boost::json::value_to<long long>(obj.at("sender"));
-    m.receiver_id = boost::json::value_to<long long>(obj.at("receiver"));
-    m.payload = boost::json::value_to<long long>(obj.at("payload"));
-    return m;
-}
+    //json to connect_message
+    connect_message tag_invoke(json::value_to_tag<connect_message>, const json::value& jv)
+    {
+        const auto& obj = jv.as_object();
+        return {json::value_to<long long>(obj.at("sender_id"))};
+    }
 
-boost::json::value server_protocol::serialize_message(const message &m)
-{
-    boost::json::object j_object;
-    j_object["type"] = serialize_message_type(m.type);
-    j_object["sender"] = m.sender_id;
-    j_object["receiver"] = m.receiver_id;
-    j_object["payload"] = m.payload;
-    return j_object;
-}
+    //json to incoming_message
+    incoming_message tag_invoke(json::value_to_tag<incoming_message>, const json::value& jv)
+    {
+        const auto& obj = jv.as_object();
+        return {
+            json::value_to<long long>(obj.at("local_id")),
+            json::value_to<long long>(obj.at("chat_id")),
+            json::value_to<std::string>(obj.at("payload"))
+        };
+    }
 
-server_protocol::message_type server_protocol::parse_message_type(const std::string &t)
-{
-    if(t == "connect") return message_type::connect;
-    if(t == "disconnect") return message_type::disconnect;
-    if(t == "forward") return message_type::forward;
-    throw std::invalid_argument("Invalid Json: type of message parse");
-}
+    //json to read_ack_incoming
+    read_ack_incoming tag_invoke(json::value_to_tag<read_ack_incoming>, const json::value& jv)
+    {
+        const auto& obj = jv.as_object();
+        return{
+            json::value_to<long long>(obj.at("chat_id")),
+            json::value_to<long long>(obj.at("last_read_msg_id"))
+        };
+    }
 
-std::string server_protocol::serialize_message_type(const message_type &mt)
-{
-    if(mt == message_type::connect) return "connect";
-    if(mt == message_type::disconnect) return "disconnect";
-    if(mt == message_type::forward) return "forward";
-    throw std::invalid_argument("Invalid JSON: type of message serialize");
+    //outgoing_message to json
+    void tag_invoke(json::value_from_tag,  json::value& jv, const outgoing_message& msg)
+    {
+        jv = {
+            {"type", static_cast<int>(message_type::FORW)},
+            {"message_id", msg.message_id},
+            {"chat_id", msg.chat_id},
+            {"sender_id", msg.sender_id},
+            {"payload", msg.payload},
+            {"timestamp", msg.timestamp},
+            {"is_read", msg.is_read}
+        };
+    }
+
+    //ack_message to json
+    void tag_invoke(json::value_from_tag, json::value& jv, const ack_message& msg)
+    {
+        jv = {
+            {"local_id", msg.local_id},
+            {"message_id", msg.message_id},
+            {"chat_id", msg.chat_id},
+            {"timestamp", msg.timestamp}
+        };
+    }
+
+    //ack_read_outgoing to json
+    void tag_invoke(json::value_from_tag, json::value& jv, const read_ack_outgoing& msg)
+    {
+        jv = {
+            {"chat_id", msg.chat_id},
+            {"last_read_message_id", msg.last_read_message_id},
+            {"reader_id", msg.reader_id}
+        };
+    }
+
 }

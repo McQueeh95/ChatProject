@@ -1,7 +1,5 @@
-#pragma once
-
 #include "session.h"
-#include "server_message.h"
+//#include "server_message.h"
 #include "sessions_manager.h"
 #include <boost/asio/buffer.hpp>
 #include <boost/asio/write.hpp>
@@ -81,7 +79,7 @@ void session::on_read(
 	//Transforming received data from Json
 	std::string string_data = beast::buffers_to_string(buffer_.data());
 	message msg(json::parse(string_data));
-	server_protocol::message m_s = server_protocol::parse_message(json::parse(string_data));
+	//server_protocol::message m_s = server_protocol::parse_message(json::parse(string_data));
 	std::cout << "MSG: " << string_data << std::endl;
 	std::cout << "MSG PARSED: " << msg.get_text() << " " << msg.get_time() << std::endl;
 	//message msg1(string_data);
@@ -274,8 +272,8 @@ void session::handle_message_before_forwarding(const message& msg, const std::st
 		handle_forward(msg, receiver);
 }
 
-void session::deleiver(const server_protocol::message& msg)
+/*void session::deleiver(const server_protocol::message& msg)
 {
 	boost::json::value to_send = server_protocol::serialize_message(msg);
 	do_write();
-}
+}*/

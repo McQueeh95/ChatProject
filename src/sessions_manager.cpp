@@ -1,5 +1,21 @@
 #include "sessions_manager.h"
+//#include "server_message.h"
+#include "server_protocol.h"
+#include "db_protocol.h"
 
+namespace {
+	server_protocol::outgoing_message map_msg_db_to_net(const db_protocol::message& db_msg)
+	{
+		server_protocol::outgoing_message net_msg;
+		net_msg.message_id = db_msg.id;
+		net_msg.chat_id = db_msg.chat_id;
+		net_msg.sender_id = db_msg.sender_id;
+		net_msg.payload = db_msg.encrypted_payload;
+		net_msg.timestamp = db_msg.created_at;
+		net_msg.is_read = db_msg.is_read;
+		return net_msg;
+	}
+}
 sessions_manager& sessions_manager::instance()
 {
 	static sessions_manager instance;
@@ -45,4 +61,12 @@ std::queue<message>& sessions_manager::get_undelieverd(const std::string& uuid)
 	return undeliverd_messages[uuid];
 }
 
+/*void sessions_manager::send_message(const server_protocol::message& m)
+{
+	auto it = sessions_.find(m.receiver_id);
+	if(it != sessions_.end())
+	{
+		it->second->deleiver(m);
+	}
+}*/
 

@@ -30,6 +30,7 @@ public:
 	void on_accept(beast::error_code ec);
 	//Reading through WebSocket
 	void do_read();
+	void do_write();
 	//Handles logic with messages
 	void on_read(beast::error_code ec, std::size_t bytes_transferd);
 	void on_write(beast::error_code ec, std::size_t bytes_transferred);
@@ -41,6 +42,6 @@ public:
 	void handle_add_contact(const message &msg, std::shared_ptr<session> receiver);
 	void send_request(const std::string& msg);
 	void handle_message_before_forwarding(const message &msg, const std::string &string_data);
-	void deleiver(const server_protocol::message& msg);
+	//void deleiver(const server_protocol::message& msg);
 };
 
