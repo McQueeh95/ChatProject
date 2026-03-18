@@ -26,7 +26,6 @@ CREATE TABLE IF NOT EXISTS messages(
 	sender_id BIGINT NOT NULL,
 	encrypted_payload TEXT NOT NULL,
 	created_at TIMESTAMPTZ DEFAULT NOW(),
-	is_delivered BOOL DEFAULT FALSE,
 	is_read BOOL DEFAULT FALSE,
 	CONSTRAINT fk_chat_id FOREIGN KEY (chat_id) REFERENCES chats(id),
 	CONSTRAINT fk_sender_id FOREIGN KEY (sender_id) REFERENCES users(id)

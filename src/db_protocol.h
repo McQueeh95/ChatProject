@@ -10,6 +10,6 @@ namespace db_protocol
         long long sender_id;
         std::string encrypted_payload;
         std::string created_at;
-        bool is_read;
+        bool is_read = false;
     };
 }

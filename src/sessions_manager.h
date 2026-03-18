@@ -1,6 +1,7 @@
 #pragma once
 #include <memory>
 #include <unordered_map>
+#include "database.h"
 #include "dependencies.h"
 #include "session.h"
 #include "message.h"
@@ -14,7 +15,8 @@ private:
 	//std::unordered_map<std::string, std::queue<std::string>> undeliverd_messages; 
 	std::unordered_map<std::string, std::queue<message>> undeliverd_messages;
 	sessions_manager() = default;
-	std::unordered_map<long long, std::shared_ptr<session>> sessions_;
+	std::map<long long, std::shared_ptr<session>> sessions_;
+	std::shared_ptr<Database> db_;
 public:
 	//No copy semantics
 	sessions_manager(const sessions_manager&) = delete;
@@ -27,5 +29,5 @@ public:
 	void add_message(const message& msg);
 	//std::queue<std::string>& get_undelieverd(const std::string& uuid); 
 	std::queue<message>& get_undelieverd(const std::string& uuid);
-	//void send_message(const server_protocol::message& m);
+	void send_message(const server_protocol::incoming_message& m, int64_t sender_id);
 };

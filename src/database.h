@@ -5,6 +5,7 @@
 #include <thread>
 #include "dependencies.h"
 #include "db_protocol.h"
+#include <cstdint>
 
 class Database
 {
@@ -15,11 +16,14 @@ class Database
     boost::asio::executor_work_guard<net::io_context::executor_type> work_guard_;
     public:
     Database(const std::string& connection_string);
+    void start();
     ~Database();
     Database (const Database&) = delete;
     Database& operator= (const Database&) = delete;
     void post_task(std::function<void()> task);
     void save_msg();
     db_protocol::message get_msg();
+    int64_t get_recepeint_id(int64_t chat_id, int64_t sender_id);
+    db_protocol::message insert_msg(int64_t chat_id, int64_t sender_id, const std::string& text);
 
 };

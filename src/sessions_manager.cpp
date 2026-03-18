@@ -1,5 +1,7 @@
 #include "sessions_manager.h"
 //#include "server_message.h"
+#include "database.h"
+#include "message.h"
 #include "server_protocol.h"
 #include "db_protocol.h"
 
@@ -61,12 +63,10 @@ std::queue<message>& sessions_manager::get_undelieverd(const std::string& uuid)
 	return undeliverd_messages[uuid];
 }
 
-/*void sessions_manager::send_message(const server_protocol::message& m)
+void sessions_manager::send_message(const server_protocol::incoming_message& m, int64_t sender_id)
 {
-	auto it = sessions_.find(m.receiver_id);
-	if(it != sessions_.end())
-	{
-		it->second->deleiver(m);
-	}
-}*/
+		db_->get_recepeint_id(m.chat_id, sender_id);
+		db_protocol::message db_message = db_->insert_msg(m.chat_id, sender_id, m.payload);
+		server_protocol::outgoing_message outgoing_message = map_msg_db_to_net(db_message);
+}
 
