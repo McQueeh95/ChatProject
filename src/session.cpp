@@ -6,6 +6,7 @@
 #include <boost/beast/core/bind_handler.hpp>
 #include <boost/json.hpp>
 #include <boost/json/object.hpp>
+#include <boost/json/parse.hpp>
 #include <boost/json/string.hpp>
 
 void session::run()
@@ -78,6 +79,7 @@ void session::on_read(
 		return fail(ec, "read");
 	//Transforming received data from Json
 	std::string string_data = beast::buffers_to_string(buffer_.data());
+	boost::json::value msg_j = json::parse(string_data);
 	message msg(json::parse(string_data));
 	//server_protocol::message m_s = server_protocol::parse_message(json::parse(string_data));
 	std::cout << "MSG: " << string_data << std::endl;
@@ -92,13 +94,6 @@ void session::on_read(
 			handle_connect(msg);
 			//std::queue<std::string>& queue_to_send = sessions_manager::instance().get_undelieverd(msg.get_uuid_from());
 			std::queue<message>& queue_to_send1 = sessions_manager::instance().get_undelieverd(msg.get_uuid_from());
-			/*while (!queue_to_send.empty())
-			{
-				message to_send(json::parse(queue_to_send.front()));
-				std::cout << "Sending unsent: " << to_send.get_text() << std::endl;
-				queue_to_send.pop();
-				handle_forward(to_send, shared_from_this());
-			}*/
 			while (!queue_to_send1.empty())
 			{
 				message to_send(queue_to_send1.front());
@@ -264,7 +259,8 @@ void session::handle_message_before_forwarding(const message& msg, const std::st
 	if (receiver == nullptr)
 	{
 		//sessions_manager::instance().add_message(msg.get_uuid_to(), string_data, msg);
-		sessions_manager::instance().add_message(msg);
+		//sessions_manager::instance().add_message(msg);
+		
 		buffer_.consume(buffer_.size());
 		do_read();
 	}

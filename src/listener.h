@@ -1,15 +1,18 @@
 #pragma once
 
 #include "dependencies.h"
-
+#include <memory>
+class sessions_manager;
+class session;
 // Accepts incoming connections and launches the sessions
 class listener : public std::enable_shared_from_this<listener>
 {
 	net::io_context& ioc_;
 	tcp::acceptor acceptor_;
+	std::shared_ptr<sessions_manager> manager_;
 public:
 	listener(net::io_context& ioc,
-		tcp::endpoint endpoint);
+		tcp::endpoint endpoint, std::shared_ptr<sessions_manager> manager);
 	//Start accepting incoming connections
 	void run();
 

@@ -4,6 +4,17 @@
 #include "message.h"
 #include "server_protocol.h"
 #include "db_protocol.h"
+#include <boost/asio/io_context.hpp>
+#include <boost/json/conversion.hpp>
+#include <boost/json/fwd.hpp>
+#include <boost/json/parse.hpp>
+#include <boost/json/serialize.hpp>
+#include <boost/json/value_from.hpp>
+#include <exception>
+#include <iostream>
+#include <memory>
+#include <string>
+#include <utility>
 
 namespace {
 	server_protocol::outgoing_message map_msg_db_to_net(const db_protocol::message& db_msg)
@@ -18,6 +29,10 @@ namespace {
 		return net_msg;
 	}
 }
+
+sessions_manager::sessions_manager(std::shared_ptr<Database> db, std::shared_ptr<net::io_context> ioc_main)
+	:db_(std::move(db)), ioc_main_(std::move(ioc_main))
+	{};
 sessions_manager& sessions_manager::instance()
 {
 	static sessions_manager instance;
@@ -63,10 +78,73 @@ std::queue<message>& sessions_manager::get_undelieverd(const std::string& uuid)
 	return undeliverd_messages[uuid];
 }
 
-void sessions_manager::send_message(const server_protocol::incoming_message& m, int64_t sender_id)
+void sessions_manager::on_auth_attempt(std::weak_ptr<session> session, const std::string& raw)
 {
-		db_->get_recepeint_id(m.chat_id, sender_id);
-		db_protocol::message db_message = db_->insert_msg(m.chat_id, sender_id, m.payload);
-		server_protocol::outgoing_message outgoing_message = map_msg_db_to_net(db_message);
+
 }
 
+
+void sessions_manager::on_data(int64_t sender_id, const std::string& raw)
+{
+	try
+	{
+		auto executor = socket_.get
+		auto jv = json::parse(raw);
+		auto type_val = jv.at("type").as_int64();
+		auto type = static_cast<server_protocol::message_type>(type_val);
+		switch (type) {
+			case server_protocol::message_type::FORW:
+			{
+				auto msg = boost::json::value_to<server_protocol::incoming_message>(jv);
+				handle_msg_forward(sender_id, msg);	
+				break;
+			}
+			case server_protocol::message_type::CONN:
+			{
+				auto msg = boost::json::value_to<server_protocol::connect_message>(jv);
+				break;
+			}
+		}
+	}
+	catch(const std::exception& e)
+	{
+		std::cerr << "Invalid protocol format: " << e.what() << std::endl;
+	}
+}
+
+void sessions_manager::handle_msg_forward(int64_t sender_id, const server_protocol::incoming_message &incoming_msg)
+{
+	auto recepeint_id = db_->get_recepeint_id(incoming_msg.chat_id, sender_id);
+	
+	if(!recepeint_id.has_value()) return;
+	auto db_message = db_->insert_msg(incoming_msg.chat_id, sender_id, incoming_msg.payload);
+	if(!db_message.has_value())
+	{ 
+		std::cerr << "Failed to save message to DB" << std::endl;
+		return;
+	}
+}
+
+void sessions_manager::send_to_recepient(int64_t recepeint_id, const db_protocol::message& msg)
+{
+	server_protocol::outgoing_message outgoing_msg = map_msg_db_to_net(msg);
+	auto jv = json::value_from(outgoing_msg);
+	std::string raw_data = json::serialize(jv);;
+	deliver(recepeint_id, raw_data);
+}
+
+void sessions_manager::deliver(int64_t recepeint_id, std::string data)
+{
+	if(auto recepeint = sessions_.find(recepeint_id); recepeint != sessions_.end())
+	{
+		if(auto recepeint_session = recepeint->second.lock())
+			recepeint_session->do_write();
+		else 
+			sessions_.erase(recepeint);
+	}
+}
+
+void sessions_manager::handle_connection(const server_protocol::connect_message &connection_msg)
+{
+
+}

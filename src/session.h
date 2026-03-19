@@ -3,6 +3,8 @@
 #include "dependencies.h"
 #include "message.h"
 #include "server_protocol.h"
+#include "sessions_manager.h"
+#include <memory>
 #include <queue>
 
 
@@ -16,10 +18,12 @@ class session : public std::enable_shared_from_this<session>
 	bool is_writing = false;
 	bool is_reading = false;
 	std::queue<std::string> message_queue_;
+	int64_t session_id = -1;
+	std::shared_ptr<sessions_manager> manager_;
 public:
 	// Passing ownership of the socket
-		explicit session(tcp::socket && socket)
-		: ws_(std::move(socket))
+		explicit session(tcp::socket && socket, std::shared_ptr<sessions_manager> manager)
+		: ws_(std::move(socket)), manager_(std::move(manager))
 	{
 	}
 	//Method for correct init of handshake cuz it is async, for safety

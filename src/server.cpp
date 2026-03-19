@@ -5,6 +5,7 @@
 #include "dbworker.h"
 #include "listener.h"
 #include "database.h"
+#include "sessions_manager.h"
 #include <boost/asio/io_context.hpp>
 #include <memory>
 #include <thread>
@@ -23,7 +24,8 @@ int main(int argc, char* argv[])
         return EXIT_FAILURE;
     }*/
     std::string conn_string{"dbname=serverdb user=postgres password=1234 host=localhost port=5432"};
-    auto db = std::make_unique<Database>(conn_string);
+    auto db = std::make_shared<Database>(conn_string);
+     
 
 
     std::cout << "Server is running" << std::endl;
@@ -32,9 +34,10 @@ int main(int argc, char* argv[])
     //auto const threads = std::max<int>(1, 4);
 
     // The io_context is required for all I/O
-    net::io_context ioc;
-    std::make_shared<listener>(ioc, tcp::endpoint{address, port})->run();
-    ioc.run();
+    net::io_context ioc_main;
+    auto manager = std::make_shared<sessions_manager>(db, ioc_main);
+    std::make_shared<listener>(ioc_main, tcp::endpoint{address, port}, *manager)->run();
+    ioc_main.run();
     /*net::io_context ioc{ threads };
 
     // Create and launch a listening port

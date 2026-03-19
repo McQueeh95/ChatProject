@@ -43,7 +43,7 @@ db_protocol::message Database::get_msg()
     ;
 }
 
-int64_t Database::get_recepeint_id(int64_t chat_id, int64_t sender_id)
+std::optional<int64_t> Database::get_recepeint_id(int64_t chat_id, int64_t sender_id)
 {
     try{
         pqxx::nontransaction n(connection_);
@@ -51,7 +51,7 @@ int64_t Database::get_recepeint_id(int64_t chat_id, int64_t sender_id)
         pqxx::result r(
         n.exec("SELECT user1_id, user2_id FROM chats WHERE id = $1", {chat_id})
         );
-        if(r.empty()) return 0;
+        if(r.empty()) return std::nullopt;
 
         int64_t u1 = (r[0][0]).as<int64_t>();
         int64_t u2 = (r[0][1]).as<int64_t>();
@@ -60,7 +60,7 @@ int64_t Database::get_recepeint_id(int64_t chat_id, int64_t sender_id)
     catch(std::exception& e)
     {
         std::cerr << "DB error(get_recepeint_id): " << e.what() << std::endl;
-        return 0;
+        return std::nullopt;
     }
 }
 
