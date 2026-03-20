@@ -5,6 +5,7 @@
 #include "server_protocol.h"
 #include "db_protocol.h"
 #include <boost/asio/io_context.hpp>
+#include <boost/asio/post.hpp>
 #include <boost/json/conversion.hpp>
 #include <boost/json/fwd.hpp>
 #include <boost/json/parse.hpp>
@@ -13,6 +14,7 @@
 #include <exception>
 #include <iostream>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 
@@ -30,99 +32,98 @@ namespace {
 	}
 }
 
+
+
 sessions_manager::sessions_manager(std::shared_ptr<Database> db, std::shared_ptr<net::io_context> ioc_main)
 	:db_(std::move(db)), ioc_main_(std::move(ioc_main))
 	{};
-sessions_manager& sessions_manager::instance()
-{
-	static sessions_manager instance;
-	return instance;
-}
 
-void sessions_manager::add_session(const std::string& uuid, std::shared_ptr<session> session)
-{
-	sessions_list[uuid] = session;
-}
 
-std::shared_ptr<session> sessions_manager::get_client(const std::string& user_name)
-{
-	if (sessions_list.count(user_name))
-		return sessions_list[user_name];
-	return nullptr;
-}
 
-void sessions_manager::remove_session(const std::string& uuid)
-{
-	if (sessions_list.count(uuid))
-		sessions_list.erase(uuid);
-}
 
 //void sessions_manager::add_message(const std::string& uuid, const std::string& message_str, const message &msg)
 //{
 //	undeliverd_messages[uuid].push(message_str);
 //}
 
-void sessions_manager::add_message(const message& msg)
-{
-	undeliverd_messages[msg.get_uuid_to()].push(msg);
-	std::cout << "Pushed into queue msg: " << msg.get_text() << " " << msg.get_time() << std::endl;
-}
-
 //std::queue<std::string>& sessions_manager::get_undelieverd(const std::string& uuid)
 //{
 //	return undeliverd_messages[uuid];
 //}
 
-std::queue<message>& sessions_manager::get_undelieverd(const std::string& uuid)
+std::optional<sessions_manager::decoded_packet> sessions_manager::decode_packet(const std::string& raw)
 {
-	return undeliverd_messages[uuid];
+	try
+	{
+		auto jv = json::parse(raw);
+		auto type_val = jv.at("type").as_int64();
+		auto type = static_cast<server_protocol::message_type>(type_val);
+		return sessions_manager::decoded_packet{type, std::move(jv)};
+	}
+	catch(const std::exception& e)
+	{
+		std::cerr << "Error converting types: " << e.what() << std::endl;
+		return std::nullopt;
+	}
 }
 
-void sessions_manager::on_auth_attempt(std::weak_ptr<session> session, const std::string& raw)
+void sessions_manager::authenticate(int64_t user_id, std::weak_ptr<session> session)
 {
+	sessions_[user_id] = session;
+}
 
+
+void sessions_manager::on_auth_attempt(std::weak_ptr<session> session_ptr, const std::string& raw)
+{
+	auto packet = decode_packet(raw);
+	if(!packet || packet->type != server_protocol::message_type::CONN) return;
+	//login 
+	auto msg = boost::json::value_to<server_protocol::connect_message>(packet->jv);
+	db_->post_task([this, msg = std::move(msg), session_ptr](){
+		auto user_id_opt = db_->login_user(msg.username, msg.hashed_password);
+		if(!user_id_opt) return;
+		boost::asio::post(this->ioc_main_, [this, session_ptr, user_id = *user_id_opt](){
+			this->authenticate(user_id, session_ptr);
+		});
+	});
 }
 
 
 void sessions_manager::on_data(int64_t sender_id, const std::string& raw)
 {
-	try
-	{
-		auto executor = socket_.get
-		auto jv = json::parse(raw);
-		auto type_val = jv.at("type").as_int64();
-		auto type = static_cast<server_protocol::message_type>(type_val);
-		switch (type) {
-			case server_protocol::message_type::FORW:
+	auto packet = decode_packet(raw);
+	if(!packet.has_value() || packet->type == server_protocol::message_type::CONN) return;
+	switch (packet->type) {
+		case server_protocol::message_type::FORW:
 			{
-				auto msg = boost::json::value_to<server_protocol::incoming_message>(jv);
+				auto msg = boost::json::value_to<server_protocol::incoming_message>(packet->jv);
 				handle_msg_forward(sender_id, msg);	
 				break;
 			}
-			case server_protocol::message_type::CONN:
+			case server_protocol::message_type::ACK:
 			{
-				auto msg = boost::json::value_to<server_protocol::connect_message>(jv);
+				//auto msg = boost::json::value_to<server_protocol::connect_message>(jv);
 				break;
 			}
-		}
-	}
-	catch(const std::exception& e)
-	{
-		std::cerr << "Invalid protocol format: " << e.what() << std::endl;
 	}
 }
 
 void sessions_manager::handle_msg_forward(int64_t sender_id, const server_protocol::incoming_message &incoming_msg)
 {
-	auto recepeint_id = db_->get_recepeint_id(incoming_msg.chat_id, sender_id);
-	
-	if(!recepeint_id.has_value()) return;
-	auto db_message = db_->insert_msg(incoming_msg.chat_id, sender_id, incoming_msg.payload);
-	if(!db_message.has_value())
-	{ 
-		std::cerr << "Failed to save message to DB" << std::endl;
-		return;
-	}
+	db_->post_task([this, sender_id, msg = std::move(incoming_msg)](){
+			auto recepeint_id = db_->get_recepeint_id(msg.chat_id, sender_id);
+			if(!recepeint_id.has_value()) return;
+			auto db_message = db_->insert_msg(msg.chat_id, sender_id, msg.payload);
+			if(!db_message.has_value())
+			{
+				std::cerr << "Failed to save message to DB" << std::endl;
+				return;
+			}
+			boost::asio::post(this->ioc_main_, [this, sender_id, msg = *db_message]{
+				this->send_to_recepient(sender_id, msg);
+			});
+		}
+	)
 }
 
 void sessions_manager::send_to_recepient(int64_t recepeint_id, const db_protocol::message& msg)

@@ -4,6 +4,7 @@
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/post.hpp>
 #include <exception>
+#include <initializer_list>
 #include <iostream>
 #include <optional>
 #include <thread>
@@ -14,6 +15,10 @@ Database::Database(const std::string& connection_string):
     if(connection_.is_open())
     {
         std::cout <<  "Connection" << std::endl;
+        connection_.prepare("login", "SELECT id, password_hash FROM users WHERE username = $1");
+        connection_.prepare("get_recepeint_id", "SELECT user1_id, user2_id FROM chats WHERE id = $1");
+        connection_.prepare("insert_msg", "INSERT INTO messages (chat_id, sender_id, encrypted_payload) "
+            "VALUES ($1, $2, $3) RETURNING id, created_at");
     }
     db_thread_ = std::thread([this]{ioc_.run();});
     std::cout << "running in: " << db_thread_.get_id();
@@ -38,6 +43,27 @@ void Database::post_task(std::function<void()> task)
     boost::asio::post(ioc_, std::move(task));
 }
 
+std::optional<int64_t> Database::login_user(std::string &username, std::string &password)
+{
+    try {
+        pqxx::nontransaction n(connection_);
+        pqxx::result r(
+            n.exec("login", pqxx::params{username})
+        );
+        if(r.empty()) return std::nullopt;
+        int64_t user_id = r[0][0].as<int64_t>();
+        std::string stored_hash = r[0][1].as<std::string>();
+        if(stored_hash != password)
+            return std::nullopt;
+        return user_id;
+    }
+    catch (std::exception &e) {
+        std::cerr << "DB error(login_user): " << e.what() << std::endl;
+        return std::nullopt;
+    }
+}
+
+
 db_protocol::message Database::get_msg()
 {
     ;
@@ -49,7 +75,7 @@ std::optional<int64_t> Database::get_recepeint_id(int64_t chat_id, int64_t sende
         pqxx::nontransaction n(connection_);
     
         pqxx::result r(
-        n.exec("SELECT user1_id, user2_id FROM chats WHERE id = $1", {chat_id})
+            n.exec("get_recepeint_id", pqxx::params{chat_id})
         );
         if(r.empty()) return std::nullopt;
 
@@ -68,8 +94,7 @@ std::optional<db_protocol::message> Database::insert_msg(int64_t chat_id, int64_
 {
     try{
         pqxx::work w(connection_);
-        pqxx::result r = w.exec("INSERT INTO messages (chat_id, sender_id, encrypted_payload) "
-            "VALUES ($1, $2, $3) RETURNING id, created_at", pqxx::params{chat_id, sender_id, text});
+        pqxx::result r = w.exec("insert_msg", pqxx::params{chat_id, sender_id, text});
         w.commit();
         
         if(!r.empty())

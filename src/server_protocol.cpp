@@ -13,7 +13,11 @@ namespace server_protocol
     connect_message tag_invoke(json::value_to_tag<connect_message>, const json::value& jv)
     {
         const auto& obj = jv.as_object();
-        return {json::value_to<long long>(obj.at("sender_id"))};
+        return {
+            json::value_to<int64_t>(obj.at("sender_id")),
+            json::value_to<std::string>(obj.at("username")),
+            json::value_to<std::string>(obj.at("hashed_password"))
+        };
     }
 
     //json to incoming_message
@@ -21,8 +25,8 @@ namespace server_protocol
     {
         const auto& obj = jv.as_object();
         return {
-            json::value_to<long long>(obj.at("local_id")),
-            json::value_to<long long>(obj.at("chat_id")),
+            json::value_to<int64_t>(obj.at("local_id")),
+            json::value_to<int64_t>(obj.at("chat_id")),
             json::value_to<std::string>(obj.at("payload"))
         };
     }
@@ -32,8 +36,8 @@ namespace server_protocol
     {
         const auto& obj = jv.as_object();
         return{
-            json::value_to<long long>(obj.at("chat_id")),
-            json::value_to<long long>(obj.at("last_read_msg_id"))
+            json::value_to<int64_t>(obj.at("chat_id")),
+            json::value_to<int64_t>(obj.at("last_read_msg_id"))
         };
     }
 

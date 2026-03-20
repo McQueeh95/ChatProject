@@ -1,12 +1,19 @@
 #pragma once
 #include <boost/asio/io_context.hpp>
+#include <boost/json.hpp>
 #include <memory>
+#include <optional>
 #include <unordered_map>
 #include "database.h"
 #include "dependencies.h"
 #include "session.h"
 #include "message.h"
 #include "server_protocol.h"
+
+namespace
+{
+
+}
 
 class sessions_manager
 {
@@ -17,9 +24,17 @@ private:
 	//std::unordered_map<std::string, std::queue<message>> undeliverd_messages;
 	//sessions_manager() = default;
 	//std::map<long long, std::shared_ptr<session>> sessions_;
+	struct decoded_packet{
+		server_protocol::message_type type;
+		boost::json::value jv;
+	};
+
 	std::shared_ptr<Database> db_;
 	net::io_context& ioc_main_;
 	std::unordered_map<int64_t, std::weak_ptr<session>> sessions_;
+	std::optional<decoded_packet> decode_packet(const std::string& raw);
+	void authenticate(int64_t user_id, std::weak_ptr<session> session_ptr);
+	
 public:
 	//No copy semantics
 	sessions_manager(std::shared_ptr<Database> db, net::io_context &ioc_main);
@@ -33,6 +48,7 @@ public:
 	//void add_message(const message& msg);
 	//std::queue<std::string>& get_undelieverd(const std::string& uuid); 
 	//std::queue<message>& get_undelieverd(const std::string& uuid);
+	
 	void on_auth_attempt(std::weak_ptr<session> session, const std::string& raw);
 	void on_data(int64_t sender_id, const std::string& raw);
 	void handle_msg_forward(int64_t sender_id, 	const server_protocol::incoming_message &incoming_msg);

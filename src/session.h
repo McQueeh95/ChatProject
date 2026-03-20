@@ -46,6 +46,7 @@ public:
 	void handle_add_contact(const message &msg, std::shared_ptr<session> receiver);
 	void send_request(const std::string& msg);
 	void handle_message_before_forwarding(const message &msg, const std::string &string_data);
+	void set_session_id(const int64_t session_id);
 	//void deleiver(const server_protocol::message& msg);
 };
 

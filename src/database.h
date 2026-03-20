@@ -22,7 +22,7 @@ class Database
     Database (const Database&) = delete;
     Database& operator= (const Database&) = delete;
     void post_task(std::function<void()> task);
-    void save_msg();
+    std::optional<int64_t> login_user(const std::string &username, const std::string &password);
     db_protocol::message get_msg();
     std::optional<int64_t> get_recepeint_id(int64_t chat_id, int64_t sender_id);
     std::optional<db_protocol::message> insert_msg(int64_t chat_id, int64_t sender_id, const std::string& text);

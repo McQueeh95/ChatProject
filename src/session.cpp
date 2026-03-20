@@ -190,6 +190,10 @@ void session::on_close(beast::error_code ec)
 		return fail(ec, "close");
 }
 
+void session::set_session_id(const int64_t session_id)
+{
+	this->session_id = session_id;
+}
 void session::handle_connect(const message& msg)
 {
 	sessions_manager::instance().add_session(msg.get_uuid_from(),
