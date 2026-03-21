@@ -1,77 +1,102 @@
-#include "database.h"
-#include "db_protocol.h"
+#include "database.hpp"
+#include "db_protocol.hpp"
 #include <boost/asio/executor_work_guard.hpp>
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/post.hpp>
+#include <cstddef>
 #include <exception>
 #include <initializer_list>
 #include <iostream>
 #include <optional>
 #include <pqxx/prepared_statement.hxx>
+#include <stdexcept>
 #include <thread>
 
-Database::Database(const std::string& connection_string): 
+database::database(const std::string& connection_string): 
     connection_(connection_string), work_guard_(boost::asio::make_work_guard(ioc_))
 {
-    if(connection_.is_open())
-    {
-        std::cout <<  "Connection" << std::endl;
-        connection_.prepare("login", "SELECT id, password_hash FROM users WHERE username = $1");
-        connection_.prepare("get_recepeint_id", "SELECT user1_id, user2_id FROM chats WHERE id = $1");
-        connection_.prepare("insert_msg", "INSERT INTO messages (chat_id, sender_id, encrypted_payload) "
-            "VALUES ($1, $2, $3) RETURNING id, created_at");
-    }
-    db_thread_ = std::thread([this]{ioc_.run();});
-    std::cout << "running in: " << db_thread_.get_id();
+    if(!connection_.is_open())
+        throw std::runtime_error("Failed to connect to DB");
+
+    prepare_statements();
+    db_thread_ = std::thread([this]{ioc_.run();}); 
 }
 
-void Database::start()
+void database::prepare_statements()
 {
-    if(db_thread_.joinable()) return;
+    connection_.prepare("login", "SELECT id, password_hash FROM users WHERE username = $1");
+    
+    connection_.prepare("get_recepeint_id", "SELECT user1_id, user2_id FROM chats WHERE id = $1");
 
-    db_thread_ = std::thread([this]{ioc_.run();});
+    connection_.prepare("insert_msg", "INSERT INTO messages (chat_id, sender_id, encrypted_payload) "
+        "VALUES ($1, $2, $3) RETURNING id, created_at");
+
+    connection_.prepare("create_user", "INSERT INTO users (username, password_hash) "
+        "VALUES ($1, $2) RETURNING id");
+
+    connection_.prepare("upsert_chat", "INSERT INTO chats (user1_id, user2_id), "
+        "VALUES ($1, $2) "
+        "ON CONFLICT (LEAST(user1_id, user2_id), GREATEST(user1_id, user2_is)) "
+        "DO UPDATE SET created_at = EXCLUDED.created_at "
+        "RETURNING id;");
 }
 
-Database::~Database()
+database::~database()
 {
     ioc_.stop();
     if(db_thread_.joinable())
         db_thread_.join();
 }
 
-void Database::post_task(std::function<void()> task)
+void database::post_task(std::function<void()> task)
 {
     boost::asio::post(ioc_, std::move(task));
 }
 
-std::optional<int64_t> Database::login_user(const std::string &username, const std::string &password)
+std::optional<int64_t> database::create_user(const std::string &username, const std::string &password)
 {
-    std::cout << "Database::login_user" << std::endl;
+    try{
+        pqxx::work w(connection_);
+        pqxx::result r(
+            w.exec(pqxx::prepped("create_user"), pqxx::params{username, password})
+        );
+        w.commit();
+
+        if(r.empty())
+            return std::nullopt;
+        int64_t user_id = r[0][0].as<int64_t>();
+        return user_id;
+    }
+    catch(const std::exception& e){
+        std::cerr << "DB error (create_user): " << e.what();
+        return std::nullopt;
+    }
+}
+
+std::optional<int64_t> database::login_user(const std::string &username, const std::string &password)
+{
+    std::cout << "database::login_user" << std::endl;
     try {
         pqxx::nontransaction n(connection_);
         pqxx::result r(
             n.exec(pqxx::prepped("login"), pqxx::params{username})
         );
+
         if(r.empty()) 
-        {
-            std::cout << "logn r is empty" << std::endl;
-            return std::nullopt;}
+            return std::nullopt;
         int64_t user_id = r[0][0].as<int64_t>();
         std::string stored_hash = r[0][1].as<std::string>();
-        std::cout << "user id " << user_id << std::endl;
-        std::cout << "pass " << stored_hash << std::endl; 
         if(stored_hash != password)
-        {std::cout << "invalid password";
-            return std::nullopt;}
+            return std::nullopt;
         return user_id;
     }
-    catch (std::exception &e) {
+    catch (const std::exception &e) {
         std::cerr << "DB error(login_user): " << e.what() << std::endl;
         return std::nullopt;
     }
 }
 
-std::optional<int64_t> Database::get_recepeint_id(int64_t chat_id, int64_t sender_id)
+std::optional<int64_t> database::get_recepeint_id(int64_t chat_id, int64_t sender_id)
 {
     try{
         pqxx::nontransaction n(connection_);
@@ -85,35 +110,54 @@ std::optional<int64_t> Database::get_recepeint_id(int64_t chat_id, int64_t sende
         int64_t u2 = (r[0][1]).as<int64_t>();
         return (u1 == sender_id) ? u2 : u1;
     }
-    catch(std::exception& e)
+    catch(const std::exception& e)
     {
         std::cerr << "DB error(get_recepeint_id): " << e.what() << std::endl;
         return std::nullopt;
     }
 }
 
-std::optional<db_protocol::message> Database::insert_msg(int64_t chat_id, int64_t sender_id, const std::string& text)
+std::optional<db_protocol::message> database::insert_msg(int64_t chat_id, int64_t sender_id, const std::string& text)
 {
     try{
         pqxx::work w(connection_);
         pqxx::result r = w.exec(pqxx::prepped("insert_msg"), pqxx::params{chat_id, sender_id, text});
         w.commit();
         
-        if(!r.empty())
-        {
-            db_protocol::message message;
-            message.chat_id = chat_id;
-            message.sender_id = sender_id;
-            message.encrypted_payload = text;
-            message.id = r[0][0].as<int64_t>();
-            message.created_at = r[0][1].as<std::string>();
-            return message;
-        }
-        return std::nullopt;
+        if(r.empty()) return std::nullopt;
+
+        db_protocol::message message;
+        message.chat_id = chat_id;
+        message.sender_id = sender_id;
+        message.encrypted_payload = text;
+        message.id = r[0][0].as<int64_t>();
+        message.created_at = r[0][1].as<std::string>();
+        return message;
+       
     }
-    catch(std::exception& e)
+    catch(const std::exception& e)
     {
         std::cerr << "DB error(insert_msg): " << e.what() << std::endl;
         return std::nullopt;
     }
+}
+
+std::optional<int64_t> database::upsert_chat(int64_t user1_id, int64_t user2_id)
+{
+   try 
+   {
+        pqxx::work w(connection_);
+        pqxx::result r = w.exec(pqxx::prepped("upsert_msg"), pqxx::params{user1_id, user2_id});
+        w.commit();
+
+        if(r.empty()) return std::nullopt;
+
+        int64_t chat_id = r[0][0].as<int64_t>();
+        return chat_id;
+    
+   } catch (const std::exception& e) 
+   {
+        std::cerr << "DB error(upsert_chat): " << e.what() << std::endl;
+        return std::nullopt;
+   } 
 }

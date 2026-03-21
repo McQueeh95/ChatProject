@@ -1,29 +1,33 @@
 #pragma once
+#include <bitset>
 #include <boost/asio/executor_work_guard.hpp>
 #include <optional>
 #include <pqxx/pqxx>
 #include <boost/asio/io_context.hpp>
 #include <thread>
-#include "dependencies.h"
-#include "db_protocol.h"
+#include "dependencies.hpp"
+#include "db_protocol.hpp"
 #include <cstdint>
 
-class Database
+class database
 {
     private:
     pqxx::connection connection_;
-    std::thread db_thread_;
     net::io_context ioc_;
     boost::asio::executor_work_guard<net::io_context::executor_type> work_guard_;
+    std::thread db_thread_;
+    void prepare_statements();
     public:
-    Database(const std::string& connection_string);
+    database(const std::string& connection_string);
     void start();
-    ~Database();
-    Database (const Database&) = delete;
-    Database& operator= (const Database&) = delete;
+    ~database();
+    database (const database&) = delete;
+    database& operator= (const database&) = delete;
     void post_task(std::function<void()> task);
+    std::optional<int64_t> create_user(const std::string &username, const std::string &password);
     std::optional<int64_t> login_user(const std::string &username, const std::string &password);
     std::optional<int64_t> get_recepeint_id(int64_t chat_id, int64_t sender_id);
     std::optional<db_protocol::message> insert_msg(int64_t chat_id, int64_t sender_id, const std::string& text);
+    std::optional<int64_t> upsert_chat(int64_t user1_id, int64_t user2_id);
 
 };

@@ -32,3 +32,5 @@ CREATE TABLE IF NOT EXISTS messages(
 );
 
 CREATE INDEX IF NOT EXISTS idx_messages_chat_id ON messages(chat_id);
+CREATE INDEX IF NOT EXISTS idx_chats_user1 ON chats(user1_id);
+CREATE INDEX IF NOT EXISTS idx_chats_user2 ON chats(user2_id);

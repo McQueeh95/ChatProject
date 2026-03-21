@@ -1,4 +1,4 @@
-#include "dbworker.h"
+#include "dbworker.hpp"
 #include <iostream>
 #include <thread>
 DBWorker::DBWorker(std::unique_ptr<Database> db)

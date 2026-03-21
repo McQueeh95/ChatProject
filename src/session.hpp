@@ -1,8 +1,8 @@
 #pragma once
-#include "dependencies.h"
-#include "message.h"
-#include "server_protocol.h"
-#include "sessions_manager.h"
+#include "dependencies.hpp"
+#include "message.hpp"
+#include "server_protocol.hpp"
+#include "sessions_manager.hpp"
 #include <deque>
 #include <memory>
 #include <queue>
@@ -21,6 +21,7 @@ class session : public std::enable_shared_from_this<session>
 	std::shared_ptr<sessions_manager> manager_;
 	void do_write();
 	void on_write(beast::error_code ec, std::size_t bytes_transferred);
+
 public:
 	// Passing ownership of the socket
 		explicit session(tcp::socket && socket, std::shared_ptr<sessions_manager> manager)

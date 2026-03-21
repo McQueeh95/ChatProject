@@ -1,4 +1,4 @@
-#include "server_protocol.h"
+#include "server_protocol.hpp"
 #include <boost/json.hpp>
 #include <boost/json/conversion.hpp>
 #include <boost/json/detail/value_to.hpp>
@@ -44,6 +44,14 @@ namespace server_protocol
         };
     }
 
+    search_request tag_invoke(json::value_to_tag<search_request>, const json::value& jv)
+    {
+        const auto& obj = jv.as_object();
+        return{
+            json::value_to<std::string>(obj.at("peer_username"))
+        };
+    }
+
     //outgoing_message to json
     void tag_invoke(json::value_from_tag,  json::value& jv, const outgoing_message& msg)
     {
@@ -77,6 +85,20 @@ namespace server_protocol
             {"last_read_message_id", msg.last_read_message_id},
             {"reader_id", msg.reader_id}
         };
+    }
+
+    void tag_invoke(json::value_from_tag, json::value& jv, const auth_response& msg)
+    {
+        boost::json::object obj;
+        obj["type"] = static_cast<int>(message_type::AUTH_RES);
+        obj["status"] = msg.status;
+
+        if(msg.status == "ok")
+            obj["user_id"] = msg.user_id;
+        else
+            obj["error_msg"] = msg.error_msg;
+
+        jv = std::move(obj);
     }
 
 }

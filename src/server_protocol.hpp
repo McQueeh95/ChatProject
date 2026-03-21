@@ -9,12 +9,17 @@ namespace server_protocol
 {
     enum class message_type
     {
-        CONN,
-        FORW,
-        DISCONN,
-        ACK,
-        READ_ACK
+        AUTH = 0,
+        FORW = 1,
+        REG = 2,
+        AUTH_RES = 3,
+        SEARCH = 4,
+        SEARCH_RES = 5,
+        DISCONN = 6,
+        ACK = 7,
+        READ_ACK = 8
     };
+    
     //received by server on connect
     struct connect_message
     {
@@ -24,6 +29,7 @@ namespace server_protocol
         friend connect_message tag_invoke(boost::json::value_to_tag<connect_message>, 
             const boost::json::value& jv);
     };
+
     //received by server
     struct incoming_message
     {
@@ -33,6 +39,15 @@ namespace server_protocol
         friend incoming_message tag_invoke(boost::json::value_to_tag<incoming_message>, 
             const boost::json::value& jv);
     };
+
+    struct search_request
+    {
+        std::string peer_username;
+
+        friend search_request tag_invoke(boost::json::value_to_tag<server_protocol::search_request>, 
+            const boost::json::value& jv);
+    };
+
     //sent by server
     struct outgoing_message
     {
@@ -46,6 +61,7 @@ namespace server_protocol
             boost::json::value& jv,  const outgoing_message &msg);
         
     };
+
     //saved in DB ACK
     struct ack_message
     {
@@ -56,6 +72,7 @@ namespace server_protocol
 
         friend void tag_invoke(boost::json::value_from_tag, boost::json::value& jv, const ack_message& msg);
     };
+
     //msg read ACK to server
     struct read_ack_incoming
     {
@@ -65,6 +82,7 @@ namespace server_protocol
         friend read_ack_incoming tag_invoke(boost::json::value_to_tag<read_ack_incoming>, 
             const boost::json::value& jv);
     };
+
     //msg read ACK to client(sender)
     struct read_ack_outgoing
     {
@@ -72,6 +90,17 @@ namespace server_protocol
         int64_t last_read_message_id;
         int64_t reader_id;
 
-        friend void tag_invoke(boost::json::value_from_tag, boost::json::value& jv, const read_ack_outgoing& msg);
+        friend void tag_invoke(boost::json::value_from_tag, boost::json::value& jv, 
+            const read_ack_outgoing& msg);
+    };
+
+    struct auth_response
+    {
+        std::string status;
+        int64_t user_id;
+        std::string error_msg;
+
+        friend void tag_invoke(boost::json::value_from_tag, boost::json::value& jv, 
+            const auth_response& msg);
     };
 }

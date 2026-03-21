@@ -1,6 +1,6 @@
 #pragma once
 
-#include "dependencies.h"
+#include "dependencies.hpp"
 #include  "boost/json.hpp"
 #include <chrono>
 #include <ctime>

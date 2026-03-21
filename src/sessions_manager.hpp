@@ -4,9 +4,9 @@
 #include <memory>
 #include <optional>
 #include <unordered_map>
-#include "database.h"
-#include "dependencies.h"
-#include "server_protocol.h"
+#include "database.hpp"
+#include "dependencies.hpp"
+#include "server_protocol.hpp"
 
 
 
@@ -26,17 +26,19 @@ private:
 		boost::json::value jv;
 	};
 
-	std::shared_ptr<Database> db_;
+	std::shared_ptr<database> db_;
 	net::io_context& ioc_main_;
 	std::unordered_map<int64_t, std::weak_ptr<session>> sessions_;
 	std::optional<decoded_packet> decode_packet(const std::string& raw);
-	void authenticate(int64_t user_id, std::weak_ptr<session> session_ptr);
+	void add_session(int64_t user_id, std::weak_ptr<session> session_ptr);
+	void authenticate();
 	void handle_msg_forward(int64_t sender_id, 	const server_protocol::incoming_message &incoming_msg);
 	void deliver(int64_t recepeint_id, std::string data);
 	void send_to_recepient(int64_t id, const db_protocol::message& msg);
+	void handle_search();
 public:
 	//No copy semantics
-	sessions_manager(std::shared_ptr<Database> db, net::io_context &ioc_main);
+	sessions_manager(std::shared_ptr<database> db, net::io_context &ioc_main);
 	sessions_manager(const sessions_manager&) = delete;
 	sessions_manager& operator=(const sessions_manager&) = delete;
 	//static sessions_manager& instance();

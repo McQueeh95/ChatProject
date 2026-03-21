@@ -1,6 +1,6 @@
 #pragma once
 
-#include "database.h"
+#include "database.hpp"
 #include <memory>
 class DBWorker
 {

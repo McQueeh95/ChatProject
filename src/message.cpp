@@ -1,4 +1,4 @@
-#include "message.h"
+#include "message.hpp"
 
 message::message(const json::value& v)
 {

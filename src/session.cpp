@@ -1,5 +1,5 @@
-#include "session.h"
-#include "sessions_manager.h"
+#include "session.hpp"
+#include "sessions_manager.hpp"
 #include <boost/asio/buffer.hpp>
 #include <boost/asio/write.hpp>
 #include <boost/beast/core/bind_handler.hpp>
