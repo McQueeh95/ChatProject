@@ -7,6 +7,7 @@
 #include <initializer_list>
 #include <iostream>
 #include <optional>
+#include <pqxx/prepared_statement.hxx>
 #include <thread>
 
 Database::Database(const std::string& connection_string): 
@@ -43,18 +44,25 @@ void Database::post_task(std::function<void()> task)
     boost::asio::post(ioc_, std::move(task));
 }
 
-std::optional<int64_t> Database::login_user(std::string &username, std::string &password)
+std::optional<int64_t> Database::login_user(const std::string &username, const std::string &password)
 {
+    std::cout << "Database::login_user" << std::endl;
     try {
         pqxx::nontransaction n(connection_);
         pqxx::result r(
-            n.exec("login", pqxx::params{username})
+            n.exec(pqxx::prepped("login"), pqxx::params{username})
         );
-        if(r.empty()) return std::nullopt;
+        if(r.empty()) 
+        {
+            std::cout << "logn r is empty" << std::endl;
+            return std::nullopt;}
         int64_t user_id = r[0][0].as<int64_t>();
         std::string stored_hash = r[0][1].as<std::string>();
+        std::cout << "user id " << user_id << std::endl;
+        std::cout << "pass " << stored_hash << std::endl; 
         if(stored_hash != password)
-            return std::nullopt;
+        {std::cout << "invalid password";
+            return std::nullopt;}
         return user_id;
     }
     catch (std::exception &e) {
@@ -63,19 +71,13 @@ std::optional<int64_t> Database::login_user(std::string &username, std::string &
     }
 }
 
-
-db_protocol::message Database::get_msg()
-{
-    ;
-}
-
 std::optional<int64_t> Database::get_recepeint_id(int64_t chat_id, int64_t sender_id)
 {
     try{
         pqxx::nontransaction n(connection_);
     
         pqxx::result r(
-            n.exec("get_recepeint_id", pqxx::params{chat_id})
+            n.exec(pqxx::prepped("get_recepeint_id"), pqxx::params{chat_id})
         );
         if(r.empty()) return std::nullopt;
 
@@ -94,7 +96,7 @@ std::optional<db_protocol::message> Database::insert_msg(int64_t chat_id, int64_
 {
     try{
         pqxx::work w(connection_);
-        pqxx::result r = w.exec("insert_msg", pqxx::params{chat_id, sender_id, text});
+        pqxx::result r = w.exec(pqxx::prepped("insert_msg"), pqxx::params{chat_id, sender_id, text});
         w.commit();
         
         if(!r.empty())

@@ -4,6 +4,7 @@
 #include <boost/json/detail/value_to.hpp>
 #include <boost/json/object.hpp>
 #include <boost/json/value_to.hpp>
+#include <iostream>
 
 namespace json = boost::json;
 
@@ -12,9 +13,11 @@ namespace server_protocol
     //json to connect_message
     connect_message tag_invoke(json::value_to_tag<connect_message>, const json::value& jv)
     {
+        std::cout << "to connect start" << std::endl;
         const auto& obj = jv.as_object();
+         std::cout << "to connect after to obj" << std::endl;
         return {
-            json::value_to<int64_t>(obj.at("sender_id")),
+            //json::value_to<int64_t>(obj.at("sender_id")),
             json::value_to<std::string>(obj.at("username")),
             json::value_to<std::string>(obj.at("hashed_password"))
         };

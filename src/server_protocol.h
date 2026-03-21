@@ -10,15 +10,15 @@ namespace server_protocol
     enum class message_type
     {
         CONN,
-        DISCONN,
         FORW,
+        DISCONN,
         ACK,
         READ_ACK
     };
     //received by server on connect
     struct connect_message
     {
-        int64_t sender_id;
+        //int64_t sender_id;
         std::string username;
         std::string hashed_password;
         friend connect_message tag_invoke(boost::json::value_to_tag<connect_message>, 
@@ -43,7 +43,7 @@ namespace server_protocol
         std::string timestamp;
         bool is_read;
         friend void tag_invoke(boost::json::value_from_tag,
-            const boost::json::value& jv, const outgoing_message& msg);
+            boost::json::value& jv,  const outgoing_message &msg);
         
     };
     //saved in DB ACK

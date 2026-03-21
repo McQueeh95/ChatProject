@@ -18,7 +18,6 @@ add_executable (server "src/server.cpp" "src/server.h"
 "src/sessions_manager.cpp" "src/sessions_manager.h" 
 "src/message.h" "src/message.cpp" 
 "src/database.h" "src/database.cpp"
-"src/dbworker.h" "src/dbworker.cpp"
 "src/server_protocol.h" "src/server_protocol.cpp")
 
 target_link_libraries(server PRIVATE 
