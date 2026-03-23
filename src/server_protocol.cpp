@@ -11,7 +11,7 @@ namespace json = boost::json;
 namespace server_protocol
 {
     //json to connect_message
-    connect_message tag_invoke(json::value_to_tag<connect_message>, const json::value& jv)
+    auth_req tag_invoke(json::value_to_tag<auth_req>, const json::value& jv)
     {
         std::cout << "to connect start" << std::endl;
         const auto& obj = jv.as_object();
@@ -24,7 +24,7 @@ namespace server_protocol
     }
 
     //json to incoming_message
-    incoming_message tag_invoke(json::value_to_tag<incoming_message>, const json::value& jv)
+    msg_forw_req tag_invoke(json::value_to_tag<msg_forw_req>, const json::value& jv)
     {
         const auto& obj = jv.as_object();
         return {
@@ -35,7 +35,7 @@ namespace server_protocol
     }
 
     //json to read_ack_incoming
-    read_ack_incoming tag_invoke(json::value_to_tag<read_ack_incoming>, const json::value& jv)
+    read_conf_req tag_invoke(json::value_to_tag<read_conf_req>, const json::value& jv)
     {
         const auto& obj = jv.as_object();
         return{
@@ -44,7 +44,7 @@ namespace server_protocol
         };
     }
 
-    search_request tag_invoke(json::value_to_tag<search_request>, const json::value& jv)
+    search_req tag_invoke(json::value_to_tag<search_req>, const json::value& jv)
     {
         const auto& obj = jv.as_object();
         return{
@@ -53,7 +53,7 @@ namespace server_protocol
     }
 
     //outgoing_message to json
-    void tag_invoke(json::value_from_tag,  json::value& jv, const outgoing_message& msg)
+    void tag_invoke(json::value_from_tag,  json::value& jv, const msg_del& msg)
     {
         jv = {
             {"type", static_cast<int>(message_type::FORW)},
@@ -67,7 +67,7 @@ namespace server_protocol
     }
 
     //ack_message to json
-    void tag_invoke(json::value_from_tag, json::value& jv, const ack_message& msg)
+    void tag_invoke(json::value_from_tag, json::value& jv, const status_res& msg)
     {
         jv = {
             {"local_id", msg.local_id},
@@ -78,7 +78,7 @@ namespace server_protocol
     }
 
     //ack_read_outgoing to json
-    void tag_invoke(json::value_from_tag, json::value& jv, const read_ack_outgoing& msg)
+    void tag_invoke(json::value_from_tag, json::value& jv, const read_confirm_notif& msg)
     {
         jv = {
             {"chat_id", msg.chat_id},
@@ -87,10 +87,10 @@ namespace server_protocol
         };
     }
 
-    void tag_invoke(json::value_from_tag, json::value& jv, const auth_response& msg)
+    void tag_invoke(json::value_from_tag, json::value& jv, const auth_res& msg)
     {
         boost::json::object obj;
-        obj["type"] = static_cast<int>(message_type::AUTH_RES);
+        obj["type"] = static_cast<int8_t>(message_type::AUTH_RES);
         obj["status"] = msg.status;
 
         if(msg.status == "ok")
@@ -98,6 +98,23 @@ namespace server_protocol
         else
             obj["error_msg"] = msg.error_msg;
 
+        jv = std::move(obj);
+    }
+
+    void tag_invoke(json::value_from_tag, json::value& jv, const search_res& msg)
+    {
+        boost::json::object obj;
+        obj["type"] = static_cast<int8_t>(message_type::AUTH_RES);
+        obj["status"] = msg.status;
+
+        if(msg.status == "ok")
+        {
+            obj["chat_id"] = msg.chat_id;
+            obj["peer_username"] = msg.peer_username;
+        }  
+        else
+            obj["error_msg"] = msg.error_msg;
+        
         jv = std::move(obj);
     }
 

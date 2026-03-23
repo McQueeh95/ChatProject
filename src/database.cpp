@@ -34,11 +34,13 @@ void database::prepare_statements()
     connection_.prepare("create_user", "INSERT INTO users (username, password_hash) "
         "VALUES ($1, $2) RETURNING id");
 
-    connection_.prepare("upsert_chat", "INSERT INTO chats (user1_id, user2_id), "
+    connection_.prepare("upsert_chat", "INSERT INTO chats (user1_id, user2_id) "
         "VALUES ($1, $2) "
-        "ON CONFLICT (LEAST(user1_id, user2_id), GREATEST(user1_id, user2_is)) "
+        "ON CONFLICT (LEAST(user1_id, user2_id), GREATEST(user1_id, user2_id)) "
         "DO UPDATE SET created_at = EXCLUDED.created_at "
         "RETURNING id;");
+    
+    connection_.prepare("get_peer_id", "SELECT id FROM users WHERE username = $1)");
 }
 
 database::~database()
@@ -160,4 +162,23 @@ std::optional<int64_t> database::upsert_chat(int64_t user1_id, int64_t user2_id)
         std::cerr << "DB error(upsert_chat): " << e.what() << std::endl;
         return std::nullopt;
    } 
+}
+
+std::optional<int64_t> database::get_user_id_by_nickname(const std::string &username)
+{
+    try {
+    {
+        pqxx::nontransaction n(connection_);
+        pqxx::result r (
+            n.exec(pqxx::prepped("get_peer_id"), pqxx::params{username})
+        );
+        if(r.empty()) return std::nullopt;
+        
+        int64_t chat_id = r[0][0].as<int64_t>();
+        return chat_id;
+    }
+    } catch (const std::exception& e) {
+        std::cerr << "DB error(get_user_id_by_nickname): " << e.what() << std::endl;
+        return std::nullopt;
+    }
 }

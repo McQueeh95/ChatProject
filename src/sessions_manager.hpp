@@ -31,27 +31,21 @@ private:
 	std::unordered_map<int64_t, std::weak_ptr<session>> sessions_;
 	std::optional<decoded_packet> decode_packet(const std::string& raw);
 	void add_session(int64_t user_id, std::weak_ptr<session> session_ptr);
+	void remove_session(int64_t user_id);
 	void authenticate();
-	void handle_msg_forward(int64_t sender_id, 	const server_protocol::incoming_message &incoming_msg);
+	void handle_msg_forward(int64_t sender_id, 	const server_protocol::msg_forw_req &incoming_msg);
 	void deliver(int64_t recepeint_id, std::string data);
 	void send_to_recepient(int64_t id, const db_protocol::message& msg);
-	void handle_search();
+	void send_auth_result(std::weak_ptr<session> session_ptr, std::optional<int64_t> user_id_opt);
+	void handle_search(int64_t sender_id, const server_protocol::search_req &search_req);
+	void handle_logout(int64_t user_id);
+	void send_search_response(int64_t sender_id, std::optional<int64_t> chat_id, const std::string &peer_name);
 public:
 	//No copy semantics
 	sessions_manager(std::shared_ptr<database> db, net::io_context &ioc_main);
 	sessions_manager(const sessions_manager&) = delete;
 	sessions_manager& operator=(const sessions_manager&) = delete;
-	//static sessions_manager& instance();
-	//void add_session(const std::string& uuid, std::shared_ptr<session> session);
-	//std::shared_ptr<session> get_client(const std::string& user_name);
-	//void remove_session(const std::string& uuid);
-	//void add_message(const std::string& uuid, const std::string& message_str, const message &msg);
-	//void add_message(const message& msg);
-	//std::queue<std::string>& get_undelieverd(const std::string& uuid); 
-	//std::queue<message>& get_undelieverd(const std::string& uuid);
 	
 	void on_auth_attempt(std::weak_ptr<session> session, const std::string& raw);
 	void on_data(int64_t sender_id, const std::string& raw);
-	
-	void handle_connection(const server_protocol::connect_message &connection_msg);
 };

@@ -1,9 +1,11 @@
 
+#include "sessions_manager.hpp"
 #include "database.hpp"
 #include "message.hpp"
 #include "db_protocol.hpp"
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/post.hpp>
+#include <boost/json.hpp>
 #include <boost/json/conversion.hpp>
 #include <boost/json/fwd.hpp>
 #include <boost/json/parse.hpp>
@@ -19,9 +21,9 @@
 #include "session.hpp"
 
 namespace {
-	server_protocol::outgoing_message map_msg_db_to_net(const db_protocol::message& db_msg)
+	server_protocol::msg_del map_msg_db_to_net(const db_protocol::message& db_msg)
 	{
-		server_protocol::outgoing_message net_msg;
+		server_protocol::msg_del net_msg;
 		net_msg.message_id = db_msg.id;
 		net_msg.chat_id = db_msg.chat_id;
 		net_msg.sender_id = db_msg.sender_id;
@@ -62,6 +64,15 @@ void sessions_manager::add_session(int64_t user_id, std::weak_ptr<session> sessi
 	sessions_[user_id] = session;
 }
 
+void sessions_manager::remove_session(int64_t user_id)
+{
+	auto it = sessions_.find(user_id);
+	if(it != sessions_.end())
+	{
+		sessions_.erase(it);
+	}
+}
+
 
 void sessions_manager::on_auth_attempt(std::weak_ptr<session> session_ptr, const std::string& raw)
 {
@@ -70,7 +81,7 @@ void sessions_manager::on_auth_attempt(std::weak_ptr<session> session_ptr, const
 					packet->type != server_protocol::message_type::REG)) return;
 	//login 
 	auto type = packet->type;
-	auto msg = boost::json::value_to<server_protocol::connect_message>(packet->jv);
+	auto msg = boost::json::value_to<server_protocol::auth_req>(packet->jv);
 	db_->post_task([this, msg = std::move(msg), session_ptr, type](){
 		std::optional<int64_t> user_id_opt;
 		if(type == server_protocol::message_type::REG)
@@ -79,24 +90,7 @@ void sessions_manager::on_auth_attempt(std::weak_ptr<session> session_ptr, const
 			user_id_opt = db_->login_user(msg.username, msg.hashed_password);
 
 		boost::asio::post(this->ioc_main_, [this, session_ptr, user_id_opt](){
-			auto s = session_ptr.lock();
-			if(!s) return;
-			
-			server_protocol::auth_response res;
-			if(user_id_opt)
-			{
-				res.status = "ok";
-				res.user_id = *user_id_opt;
-				this->add_session(*user_id_opt, session_ptr);
-				s->set_session_id(*user_id_opt);
-			}
-			else 
-			{
-				res.status = "error";
-				res.error_msg = "Invalid credentials or user already exists";
-			}
-			auto jv = json::value_from(res);
-			s->send(json::serialize(jv));
+			this->send_auth_result(session_ptr, user_id_opt);
 		});
 	});
 }
@@ -105,43 +99,46 @@ void sessions_manager::on_auth_attempt(std::weak_ptr<session> session_ptr, const
 void sessions_manager::on_data(int64_t sender_id, const std::string& raw)
 {
 	auto packet = decode_packet(raw);
-	if(!packet.has_value() || packet->type == server_protocol::message_type::AUTH) return;
+	if(!packet.has_value() || (packet->type != server_protocol::message_type::AUTH
+					&& packet->type != server_protocol::message_type::REG && sender_id != -1)) return;
 	std::cout << "on_data packet has value" << std::endl;;
 	switch (packet->type) {
 		case server_protocol::message_type::FORW:
 		{
-			auto msg = boost::json::value_to<server_protocol::incoming_message>(packet->jv);
+			auto msg = boost::json::value_to<server_protocol::msg_forw_req>(packet->jv);
 			handle_msg_forward(sender_id, msg);	
 			break;
 		}
 		case server_protocol::message_type::SEARCH:
 		{
-			auto msg = boost::json::value_to<server_protocol::search_request>(packet->jv);
+			auto msg = boost::json::value_to<server_protocol::search_req>(packet->jv);
+			handle_search(sender_id, msg);
 			break;
 		}
 		case server_protocol::message_type::ACK:
 		{
-			//auto msg = boost::json::value_to<server_protocol::connect_message>(jv);
 			break;
 		}
 		case server_protocol::message_type::READ_ACK:
 		{
 			break;
 		}
-		case server_protocol::message_type::DISCONN:
+		case server_protocol::message_type::LOGOUT:
 		{
+			remove_session(sender_id);
 			break;
 		}
 		case server_protocol::message_type::AUTH:
 		case server_protocol::message_type::REG:
 		case server_protocol::message_type::AUTH_RES:
+		case server_protocol::message_type::SEARCH_RES:
 		{
 			break;
 		}
 	}
 }
 
-void sessions_manager::handle_msg_forward(int64_t sender_id, const server_protocol::incoming_message &incoming_msg)
+void sessions_manager::handle_msg_forward(int64_t sender_id, const server_protocol::msg_forw_req &incoming_msg)
 {
 	std::cout << "handle_msg_forward" << std::endl;
 	db_->post_task([this, sender_id, msg = std::move(incoming_msg)](){
@@ -160,9 +157,31 @@ void sessions_manager::handle_msg_forward(int64_t sender_id, const server_protoc
 	);
 }
 
+void sessions_manager::send_auth_result(std::weak_ptr<session> session_ptr, std::optional<int64_t> user_id_opt)
+{
+	auto s = session_ptr.lock();
+	if(!s) return;
+	
+	server_protocol::auth_res res;
+	if(user_id_opt)
+	{
+		res.status = "ok";
+		res.user_id = *user_id_opt;
+		this->add_session(*user_id_opt, session_ptr);
+		s->set_session_id(*user_id_opt);
+	}
+	else 
+	{
+		res.status = "error";
+		res.error_msg = "Invalid credentials or user already exists";
+	}
+	auto jv = json::value_from(res);
+	s->send(json::serialize(jv));
+}
+
 void sessions_manager::send_to_recepient(int64_t recepeint_id, const db_protocol::message& msg)
 {
-	server_protocol::outgoing_message outgoing_msg = map_msg_db_to_net(msg);
+	server_protocol::msg_del outgoing_msg = map_msg_db_to_net(msg);
 	auto jv = json::value_from(outgoing_msg);
 	std::string raw_data = json::serialize(jv);
 	deliver(recepeint_id, raw_data);
@@ -180,7 +199,45 @@ void sessions_manager::deliver(int64_t recepeint_id, std::string data)
 	}
 }
 
-void sessions_manager::handle_connection(const server_protocol::connect_message &connection_msg)
+void sessions_manager::send_search_response(int64_t sender_id, std::optional<int64_t> chat_id, const std::string &peer_name)
 {
+	server_protocol::search_res search_res;
+	if(chat_id){
+		search_res.status = "ok";
+		search_res.chat_id = *chat_id;
+		search_res.peer_username = peer_name;
+	}
+	else {
+		search_res.status = "error";
+		search_res.error_msg = "User not found or chat error";
+	}
+	auto raw_data = json::serialize(json::value_from(search_res));
 
+	if(auto it = sessions_.find(sender_id); it != sessions_.end())
+	{
+		if(auto session_ptr = it->second.lock())
+			session_ptr->send(raw_data);
+		else
+			sessions_.erase(it);
+	}
+}
+
+void sessions_manager::handle_search(int64_t sender_id, const server_protocol::search_req &search_req)
+{
+	std::string username = search_req.peer_username;
+	db_->post_task([this, sender_id, username = std::move(username)](){
+		auto receiver_id = db_->get_user_id_by_nickname(username);
+		if(!receiver_id)
+		{
+			boost::asio::post(this->ioc_main_, [this, sender_id](){
+				this->send_search_response(sender_id, std::nullopt, "");
+			});
+			return;
+		}
+		auto chat_id = db_->upsert_chat(sender_id, *receiver_id);
+
+		boost::asio::post(this->ioc_main_, [this, sender_id, chat_id, username](){
+			this->send_search_response(sender_id, chat_id, username);
+		});
+	});
 }

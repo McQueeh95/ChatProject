@@ -11,6 +11,7 @@
 CMakeFiles/
 CMakeCache.txt
 cmake_install.cmake
+CmakePresets.json
 build/
 out/
 .vscode/
