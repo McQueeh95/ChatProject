@@ -8,6 +8,7 @@
 #include "dependencies.hpp"
 #include "db_protocol.hpp"
 #include <cstdint>
+#include <vector>
 
 class database
 {
@@ -30,5 +31,6 @@ class database
     std::optional<db_protocol::message> insert_msg(int64_t chat_id, int64_t sender_id, const std::string& text);
     std::optional<int64_t> upsert_chat(int64_t user1_id, int64_t user2_id);
     std::optional<int64_t> get_user_id_by_nickname(const std::string &username);
+    std::vector<db_protocol::user_chat> get_user_chats(int64_t user_id);
 
 };

@@ -17,6 +17,7 @@
 #include <optional>
 #include <string>
 #include <utility>
+#include <vector>
 #include "server_protocol.hpp"
 #include "session.hpp"
 
@@ -31,6 +32,14 @@ namespace {
 		net_msg.timestamp = db_msg.created_at;
 		net_msg.is_read = db_msg.is_read;
 		return net_msg;
+	}
+
+	server_protocol::chat_info map_chat_db_to_net(const db_protocol::user_chat& db_chat)
+	{
+		server_protocol::chat_info net_chat;
+		net_chat.chat_id = db_chat.chat_id;
+		net_chat.peer_username = db_chat.peer_username;
+		return net_chat;
 	}
 }
 
@@ -88,9 +97,19 @@ void sessions_manager::on_auth_attempt(std::weak_ptr<session> session_ptr, const
 			user_id_opt = db_->create_user(msg.username, msg.hashed_password);
 		else
 			user_id_opt = db_->login_user(msg.username, msg.hashed_password);
+		
+		std::vector<server_protocol::chat_info> chats;
+		if(user_id_opt){
+			auto db_chats = db_->get_user_chats(*user_id_opt);
 
-		boost::asio::post(this->ioc_main_, [this, session_ptr, user_id_opt](){
-			this->send_auth_result(session_ptr, user_id_opt);
+			chats.reserve(db_chats.size());
+			for(const auto& c: db_chats){
+				chats.push_back({c.chat_id, c.peer_username});
+			}
+		}
+
+		boost::asio::post(this->ioc_main_, [this, session_ptr, user_id_opt, chats = std::move(chats)](){
+			this->send_auth_result(session_ptr, user_id_opt, chats);
 		});
 	});
 }
@@ -99,8 +118,8 @@ void sessions_manager::on_auth_attempt(std::weak_ptr<session> session_ptr, const
 void sessions_manager::on_data(int64_t sender_id, const std::string& raw)
 {
 	auto packet = decode_packet(raw);
-	if(!packet.has_value() || (packet->type != server_protocol::message_type::AUTH
-					&& packet->type != server_protocol::message_type::REG && sender_id != -1)) return;
+	if(!packet.has_value() || packet->type == server_protocol::message_type::AUTH
+					|| packet->type == server_protocol::message_type::REG || sender_id == -1) return;
 	std::cout << "on_data packet has value" << std::endl;;
 	switch (packet->type) {
 		case server_protocol::message_type::FORW:
@@ -157,7 +176,8 @@ void sessions_manager::handle_msg_forward(int64_t sender_id, const server_protoc
 	);
 }
 
-void sessions_manager::send_auth_result(std::weak_ptr<session> session_ptr, std::optional<int64_t> user_id_opt)
+void sessions_manager::send_auth_result(std::weak_ptr<session> session_ptr, std::optional<int64_t> user_id_opt, 
+	std::vector<server_protocol::chat_info> chats)
 {
 	auto s = session_ptr.lock();
 	if(!s) return;
@@ -167,6 +187,7 @@ void sessions_manager::send_auth_result(std::weak_ptr<session> session_ptr, std:
 	{
 		res.status = "ok";
 		res.user_id = *user_id_opt;
+		res.chats = chats;
 		this->add_session(*user_id_opt, session_ptr);
 		s->set_session_id(*user_id_opt);
 	}

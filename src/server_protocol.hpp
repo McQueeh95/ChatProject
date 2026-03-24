@@ -94,19 +94,27 @@ namespace server_protocol
             const read_conf_req& msg);
     };
 
+    struct chat_info{
+        int64_t chat_id;
+        std::string peer_username;
+
+        friend void tag_invoke(boost::json::value_from_tag, boost::json::value& jv, 
+            const chat_info& msg);
+    };
+
     struct auth_res
     {
         std::string status;
         int64_t user_id;
         std::string error_msg;
-
+        std::vector<server_protocol::chat_info> chats;
         friend void tag_invoke(boost::json::value_from_tag, boost::json::value& jv, 
             const auth_res& msg);
     };
 
-    struct logout_req{
+    /*struct logout_req{
         int64_t user_id;
-    };
+    };*/
 
     struct search_res
     {
@@ -118,5 +126,6 @@ namespace server_protocol
         friend void tag_invoke(boost::json::value_from_tag, boost::json::value& jv,
             const search_res& msg);
     };
+
 
 }

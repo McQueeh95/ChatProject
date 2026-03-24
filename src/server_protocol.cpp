@@ -94,7 +94,10 @@ namespace server_protocol
         obj["status"] = msg.status;
 
         if(msg.status == "ok")
+        {
             obj["user_id"] = msg.user_id;
+            obj["chats"] = json::value_from(msg.chats);
+        }
         else
             obj["error_msg"] = msg.error_msg;
 
@@ -116,6 +119,14 @@ namespace server_protocol
             obj["error_msg"] = msg.error_msg;
         
         jv = std::move(obj);
+    }
+
+    void tag_invoke(json::value_from_tag, json::value& jv, const chat_info& msg)
+    {
+        jv = {
+            {"chat_id", msg.chat_id},
+            {"peer_username", msg.peer_username}
+        };
     }
 
 }

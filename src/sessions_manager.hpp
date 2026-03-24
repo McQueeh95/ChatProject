@@ -31,12 +31,13 @@ private:
 	std::unordered_map<int64_t, std::weak_ptr<session>> sessions_;
 	std::optional<decoded_packet> decode_packet(const std::string& raw);
 	void add_session(int64_t user_id, std::weak_ptr<session> session_ptr);
-	void remove_session(int64_t user_id);
+	
 	void authenticate();
 	void handle_msg_forward(int64_t sender_id, 	const server_protocol::msg_forw_req &incoming_msg);
 	void deliver(int64_t recepeint_id, std::string data);
 	void send_to_recepient(int64_t id, const db_protocol::message& msg);
-	void send_auth_result(std::weak_ptr<session> session_ptr, std::optional<int64_t> user_id_opt);
+	void send_auth_result(std::weak_ptr<session> session_ptr, std::optional<int64_t> user_id_opt, 
+		std::vector<server_protocol::chat_info> chats);
 	void handle_search(int64_t sender_id, const server_protocol::search_req &search_req);
 	void handle_logout(int64_t user_id);
 	void send_search_response(int64_t sender_id, std::optional<int64_t> chat_id, const std::string &peer_name);
@@ -48,4 +49,5 @@ public:
 	
 	void on_auth_attempt(std::weak_ptr<session> session, const std::string& raw);
 	void on_data(int64_t sender_id, const std::string& raw);
+	void remove_session(int64_t user_id);
 };

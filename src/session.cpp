@@ -70,10 +70,19 @@ void session::on_read(
 	boost::ignore_unused(bytes_transferd);
 
 	if (ec == websocket::error::closed)
+	{
+		if(this->session_id != -1)
+			manager_->remove_session(session_id);
 		return;
+	}
 
 	if (ec)
+	{
+		if(this->session_id != -1)
+			manager_->remove_session(session_id);
 		return fail(ec, "read");
+	}
+
 
 	//Transforming received data from Json
 	std::string raw_string = beast::buffers_to_string(read_buffer_.data());

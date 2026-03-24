@@ -11,6 +11,7 @@
 #include <pqxx/prepared_statement.hxx>
 #include <stdexcept>
 #include <thread>
+#include <vector>
 
 database::database(const std::string& connection_string): 
     connection_(connection_string), work_guard_(boost::asio::make_work_guard(ioc_))
@@ -40,7 +41,16 @@ void database::prepare_statements()
         "DO UPDATE SET created_at = EXCLUDED.created_at "
         "RETURNING id;");
     
-    connection_.prepare("get_peer_id", "SELECT id FROM users WHERE username = $1)");
+    connection_.prepare("get_peer_id", "SELECT id FROM users WHERE username = $1");
+
+    connection_.prepare("get_user_chats", 
+                        "SELECT c.id AS chat_id, u.username AS peer_name FROM chats c "
+                            "JOIN users u ON u.id = CASE  "
+                                    "WHEN "
+                                    "c.user1_id = $1 THEN c.user2_id "
+                                    "ELSE c.user1_id " 
+                                    "END "
+                                "WHERE c.user1_id = $1 OR c.user2_id = $1;");
 }
 
 database::~database()
@@ -167,7 +177,6 @@ std::optional<int64_t> database::upsert_chat(int64_t user1_id, int64_t user2_id)
 std::optional<int64_t> database::get_user_id_by_nickname(const std::string &username)
 {
     try {
-    {
         pqxx::nontransaction n(connection_);
         pqxx::result r (
             n.exec(pqxx::prepped("get_peer_id"), pqxx::params{username})
@@ -176,9 +185,30 @@ std::optional<int64_t> database::get_user_id_by_nickname(const std::string &user
         
         int64_t chat_id = r[0][0].as<int64_t>();
         return chat_id;
-    }
     } catch (const std::exception& e) {
         std::cerr << "DB error(get_user_id_by_nickname): " << e.what() << std::endl;
         return std::nullopt;
     }
+}
+
+std::vector<db_protocol::user_chat> database::get_user_chats(int64_t user_id)
+{
+    std::vector<db_protocol::user_chat> chats;
+    try{
+        pqxx::nontransaction n(connection_);
+        pqxx::result r (
+            n.exec(pqxx::prepped("get_user_chats"), pqxx::params{user_id})
+        );
+        for(auto const row: r)
+        {
+            chats.push_back({
+                row[0].as<int64_t>(),
+                row[1].as<std::string>()
+            });
+        }
+    }
+    catch(const std::exception &e){
+        std::cerr << "DB error(get_user_chats): " << e.what() << std::endl;
+    }
+    return chats;
 }
