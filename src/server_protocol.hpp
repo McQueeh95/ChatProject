@@ -9,24 +9,31 @@ namespace server_protocol
 {
     enum class message_type
     {
-        AUTH = 0,
+        LOGIN = 0,
         FORW = 1,
         REG = 2,
-        AUTH_RES = 3,
-        SEARCH = 4,
-        SEARCH_RES = 5,
-        LOGOUT = 6,
-        ACK = 7,
-        READ_ACK = 8
+        LOGIN_RES = 3,
+        REG_RES = 4,
+        SEARCH = 5,
+        SEARCH_RES = 6,
+        LOGOUT = 7,
+        DELIV_ACK = 8,
+        READ_ACK = 9,
     };
-    
-    //received by server on connect
-    struct auth_req
+
+    struct login_req
     {
-        //int64_t sender_id;
         std::string username;
         std::string hashed_password;
-        friend auth_req tag_invoke(boost::json::value_to_tag<auth_req>, 
+        friend login_req tag_invoke(boost::json::value_to_tag<login_req>, 
+            const boost::json::value& jv);
+    };
+
+    struct reg_req
+    {
+        std::string username;
+        std::string hashed_password;
+        friend reg_req tag_invoke(boost::json::value_to_tag<reg_req>, 
             const boost::json::value& jv);
     };
 
@@ -49,7 +56,7 @@ namespace server_protocol
     };
 
     //sent by server
-    struct msg_del
+    struct msg_deliv
     {
         int64_t message_id;
         int64_t chat_id;
@@ -58,7 +65,7 @@ namespace server_protocol
         std::string timestamp;
         bool is_read;
         friend void tag_invoke(boost::json::value_from_tag,
-            boost::json::value& jv,  const msg_del &msg);
+            boost::json::value& jv,  const msg_deliv &msg);
         
     };
 
@@ -102,19 +109,24 @@ namespace server_protocol
             const chat_info& msg);
     };
 
-    struct auth_res
+    struct login_res
     {
         std::string status;
         int64_t user_id;
         std::string error_msg;
         std::vector<server_protocol::chat_info> chats;
         friend void tag_invoke(boost::json::value_from_tag, boost::json::value& jv, 
-            const auth_res& msg);
+            const login_res& msg);
     };
 
-    /*struct logout_req{
+    struct reg_res
+    {
+        std::string status;
         int64_t user_id;
-    };*/
+        std::string error_msg;
+        friend void tag_invoke(boost::json::value_from_tag, boost::json::value& jv, 
+            const reg_res& msg);
+    };
 
     struct search_res
     {

@@ -22,9 +22,9 @@
 #include "session.hpp"
 
 namespace {
-	server_protocol::msg_del map_msg_db_to_net(const db_protocol::message& db_msg)
+	server_protocol::msg_deliv map_msg_db_to_net(const db_protocol::message& db_msg)
 	{
-		server_protocol::msg_del net_msg;
+		server_protocol::msg_deliv net_msg;
 		net_msg.message_id = db_msg.id;
 		net_msg.chat_id = db_msg.chat_id;
 		net_msg.sender_id = db_msg.sender_id;
@@ -57,6 +57,7 @@ std::optional<sessions_manager::decoded_packet> sessions_manager::decode_packet(
 	{
 		auto jv = json::parse(raw);
 		auto type_val = jv.at("type").as_int64();
+		std::cout << "Type:" << type_val << std::endl;
 		auto type = static_cast<server_protocol::message_type>(type_val);
 		return sessions_manager::decoded_packet{type, std::move(jv)};
 	}
@@ -86,30 +87,50 @@ void sessions_manager::remove_session(int64_t user_id)
 void sessions_manager::on_auth_attempt(std::weak_ptr<session> session_ptr, const std::string& raw)
 {
 	auto packet = decode_packet(raw);
-	if(!packet || (packet->type != server_protocol::message_type::AUTH &&
+	if(!packet || (packet->type != server_protocol::message_type::LOGIN &&
 					packet->type != server_protocol::message_type::REG)) return;
 	//login 
+	std::cout << "Started login" << std::endl;
 	auto type = packet->type;
-	auto msg = boost::json::value_to<server_protocol::auth_req>(packet->jv);
-	db_->post_task([this, msg = std::move(msg), session_ptr, type](){
-		std::optional<int64_t> user_id_opt;
-		if(type == server_protocol::message_type::REG)
-			user_id_opt = db_->create_user(msg.username, msg.hashed_password);
-		else
-			user_id_opt = db_->login_user(msg.username, msg.hashed_password);
-		
-		std::vector<server_protocol::chat_info> chats;
-		if(user_id_opt){
-			auto db_chats = db_->get_user_chats(*user_id_opt);
+	if(type == server_protocol::message_type::LOGIN)
+	{
+		auto msg = boost::json::value_to<server_protocol::login_req>(packet->jv);
+		handle_login(session_ptr, msg);
 
+	}
+	else if(type == server_protocol::message_type::REG) {
+		auto msg = boost::json::value_to<server_protocol::reg_req>(packet->jv);
+		handle_reg(session_ptr, msg);
+	}
+}
+
+void sessions_manager::handle_login(std::weak_ptr<session> session_ptr, const server_protocol::login_req &login_msg)
+{
+	db_->post_task([this, msg = std::move(login_msg), session_ptr](){
+		std::optional<int64_t> user_id_opt = db_->login_user(msg.username, msg.hashed_password);
+		std::vector<server_protocol::chat_info> chats;
+		if(user_id_opt)
+		{
+			auto db_chats = db_->get_user_chats(*user_id_opt);
 			chats.reserve(db_chats.size());
-			for(const auto& c: db_chats){
+			for(const auto& c: db_chats)
+			{
 				chats.push_back({c.chat_id, c.peer_username});
 			}
 		}
-
 		boost::asio::post(this->ioc_main_, [this, session_ptr, user_id_opt, chats = std::move(chats)](){
-			this->send_auth_result(session_ptr, user_id_opt, chats);
+			this->send_login_res(session_ptr, user_id_opt, chats);
+		});
+	});
+}
+
+void sessions_manager::handle_reg(std::weak_ptr<session> session_ptr, const server_protocol::reg_req &reg_msg)
+{
+	db_->post_task([this, msg = std::move(reg_msg), session_ptr](){
+		std::optional<int64_t> user_id_opt = db_->create_user(msg.username, msg.hashed_password);
+
+		boost::asio::post(this->ioc_main_, [this, session_ptr, user_id_opt](){
+			this->send_reg_res(session_ptr, user_id_opt);
 		});
 	});
 }
@@ -118,7 +139,7 @@ void sessions_manager::on_auth_attempt(std::weak_ptr<session> session_ptr, const
 void sessions_manager::on_data(int64_t sender_id, const std::string& raw)
 {
 	auto packet = decode_packet(raw);
-	if(!packet.has_value() || packet->type == server_protocol::message_type::AUTH
+	if(!packet.has_value() || packet->type == server_protocol::message_type::LOGIN
 					|| packet->type == server_protocol::message_type::REG || sender_id == -1) return;
 	std::cout << "on_data packet has value" << std::endl;;
 	switch (packet->type) {
@@ -134,7 +155,7 @@ void sessions_manager::on_data(int64_t sender_id, const std::string& raw)
 			handle_search(sender_id, msg);
 			break;
 		}
-		case server_protocol::message_type::ACK:
+		case server_protocol::message_type::DELIV_ACK:
 		{
 			break;
 		}
@@ -147,9 +168,10 @@ void sessions_manager::on_data(int64_t sender_id, const std::string& raw)
 			remove_session(sender_id);
 			break;
 		}
-		case server_protocol::message_type::AUTH:
+		case server_protocol::message_type::LOGIN:
 		case server_protocol::message_type::REG:
-		case server_protocol::message_type::AUTH_RES:
+		case server_protocol::message_type::LOGIN_RES:
+		case server_protocol::message_type::REG_RES:
 		case server_protocol::message_type::SEARCH_RES:
 		{
 			break;
@@ -176,13 +198,13 @@ void sessions_manager::handle_msg_forward(int64_t sender_id, const server_protoc
 	);
 }
 
-void sessions_manager::send_auth_result(std::weak_ptr<session> session_ptr, std::optional<int64_t> user_id_opt, 
-	std::vector<server_protocol::chat_info> chats)
+void sessions_manager::send_login_res(std::weak_ptr<session> session_ptr, std::optional<int64_t> user_id_opt, 
+		std::vector<server_protocol::chat_info> chats)
 {
 	auto s = session_ptr.lock();
 	if(!s) return;
 	
-	server_protocol::auth_res res;
+	server_protocol::login_res res;
 	if(user_id_opt)
 	{
 		res.status = "ok";
@@ -194,15 +216,38 @@ void sessions_manager::send_auth_result(std::weak_ptr<session> session_ptr, std:
 	else 
 	{
 		res.status = "error";
-		res.error_msg = "Invalid credentials or user already exists";
+		res.error_msg = "Invalid credentials";
 	}
 	auto jv = json::value_from(res);
 	s->send(json::serialize(jv));
 }
 
+void sessions_manager::send_reg_res(std::weak_ptr<session> session_ptr, std::optional<int64_t> user_id_opt)
+{
+	auto s = session_ptr.lock();
+	if(!s) return;
+	
+	server_protocol::reg_res res;
+	if(user_id_opt)
+	{
+		res.status = "ok";
+		res.user_id = *user_id_opt;
+		this->add_session(*user_id_opt, session_ptr);
+		s->set_session_id(*user_id_opt);
+	}
+	else 
+	{
+		res.status = "error";
+		res.error_msg = "User already exists";
+	}
+	auto jv = json::value_from(res);
+	s->send(json::serialize(jv));
+}
+
+
 void sessions_manager::send_to_recepient(int64_t recepeint_id, const db_protocol::message& msg)
 {
-	server_protocol::msg_del outgoing_msg = map_msg_db_to_net(msg);
+	server_protocol::msg_deliv outgoing_msg = map_msg_db_to_net(msg);
 	auto jv = json::value_from(outgoing_msg);
 	std::string raw_data = json::serialize(jv);
 	deliver(recepeint_id, raw_data);

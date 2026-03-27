@@ -72,14 +72,19 @@ void session::on_read(
 	if (ec == websocket::error::closed)
 	{
 		if(this->session_id != -1)
+		{
 			manager_->remove_session(session_id);
+		}
 		return;
 	}
 
 	if (ec)
 	{
 		if(this->session_id != -1)
+		{
 			manager_->remove_session(session_id);
+			std::cout << session_id << " was removed" << std::endl; 
+		}
 		return fail(ec, "read");
 	}
 
@@ -131,6 +136,7 @@ void session::on_close(beast::error_code ec)
 void session::set_session_id(const int64_t session_id)
 {
 	this->session_id = session_id;
+	std::cout << "Session id was set to: " <<  this->session_id << std::endl;
 }
 
 /*void session::handle_disconnect(const message& msg)
