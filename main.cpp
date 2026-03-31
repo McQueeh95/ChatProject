@@ -1,13 +1,15 @@
 #include "ui/mainwindow.h"
 
+#include <iostream>
 #include <QApplication>
+#include <QDebug>
 
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
-    const QString DB_PATH = "C:/Users/nezna/ChatCourseProjectFull/client/data/client_database.sqlite";
+    AppController controller;
     //Creating window
-    MainWindow w(DB_PATH);
+    MainWindow w(&controller);
     w.show();
     return a.exec();
 }

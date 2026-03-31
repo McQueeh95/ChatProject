@@ -2,30 +2,36 @@
 #include <QClipboard>
 #include "mainwindow.h"
 #include "./ui_mainwindow.h"
-#include "../models/messageitemdelegate.h"
 #include "../models/contactiemdelegate.h"
 
 
-MainWindow::MainWindow(const QString& dbPath, QWidget *parent)
+MainWindow::MainWindow(AppController *controller, QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
+    , m_controller(controller)
 {
     ui->setupUi(this);
-    db = new DataBaseManager(dbPath);
-    //Checking if id is present in DB
-    auto checkUuid = db->getUuid();
-    if(checkUuid.has_value())
-    {
-        userHasUuid(checkUuid.value().first, checkUuid.value().second);
-    }
-    else
-    {
-        registerWidget = new RegisterWidget(this);
-        ui->stackedWidget->addWidget(registerWidget);
-        //When user inputs username complete registration
-        connect(registerWidget, &RegisterWidget::usernameInputted, this, &MainWindow::handleUserRegistration);
-        uuidDoesntExist();
-    }
+
+    m_stackedWidget = new QStackedWidget(this);
+    setCentralWidget(m_stackedWidget);
+
+    m_loginPage = new LoginPage(m_controller, this);
+    this->m_stackedWidget->addWidget(m_loginPage);
+
+
+    m_registrationPage = new RegistrationPage(m_controller, this);
+    this->m_stackedWidget->addWidget(m_registrationPage);
+
+    m_mainPage = new MainPage(m_controller, this);
+    this->m_stackedWidget->addWidget(m_mainPage);
+
+    this->m_stackedWidget->setCurrentWidget(m_loginPage);
+
+    connect(m_loginPage, &LoginPage::registrationRequested, this, &MainWindow::showRegistrationPage);
+    connect(m_registrationPage, &RegistrationPage::loginRequested, this, &MainWindow::showLoginPage);
+
+    connect(controller, &AppController::loginSuccess, this, &MainWindow::onLoginSuccess);
+    connect(controller, &AppController::registrationSuccess, this, &MainWindow::onRegistrationSuccess);
 }
 
 MainWindow::~MainWindow()
@@ -33,17 +39,40 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-void MainWindow::uuidDoesntExist()
+void MainWindow::showRegistrationPage()
+{
+    this->m_stackedWidget->setCurrentWidget(m_registrationPage);
+}
+
+void MainWindow::showLoginPage()
+{
+    this->m_stackedWidget->setCurrentWidget(m_loginPage);
+}
+
+void MainWindow::onLoginSuccess(qint64 userId, const QList<protocol::ChatInfo> chats)
+{
+    m_mainPage->setChats(chats);
+    m_mainPage->setUserId(userId);
+    this->m_stackedWidget->setCurrentWidget(m_mainPage);
+}
+
+void MainWindow::onRegistrationSuccess(qint64 userId)
+{
+    m_mainPage->setUserId(userId);
+    this->m_stackedWidget->setCurrentWidget(m_mainPage);
+}
+
+/*void MainWindow::uuidDoesntExist()
 {
     ui->stackedWidget->setCurrentWidget(registerWidget);
-}
+}*/
 
-NetworkClient &MainWindow::getClient()
+/*NetworkClient &MainWindow::getClient()
 {
     return *client;
-}
+}*/
 
-void MainWindow::handleUserRegistration(const QString &username)
+/*void MainWindow::handleUserRegistration(const QString &username)
 {
     while(!username.isEmpty())
     {
@@ -52,9 +81,9 @@ void MainWindow::handleUserRegistration(const QString &username)
     userHasUuid(uuid, username);
     break;
     }
-}
+}*/
 
-void MainWindow::userHasUuid(const QString &uuid, const QString& username)
+/*void MainWindow::userHasUuid(const QString &uuid, const QString& username)
 {
     //Temporary, need to change after
     client = new NetworkClient(QUrl("ws://localhost:8080"));
@@ -83,9 +112,9 @@ void MainWindow::userHasUuid(const QString &uuid, const QString& username)
     QList<Contact> contacts = db->getContactList();
     emit sendContactsToMainWidget(contacts);
     connect(this, &MainWindow::sendMessagesToMainWidget, mainPageWidget, &MainPageWidget::onMessagesReceived);
-}
+}*/
 
-void MainWindow::removeRegisterWidget()
+/*void MainWindow::removeRegisterWidget()
 {
     if(registerWidget != nullptr)
     {
@@ -93,9 +122,9 @@ void MainWindow::removeRegisterWidget()
         registerWidget->deleteLater();
         registerWidget = nullptr;
     }
-}
+}*/
 
-void MainWindow::sendMessage(int contactId, const QString &text)
+/*void MainWindow::sendMessage(int contactId, const QString &text)
 {
     if(!text.isEmpty())
     {
@@ -136,6 +165,11 @@ void MainWindow::onRequestForRequests()
 {
     QList<std::pair<int, QString>> requests = db->getRequests();
     emit sendRequestsToMainWidget(requests);
+}
+
+void MainWindow::onLoginSuccess()
+{
+    qDebug() << "Login Success";
 }
 
 void MainWindow::onRequestAction(int contactId, const QString &action)
@@ -199,5 +233,5 @@ void MainWindow::onMessageReceived(const Message &message)
     {
         db->requestRejected(message.getUuidFrom(), message.getUsernameFrom());
     }
-}
+}*/
 

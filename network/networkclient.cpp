@@ -1,114 +1,58 @@
 #include "networkclient.h"
-#include "message.h"
 #include <QDateTime>
 
-NetworkClient::NetworkClient(const QUrl &url, QObject *parent) : QObject(parent)
+NetworkClient::NetworkClient(QObject *parent) : QObject(parent)
 {
-    connect(&mWebSocket, &QWebSocket::connected, this, &NetworkClient::onConnected);
-    connect(&mWebSocket, &QWebSocket::disconnected, this, &NetworkClient::onDisconnected);
-    mWebSocket.open(url);
+    connect(&m_webSocket, &QWebSocket::disconnected, this, &NetworkClient::onDisconnected);
+    connect(&m_webSocket, &QWebSocket::textMessageReceived, this, &NetworkClient::onTextMessageReceived);
 }
 
-void NetworkClient::setUuid(const QString &uuid)
+void NetworkClient::sendJson(const QJsonObject& json)
 {
-    this->uuid = uuid;
-}
-
-void NetworkClient::setUsername(const QString &username)
-{
-    this->username = username;
-}
-
-Message NetworkClient::sendMessage(const QString &msgText, const QString &uuidTo)
-{
-    if(mWebSocket.state() == QAbstractSocket::ConnectedState)
+    if(m_webSocket.state() == QAbstractSocket::ConnectedState)
     {
-        QString timeStamp = QDateTime::currentDateTimeUtc().toString(Qt::ISODate);
-        Message msg = Message::createTextMessage(uuid, uuidTo, msgText, timeStamp);
-        QString toSend = msg.toJsonString();
-        mWebSocket.sendTextMessage(toSend);
-        //emit addContactRequestSent(msg);
-        return msg;
+        QString toSend = QJsonDocument(json).toJson(QJsonDocument::Compact);
+        m_webSocket.sendTextMessage(toSend);
     }
     else
-    {
-        return Message();
-    }
+        qDebug() << "Error sending Json(send json)";
 }
 
-bool NetworkClient::sendAddContactRequest(const QString &uuidTo)
+void NetworkClient::connectToServer(const QUrl &url)
 {
-    if(mWebSocket.state() == QAbstractSocket::ConnectedState)
-    {
-        QString timeStamp = QDateTime::currentDateTimeUtc().toString(Qt::ISODate);
-        Message msg = Message::createFriendRequestMessage(this->uuid, uuidTo, timeStamp, this->username);
-        QString jsonString = msg.toJsonString();
-        mWebSocket.sendTextMessage(jsonString);
-        emit addContactRequestSent(msg);
-        return true;
-    }
-    return false;
-}
-
-bool NetworkClient::sendContactAccepted(const QString &uuidTo)
-{
-    if(mWebSocket.state() == QAbstractSocket::ConnectedState)
-    {
-        QString timeStamp = QDateTime::currentDateTimeUtc().toString(Qt::ISODate);
-        Message msg = Message::createContactAcceptedMessage(this->uuid, uuidTo, timeStamp, this->getUsername());
-        QString jsonString = msg.toJsonString();
-        mWebSocket.sendTextMessage(jsonString);
-        return true;
-    }
-    return false;
-}
-
-bool NetworkClient::sendContactRejected(const QString &uuidTo)
-{
-    if(mWebSocket.state() == QAbstractSocket::ConnectedState)
-    {
-        QString timeStamp = QDateTime::currentDateTimeUtc().toString(Qt::ISODate);
-        Message msg = Message::createContactRejectedMessage(this->uuid, uuidTo, timeStamp, this->getUsername());
-        QString jsonString = msg.toJsonString();
-        mWebSocket.sendTextMessage(jsonString);
-        return true;
-    }
-    return false;
-}
-
-void NetworkClient::disconnectFromServer()
-{
-    Message message = Message::createDisconnectMessage(this->uuid);
-    QString toSend = message.toJsonString();
-    mWebSocket.sendTextMessage(toSend);
-    mWebSocket.close();
-}
-
-QString NetworkClient::getUuid() const
-{
-    return uuid;
-}
-
-QString NetworkClient::getUsername() const
-{
-    return username;
+    m_webSocket.open(url);
 }
 
 void NetworkClient::onConnected()
 {
-    connect(&mWebSocket, &QWebSocket::textMessageReceived, this, &NetworkClient::onMessageReceived);
-
-    Message msg = Message::createConnectionMessage(this->uuid);
-    QString jsonString = msg.toJsonString();
-    mWebSocket.sendTextMessage(jsonString);
+    emit connected();
 }
 
-void NetworkClient::onMessageReceived(const QString &message)
+void NetworkClient::onTextMessageReceived(const QString& rawString)
 {
-    QJsonObject obj = QJsonDocument::fromJson(message.toUtf8()).object();
-    Message msg(obj);
-    qDebug() << "Received msg" << msg.getText();
-    emit messageReceived(msg);
+    QJsonObject obj;
+    QJsonDocument doc = QJsonDocument::fromJson(rawString.toUtf8());
+    if(!doc.isNull())
+    {
+        if(doc.isObject())
+            obj = doc.object();
+        else
+            qDebug() << "Json is not an object (onTextMessageReceived)";
+    }
+    else
+    {
+        qDebug() << "Invalid Json (onTextMessageReceived)";
+    }
+    emit jsonReceived(obj);
+}
+
+bool NetworkClient::isConnected()
+{
+    return(m_webSocket.state() == QAbstractSocket::ConnectedState);
+}
+void NetworkClient::setUsername(const QString &username)
+{
+    this->username = username;
 }
 
 void NetworkClient::onDisconnected()

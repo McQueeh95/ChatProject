@@ -1,16 +1,20 @@
 #include "contactmodelwidget.h"
 #include "ui_contactmodelwidget.h"
 
-ContactModelWidget::ContactModelWidget(Contact contact, QWidget *parent)
+ContactModelWidget::ContactModelWidget(QWidget *parent)
     : QWidget(parent)
     , ui(new Ui::ContactModelWidget)
 {
     ui->setupUi(this);
-    this->contact = contact;
-    ui->usernameLabel->setText(contact.username);
 }
 
 ContactModelWidget::~ContactModelWidget()
 {
     delete ui;
+}
+
+void ContactModelWidget::setChat(const protocol::ChatInfo chat)
+{
+    this->chat = chat;
+    ui->usernameLabel->setText(chat.peerUsername);
 }

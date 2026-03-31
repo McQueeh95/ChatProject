@@ -8,12 +8,17 @@ set(CMAKE_AUTORCC ON)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+add_compile_definitions(QT_FORCE_STDERR_LOGGING)
 
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core)
 find_package(Qt6 REQUIRED COMPONENTS Core WebSockets)
 find_package(Qt6 REQUIRED COMPONENTS Sql)
+find_package(Qt6 REQUIRED COMPONENTS Core)
+find_package(Qt6 REQUIRED COMPONENTS Core)
+find_package(Qt6 REQUIRED COMPONENTS Core)
+find_package(Qt6 REQUIRED COMPONENTS Core)
 
 set(PROJECT_SOURCES
         main.cpp
@@ -27,24 +32,26 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     qt_add_executable(client
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
-        database/databasemanager.h database/databasemanager.cpp
-        ui/registerwidget.h ui/registerwidget.cpp ui/registerwidget.ui
-        ui/mainpagewidget.h ui/mainpagewidget.cpp ui/mainpagewidget.ui
+        ui/registrationpage.h ui/registrationpage.cpp ui/registrationpage.ui
 
         network/networkclient.h network/networkclient.cpp
-        network/message.h network/message.cpp
-        ui/addcontactpopup.h ui/addcontactpopup.cpp ui/addcontactpopup.ui
-        ui/requestlistoverlay.h ui/requestlistoverlay.cpp ui/requestlistoverlay.ui
-        ui/requestitemwidget.h ui/requestitemwidget.cpp ui/requestitemwidget.ui
 
-        models/contact.h
+
+        models/contactiemdelegate.h models/contactlistmodel.cpp
         ui/contactmodelwidget.h ui/contactmodelwidget.cpp ui/contactmodelwidget.ui
-        models/contactlistmodel.h models/contactlistmodel.cpp
-        models/messageslistmodel.h models/messageslistmodel.cpp
-        database/databasemessage.h database/databasemessage.cpp
-        ui/messageitemwidget.h ui/messageitemwidget.cpp ui/messageitemwidget.ui
-        models/messageitemdelegate.h models/messageitemdelegate.cpp
         models/contactiemdelegate.h models/contactiemdelegate.cpp
+        appcontroller.h appcontroller.cpp
+        networktypes.h
+        ui/loginpage.h ui/loginpage.cpp ui/loginpage.ui
+        resources.qrc
+        styles.qss
+        ui/contactwidget.h ui/contactwidget.cpp ui/contactwidget.ui
+        ui/mainpage.h ui/mainpage.cpp ui/mainpage.ui
+        models/chatdelegate.h models/chatdelegate.cpp
+        models/messagedelegate.h models/messagedelegate.cpp
+        models/messageviewmodel.h models/messageviewmodel.cpp
+        models/chatroles.h
+        models/searchviewmodel.h models/searchviewmodel.cpp
 
 
 
@@ -68,6 +75,10 @@ else()
 endif()
 
 target_link_libraries(client PRIVATE Qt${QT_VERSION_MAJOR}::Widgets Qt6::Core Qt6::WebSockets Qt6::Sql)
+target_link_libraries(client PRIVATE Qt6::Core)
+target_link_libraries(client PRIVATE Qt6::Core)
+target_link_libraries(client PRIVATE Qt6::Core)
+target_link_libraries(client PRIVATE Qt6::Core)
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
 # If you are developing for iOS or macOS you should consider setting an

@@ -2,7 +2,7 @@
 #define CONTACTMODELWIDGET_H
 
 #include <QWidget>
-#include "../models/contact.h"
+#include "../networktypes.h"
 
 namespace Ui {
 class ContactModelWidget;
@@ -13,13 +13,13 @@ class ContactModelWidget : public QWidget
     Q_OBJECT
 
 public:
-    ContactModelWidget(Contact contact, QWidget *parent = nullptr);
-
+    ContactModelWidget(QWidget *parent = nullptr);
+    void setChat(const protocol::ChatInfo chat);
     ~ContactModelWidget();
 
 private:
     Ui::ContactModelWidget *ui;
-    Contact contact;
+    protocol::ChatInfo chat;
 };
 
 #endif // CONTACTMODELWIDGET_H

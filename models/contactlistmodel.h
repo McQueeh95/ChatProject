@@ -2,7 +2,7 @@
 #define CONTACTLISTMODEL_H
 
 #include <QAbstractListModel>
-#include "contact.h"
+#include "../networktypes.h"
 //#include "ui_contactmodelwidget.h"
 
 class ContactListModel : public QAbstractListModel
@@ -22,10 +22,11 @@ public:
 
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
 
-    void setContacts(const QList<Contact> &contacts);
+    void setChats(const QList<protocol::ChatInfo> &chats);
+
 
 private:
-    QList<Contact> mContacts;
+    QList<protocol::ChatInfo> m_сhats;
 };
 
 #endif // CONTACTLISTMODEL_H

@@ -2,7 +2,6 @@
 #define MESSAGESLISTMODEL_H
 
 #include <QAbstractListModel>
-#include "../database/databasemessage.h"
 
 class MessagesListModel : public QAbstractListModel
 {
@@ -21,12 +20,10 @@ public:
 
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
 
-    void setMessages(const QList<DatabaseMessage> &messages);
 
     void setUuid(const QString &localUuid);
 
 private:
-    QList<DatabaseMessage> mMessages;
     QString localUuid;
 };
 

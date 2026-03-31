@@ -2,33 +2,30 @@
 #define NETWORKCLIENT_H
 #include <QWebSocket>
 #include <QUrl>
-#include "message.h"
+#include <QJsonDocument>
+#include <QJsonObject>
 
 class NetworkClient : public QObject
 {
     Q_OBJECT
 private:
-    QWebSocket mWebSocket;
+    QWebSocket m_webSocket;
     QString uuid;
     QString username;
 public:
-    NetworkClient(const QUrl &url, QObject *parent = nullptr);
-    void setUuid(const QString &uuid);
+    NetworkClient(QObject *parent = nullptr);
+    void sendJson(const QJsonObject& json);
+    void connectToServer(const QUrl &url);
+    bool isConnected();
     void setUsername(const QString &username);
-    Message sendMessage(const QString &msgText, const QString &uuidTo);
-    bool sendAddContactRequest(const QString &uuidTo);
-    bool sendContactAccepted(const QString &uuidTo);
-    bool sendContactRejected(const QString &uuidTo);
     void disconnectFromServer();
-    QString getUuid() const;
-    QString getUsername() const;
 private slots:
-    void onConnected();
-    void onMessageReceived(const QString &message);
     void onDisconnected();
+    void onTextMessageReceived(const QString& rawString);
+    void onConnected();
 signals:
-    Message messageReceived(const Message &message);
-    void addContactRequestSent(const Message &message);
+    void connected();
+    void jsonReceived(const QJsonObject& obj);
 };
 
 #endif // NETWORKCLIENT_H

@@ -1,4 +1,5 @@
 #include "contactlistmodel.h"
+#include <QSize>
 
 ContactListModel::ContactListModel(QObject *parent)
     : QAbstractListModel(parent)
@@ -15,7 +16,7 @@ int ContactListModel::rowCount(const QModelIndex &parent) const
     // other (valid) parents, rowCount() should return 0 so that it does not become a tree model.
     if (parent.isValid())
         return 0;
-    return mContacts.size();
+    return m_сhats.size();
     // FIXME: Implement me!
 }
 
@@ -24,24 +25,30 @@ QVariant ContactListModel::data(const QModelIndex &index, int role) const
     if (!index.isValid())
         return QVariant();
 
-    if (index.row() < 0 || index.row() >= mContacts.size())
+    if (index.row() < 0 || index.row() >= m_сhats.size())
         return QVariant();
 
-    const Contact &contact = mContacts.at(index.row());
+    const protocol::ChatInfo &chat = m_сhats.at(index.row());
     if(role == Qt::DisplayRole)
     {
-        return contact.username;
+        return chat.peerUsername;
     }
     if(role == Qt::UserRole)
-        return contact.id;
+    {
+        return chat.chatId;
+    }
+    if(role == Qt::SizeHintRole)
+    {
+        return QSize(-1, 60);
+    }
 
     return QVariant();
 
 }
 
-void ContactListModel::setContacts(const QList<Contact> &contacts)
+void ContactListModel::setChats(const QList<protocol::ChatInfo> &chats)
 {
     beginResetModel();
-    mContacts = contacts;
+    m_сhats = chats;
     endResetModel();
 }
