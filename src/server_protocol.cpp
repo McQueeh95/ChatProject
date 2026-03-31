@@ -3,7 +3,9 @@
 #include <boost/json/conversion.hpp>
 #include <boost/json/detail/value_to.hpp>
 #include <boost/json/object.hpp>
+#include <boost/json/value_from.hpp>
 #include <boost/json/value_to.hpp>
+#include <cstdint>
 #include <iostream>
 
 namespace json = boost::json;
@@ -57,7 +59,7 @@ namespace server_protocol
     {
         const auto& obj = jv.as_object();
         return{
-            json::value_to<std::string>(obj.at("peer_username"))
+            json::value_to<std::string>(obj.at("to_find"))
         };
     }
 
@@ -67,6 +69,7 @@ namespace server_protocol
         jv = {
             {"type", static_cast<int8_t>(message_type::FORW)},
             {"message_id", msg.message_id},
+            {"local_id", msg.local_id},
             {"chat_id", msg.chat_id},
             {"sender_id", msg.sender_id},
             {"payload", msg.payload},
@@ -129,7 +132,24 @@ namespace server_protocol
         jv = std::move(obj);
     }
 
+    void tag_invoke(json::value_from_tag, json::value& jv, const user_search& msg)
+    {
+        jv = {
+            {"user_id", msg.user_id},
+            {"username", msg.username}
+        };
+    }
+
     void tag_invoke(json::value_from_tag, json::value& jv, const search_res& msg)
+    {
+        json::object obj;
+        obj["type"] = static_cast<int8_t>(message_type::SEARCH_RES);
+        obj["found_users"] = json::value_from(msg.found_users);
+
+        jv = std::move(obj);
+    }
+
+    /*void tag_invoke(json::value_from_tag, json::value& jv, const search_res& msg)
     {
         boost::json::object obj;
         obj["type"] = static_cast<int8_t>(message_type::SEARCH_RES);
@@ -144,6 +164,26 @@ namespace server_protocol
             obj["error_msg"] = msg.error_msg;
         
         jv = std::move(obj);
+    }*/
+
+    void tag_invoke(json::value_from_tag, json::value& jv, const deliv_ack& msg)
+    {
+        json::object obj;
+        obj["type"] = static_cast<int8_t>(message_type::DELIV_ACK);
+        obj["status"] = msg.status;
+        obj["chat_id"] = msg.chat_id;
+        obj["local_id"] = msg.local_id;
+
+        if(msg.status == "ok")
+        {
+            obj["real_id"] = msg.real_id; 
+            obj["timestamp"] = msg.timestamp;
+        }
+        else
+        {
+            obj["error_msg"] = msg.error_msg;
+        }
+        jv = std::move(obj);
     }
 
     void tag_invoke(json::value_from_tag, json::value& jv, const chat_info& msg)
@@ -152,6 +192,28 @@ namespace server_protocol
             {"chat_id", msg.chat_id},
             {"peer_username", msg.peer_username}
         };
+    }
+
+    history_req tag_invoke(json::value_to_tag<history_req>, const json::value &jv)
+    {
+        const auto& obj = jv.as_object();
+        return { json::value_to<int64_t>(obj.at("chat_id"))};
+    }
+
+    void tag_invoke(boost::json::value_from_tag, boost::json::value &jv, const history_res& msg)
+    {
+        boost::json::object obj;
+        obj["type"] = static_cast<int64_t>(message_type::HISTORY_RES);
+        obj["status"] = msg.status;
+        obj["chat_id"] = msg.chat_id;
+        if(msg.status == "ok")
+        {
+            obj["messages"] = json::value_from(msg.messages);
+        }
+        else {
+            obj["error_msg"] = msg.error_message;
+        }
+        jv = (std::move(obj));
     }
 
 }

@@ -41,6 +41,24 @@ namespace {
 		net_chat.peer_username = db_chat.peer_username;
 		return net_chat;
 	}
+
+	server_protocol::deliv_ack map_msg_db_to_ack(const db_protocol::message& db_msg)
+	{
+		server_protocol::deliv_ack del_ack;
+		del_ack.chat_id = db_msg.chat_id;
+		del_ack.real_id = db_msg.id;
+		del_ack.timestamp = db_msg.created_at;
+		del_ack.status = "ok";
+		return del_ack;
+	}
+
+	server_protocol::user_search map_users_db_to_search(db_protocol::found_user& db_user)
+	{
+		server_protocol::user_search user_search;
+		user_search.user_id = db_user.user_id;
+		user_search.username = db_user.username;
+		return user_search;
+	}
 }
 
 
@@ -80,6 +98,7 @@ void sessions_manager::remove_session(int64_t user_id)
 	if(it != sessions_.end())
 	{
 		sessions_.erase(it);
+		std::cout << "session: " << user_id << " removed" << std::endl;
 	}
 }
 
@@ -145,11 +164,13 @@ void sessions_manager::on_data(int64_t sender_id, const std::string& raw)
 	switch (packet->type) {
 		case server_protocol::message_type::FORW:
 		{
+			std::cout << "before FORW msg converted!";
 			auto msg = boost::json::value_to<server_protocol::msg_forw_req>(packet->jv);
+			std::cout << "FORW msg converted!";
 			handle_msg_forward(sender_id, msg);	
 			break;
 		}
-		case server_protocol::message_type::SEARCH:
+		case server_protocol::message_type::SEARCH_REQ:
 		{
 			auto msg = boost::json::value_to<server_protocol::search_req>(packet->jv);
 			handle_search(sender_id, msg);
@@ -167,6 +188,12 @@ void sessions_manager::on_data(int64_t sender_id, const std::string& raw)
 		{
 			remove_session(sender_id);
 			break;
+		}
+		case server_protocol::message_type::HISTORY_REQ:
+		{
+			auto msg = boost::json::value_to<server_protocol::history_req>(packet->jv);
+			
+			handle_history_req(sender_id, msg.chat_id);
 		}
 		case server_protocol::message_type::LOGIN:
 		case server_protocol::message_type::REG:
@@ -191,11 +218,48 @@ void sessions_manager::handle_msg_forward(int64_t sender_id, const server_protoc
 				std::cerr << "Failed to save message to DB" << std::endl;
 				return;
 			}
-			boost::asio::post(this->ioc_main_, [this, recepeint_id = *recepeint_id, msg = *db_message]{
+			int64_t local_id = msg.local_id;
+			boost::asio::post(this->ioc_main_, [this, local_id, recepeint_id = *recepeint_id, msg = *db_message, sender_id]{
+				this->send_deliv_ack(sender_id, local_id, msg);
 				this->send_to_recepient(recepeint_id, msg);
 			});
 		}
 	);
+}
+
+void sessions_manager::handle_history_req(int64_t sender_id, int64_t chat_id)
+{
+	db_->post_task([this, chat_id, sender_id](){
+		std::vector<db_protocol::message> messages = db_->get_messages(chat_id);
+		boost::asio::post(this->ioc_main_, [this, messages, sender_id, chat_id]{
+			this->send_history(sender_id, chat_id, messages);
+		});
+	});
+}
+
+void sessions_manager::send_history(int64_t sender_id, int64_t chat_id, std::vector<db_protocol::message> db_messages)
+{
+	std::vector<server_protocol::msg_deliv> net_messages;
+	net_messages.reserve(db_messages.size());
+	for(const auto m: db_messages)
+	{
+		net_messages.push_back(map_msg_db_to_net(m));
+	}
+
+	server_protocol::history_res his_res;
+	his_res.chat_id = chat_id;
+	if(net_messages.empty())
+	{
+		his_res.status = "error";
+		his_res.error_message = "Chat is empty";
+	}
+	else 
+	{
+		his_res.status = "ok";
+		his_res.messages = std::move(net_messages);
+	}
+	auto jv = json::value_from(his_res);
+	deliver(sender_id, json::serialize(jv));
 }
 
 void sessions_manager::send_login_res(std::weak_ptr<session> session_ptr, std::optional<int64_t> user_id_opt, 
@@ -247,10 +311,20 @@ void sessions_manager::send_reg_res(std::weak_ptr<session> session_ptr, std::opt
 
 void sessions_manager::send_to_recepient(int64_t recepeint_id, const db_protocol::message& msg)
 {
+	std::cout << "send_to_recepient start" << std::endl;
 	server_protocol::msg_deliv outgoing_msg = map_msg_db_to_net(msg);
 	auto jv = json::value_from(outgoing_msg);
 	std::string raw_data = json::serialize(jv);
 	deliver(recepeint_id, raw_data);
+}
+
+void sessions_manager::send_deliv_ack(int64_t sender_id, int64_t local_id, const db_protocol::message& msg)
+{
+	server_protocol::deliv_ack deliv_ack = map_msg_db_to_ack(msg);
+	deliv_ack.local_id = local_id;
+	auto jv = json::value_from(deliv_ack);
+	std::string raw_data = json::serialize(jv);
+	deliver(sender_id, raw_data);
 }
 
 void sessions_manager::deliver(int64_t recepeint_id, std::string data)
@@ -265,45 +339,30 @@ void sessions_manager::deliver(int64_t recepeint_id, std::string data)
 	}
 }
 
-void sessions_manager::send_search_response(int64_t sender_id, std::optional<int64_t> chat_id, const std::string &peer_name)
-{
-	server_protocol::search_res search_res;
-	if(chat_id){
-		search_res.status = "ok";
-		search_res.chat_id = *chat_id;
-		search_res.peer_username = peer_name;
-	}
-	else {
-		search_res.status = "error";
-		search_res.error_msg = "User not found or chat error";
-	}
-	auto raw_data = json::serialize(json::value_from(search_res));
-
-	if(auto it = sessions_.find(sender_id); it != sessions_.end())
-	{
-		if(auto session_ptr = it->second.lock())
-			session_ptr->send(raw_data);
-		else
-			sessions_.erase(it);
-	}
-}
-
 void sessions_manager::handle_search(int64_t sender_id, const server_protocol::search_req &search_req)
 {
-	std::string username = search_req.peer_username;
-	db_->post_task([this, sender_id, username = std::move(username)](){
-		auto receiver_id = db_->get_user_id_by_nickname(username);
-		if(!receiver_id)
-		{
-			boost::asio::post(this->ioc_main_, [this, sender_id](){
-				this->send_search_response(sender_id, std::nullopt, "");
-			});
-			return;
-		}
-		auto chat_id = db_->upsert_chat(sender_id, *receiver_id);
+	std::string query = search_req.to_find;
+	db_->post_task([this, sender_id, search_req, query](){
+		auto found_users = db_->get_searched_users(query);
 
-		boost::asio::post(this->ioc_main_, [this, sender_id, chat_id, username](){
-			this->send_search_response(sender_id, chat_id, username);
+		boost::asio::post(ioc_main_, [this, sender_id, found_users](){
+			send_search_res(sender_id, found_users);
 		});
 	});
+}
+
+void sessions_manager::send_search_res(int64_t sender_id, std::vector<db_protocol::found_user> db_users)
+{
+	std::vector<server_protocol::user_search> net_users;
+	net_users.reserve(db_users.size());
+	for(auto u: db_users)
+	{
+		net_users.push_back(map_users_db_to_search(u));
+	}
+	server_protocol::search_res search_res;
+	search_res.found_users = net_users;
+	auto jv = json::value_from(search_res);
+	std::string raw_data = json::serialize(jv);
+
+	deliver(sender_id, raw_data);
 }

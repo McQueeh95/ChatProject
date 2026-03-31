@@ -4,6 +4,7 @@
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/post.hpp>
 #include <cstddef>
+#include <cstdint>
 #include <exception>
 #include <initializer_list>
 #include <iostream>
@@ -41,7 +42,7 @@ void database::prepare_statements()
         "DO UPDATE SET created_at = EXCLUDED.created_at "
         "RETURNING id;");
     
-    connection_.prepare("get_peer_id", "SELECT id FROM users WHERE username = $1");
+    connection_.prepare("get_searched_users", "SELECT id, username FROM users WHERE username ILIKE $1 || '%' LIMIT 10");
 
     connection_.prepare("get_user_chats", 
                         "SELECT c.id AS chat_id, u.username AS peer_name FROM chats c "
@@ -51,6 +52,9 @@ void database::prepare_statements()
                                     "ELSE c.user1_id " 
                                     "END "
                                 "WHERE c.user1_id = $1 OR c.user2_id = $1;");
+    
+    connection_.prepare("get_messages", "SELECT * FROM (SELECT id, chat_id, sender_id, encrypted_payload, created_at, is_read "
+        "FROM messages WHERE chat_id = $1 ORDER BY id DESC LIMIT 50) AS sub ORDER BY id ASC" );
 }
 
 database::~database()
@@ -174,21 +178,26 @@ std::optional<int64_t> database::upsert_chat(int64_t user1_id, int64_t user2_id)
    } 
 }
 
-std::optional<int64_t> database::get_user_id_by_nickname(const std::string &username)
+std::vector<db_protocol::found_user> database::get_searched_users(const std::string &query)
 {
+    std::vector<db_protocol::found_user> users;
     try {
         pqxx::nontransaction n(connection_);
         pqxx::result r (
-            n.exec(pqxx::prepped("get_peer_id"), pqxx::params{username})
+            n.exec(pqxx::prepped("get_searched_users"), pqxx::params{query})
         );
-        if(r.empty()) return std::nullopt;
         
-        int64_t chat_id = r[0][0].as<int64_t>();
-        return chat_id;
+        for(auto const row: r)
+        {
+            users.push_back({
+                row[0].as<int64_t>(),
+                row[1].as<std::string>()
+            });
+        }  
     } catch (const std::exception& e) {
         std::cerr << "DB error(get_user_id_by_nickname): " << e.what() << std::endl;
-        return std::nullopt;
     }
+    return users;
 }
 
 std::vector<db_protocol::user_chat> database::get_user_chats(int64_t user_id)
@@ -211,4 +220,31 @@ std::vector<db_protocol::user_chat> database::get_user_chats(int64_t user_id)
         std::cerr << "DB error(get_user_chats): " << e.what() << std::endl;
     }
     return chats;
+}
+
+std::vector<db_protocol::message> database::get_messages(int64_t chat_id)
+{
+    std::vector<db_protocol::message> messages;
+    try{
+        pqxx::nontransaction n(connection_);
+        pqxx::result r(
+            n.exec(pqxx::prepped("get_messages"), pqxx::params{chat_id})
+        );
+        for(auto const row: r)
+        {
+            messages.push_back({
+                row[0].as<int64_t>(),
+                row[1].as<int64_t>(),
+                row[2].as<int64_t>(),
+                row[3].as<std::string>(),
+                row[4].as<std::string>(),
+                row[5].as<bool>()
+            });
+        }
+    }
+    catch(const std::exception &e)
+    {
+        std::cerr << "DB error(get_messages): " << e.what() << std::endl;
+    }
+    return messages;
 }
