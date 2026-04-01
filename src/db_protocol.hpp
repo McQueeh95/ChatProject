@@ -16,6 +16,7 @@ namespace db_protocol
     struct user_chat
     {
         int64_t chat_id;
+        int64_t peer_id;
         std::string peer_username;
     };
 

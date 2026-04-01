@@ -134,7 +134,7 @@ void sessions_manager::handle_login(std::weak_ptr<session> session_ptr, const se
 			chats.reserve(db_chats.size());
 			for(const auto& c: db_chats)
 			{
-				chats.push_back({c.chat_id, c.peer_username});
+				chats.push_back({c.chat_id, c.peer_id ,c.peer_username});
 			}
 		}
 		boost::asio::post(this->ioc_main_, [this, session_ptr, user_id_opt, chats = std::move(chats)](){

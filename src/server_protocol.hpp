@@ -108,6 +108,7 @@ namespace server_protocol
 
     struct chat_info{
         int64_t chat_id;
+        int64_t peer_id;
         std::string peer_username;
 
         friend void tag_invoke(boost::json::value_from_tag, boost::json::value& jv, 

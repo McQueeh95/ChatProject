@@ -190,6 +190,7 @@ namespace server_protocol
     {
         jv = {
             {"chat_id", msg.chat_id},
+            {"peer_id", msg.peer_id},
             {"peer_username", msg.peer_username}
         };
     }
