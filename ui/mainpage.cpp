@@ -3,6 +3,7 @@
 #include "contactwidget.h"
 #include "../models/chatdelegate.h"
 #include "../models/messagedelegate.h"
+#include "../models/approles.h"
 
 MainPage::MainPage(AppController *controller, QWidget *parent)
     : QWidget(parent)
@@ -14,7 +15,7 @@ MainPage::MainPage(AppController *controller, QWidget *parent)
     m_searchTimer = new QTimer(this);
     m_searchTimer->setSingleShot(true);
 
-    ui->usernameLabel->hide();
+    hideChatScreen();
 
     m_chatsModel = new ContactListModel(this);
     ui->chatsList->setModel(m_chatsModel);
@@ -35,15 +36,17 @@ MainPage::MainPage(AppController *controller, QWidget *parent)
 
     connect(ui->chatsList, &QListView::clicked, this, &MainPage::onChatClicked);
     connect(ui->sendMessageButton, &QPushButton::clicked, this, &MainPage::sendMessage);
+    connect(ui->backButton, &QPushButton::clicked, this, &MainPage::hideChatScreen);
+
     connect(m_controller, &AppController::historyReceived, this, &MainPage::showChatHistory);
     connect(m_controller, &AppController::newMessageReceived, this, &MainPage::addNewMessage);
     connect(m_controller, &AppController::localMessageCreated, this, &MainPage::addNewMessage);
     connect(m_controller, &AppController::msgConfirmed, this, &MainPage::ChangeViewStatus);
+    connect(m_controller, &AppController::chatScreenRequested, this, &MainPage::showChatScreen);
 
     connect(ui->searchEdit, &QLineEdit::textEdited, this, &MainPage::onSearchInput);
 
     connect(m_controller, &AppController::foundUsers, this, &MainPage::showSearchResult);
-    //connect(ui->searchEdit, &QLineEdit::inputRejected)
 }
 
 MainPage::~MainPage()
@@ -64,11 +67,10 @@ void MainPage::setUserId(qint64 userId)
 
 void MainPage::onChatClicked(const QModelIndex &index)
 {
-    ui->usernameLabel->show();
-    qint64 chatId = index.data(Qt::UserRole).toLongLong();
     QString username = index.data(Qt::DisplayRole).toString();
-    m_controller->loadHistory(chatId);
-    ui->usernameLabel->setText(username);
+    qint64 chatId = index.data(AppRoles::ChatIdRole).toLongLong();
+    qint64 userId = index.data(AppRoles::UserIdRole).toLongLong();
+    m_controller->processChatSelection(chatId, userId, username);
 }
 
 void MainPage::sendMessage()
@@ -123,4 +125,25 @@ void MainPage::onSearchInput()
 void MainPage::showSearchResult(const QList<protocol::UserSearch> &users)
 {
     m_searchResults->setSearchRes(users);
+}
+
+void MainPage::hideChatScreen()
+{
+    ui->usernameLabel->hide();
+    ui->sendMessageButton->hide();
+    ui->messagesList->hide();
+    ui->messageEdit->hide();
+    ui->backButton->hide();
+    ui->selectChatLabel->show();
+}
+
+void MainPage::showChatScreen(const QString &username)
+{
+    ui->usernameLabel->setText(username);
+    ui->selectChatLabel->hide();
+    ui->sendMessageButton->show();
+    ui->messagesList->show();
+    ui->messageEdit->show();
+    ui->usernameLabel->show();
+    ui->backButton->show();
 }

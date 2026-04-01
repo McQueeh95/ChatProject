@@ -1,4 +1,5 @@
 #include "searchviewmodel.h"
+#include "approles.h"
 
 SearchViewModel::SearchViewModel(QObject *parent)
     : QAbstractListModel{parent}
@@ -25,7 +26,7 @@ QVariant SearchViewModel::data(const QModelIndex &index, int role) const
     {
         return user.username;
     }
-    if(role == Qt::UserRole)
+    if(role == AppRoles::UserIdRole)
     {
         return user.userId;
     }

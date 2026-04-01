@@ -1,5 +1,6 @@
 #include "contactlistmodel.h"
 #include <QSize>
+#include "approles.h"
 
 ContactListModel::ContactListModel(QObject *parent)
     : QAbstractListModel(parent)
@@ -33,13 +34,9 @@ QVariant ContactListModel::data(const QModelIndex &index, int role) const
     {
         return chat.peerUsername;
     }
-    if(role == Qt::UserRole)
+    if(role == AppRoles::ChatIdRole)
     {
         return chat.chatId;
-    }
-    if(role == Qt::SizeHintRole)
-    {
-        return QSize(-1, 60);
     }
 
     return QVariant();

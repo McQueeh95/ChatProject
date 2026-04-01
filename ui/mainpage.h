@@ -30,6 +30,8 @@ private:
     MessageViewModel *m_messages;
     SearchViewModel *m_searchResults;
     QTimer *m_searchTimer;
+    void showChatScreen(const QString &username);
+    void hideChatScreen();
 
 
 

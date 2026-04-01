@@ -21,6 +21,7 @@ public:
 
     void appendMessage(const protocol::MsgDeliv &msg);
     void updateMessage(const protocol::MsgDeliv &msg);
+    void clearMessages();
 
 private:
     QList<protocol::MsgDeliv> m_messages;

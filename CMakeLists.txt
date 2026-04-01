@@ -50,7 +50,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         models/chatdelegate.h models/chatdelegate.cpp
         models/messagedelegate.h models/messagedelegate.cpp
         models/messageviewmodel.h models/messageviewmodel.cpp
-        models/chatroles.h
+        models/approles.h
         models/searchviewmodel.h models/searchviewmodel.cpp
 
 

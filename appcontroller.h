@@ -13,7 +13,9 @@ private:
     QHash<qint64, protocol::ChatInfo> m_chats;
     qint64 m_userId;
     qint64 m_currentChatId = -1;
+    qint64 m_phantomTargetId = -1;
     QHash<qint64, QList<protocol::MsgDeliv>> m_chatsCache;
+    qint64 findChatIdByUserId(qint64 targetUserId);
 public:
     AppController();
     void loginUser(const QString& username, const QString& password);
@@ -23,6 +25,7 @@ public:
     void sendHistoryReq(qint64 chatId);
     void searchUsers(const QString &query);
     qint64 getCurrentChatId();
+    void processChatSelection(qint64 chatId, qint64 userId, const QString& username);
 private slots:
     void onJsonReceived(const QJsonObject& obj);
 signals:
@@ -34,6 +37,7 @@ signals:
     void localMessageCreated(const protocol::MsgDeliv &msg);
     void msgConfirmed(const protocol::MsgDeliv &msg);
     void foundUsers(const QList<protocol::UserSearch> &users);
+    void chatScreenRequested(const QString &username);
 };
 
 #endif // APPCONTROLLER_H

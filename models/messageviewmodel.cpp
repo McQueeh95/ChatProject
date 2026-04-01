@@ -1,5 +1,5 @@
 #include "messageviewmodel.h"
-#include "chatroles.h"
+#include "approles.h"
 
 MessageViewModel::MessageViewModel(QObject *parent)
     : QAbstractListModel{parent}
@@ -26,11 +26,11 @@ QVariant MessageViewModel::data(const QModelIndex &index, int role) const
     {
         return message.payload;
     }
-    if(role == ChatRoles::MessageIdRole)
+    if(role == AppRoles::MessageIdRole)
     {
         return message.messageId;
     }
-    if(role == ChatRoles::TimeRole)
+    if(role == AppRoles::TimeRole)
     {
         if(message.messageId == 0 || message.timeStamp.isEmpty())
         {
@@ -38,7 +38,7 @@ QVariant MessageViewModel::data(const QModelIndex &index, int role) const
         }
         return message.displayTime;
     }
-    if(role == Qt::UserRole)
+    if(role == AppRoles::IsMyMessageRole)
     {
         return message.senderId == m_userId;
     }
@@ -81,5 +81,12 @@ void MessageViewModel::updateMessage(const protocol::MsgDeliv &msg)
             m_messages[i].messageId = msg.messageId;
         }
     }
+    endResetModel();
+}
+
+void MessageViewModel::clearMessages()
+{
+    beginResetModel();
+    m_messages.clear();
     endResetModel();
 }

@@ -25,12 +25,14 @@ namespace protocol
 
     struct ChatInfo{
         qint64 chatId;
+        qint64 peerId;
         QString peerUsername;
 
         static ChatInfo fromJson(const QJsonObject& json)
         {
             ChatInfo chat;
             chat.chatId = json["chat_id"].toVariant().toLongLong();
+            chat.peerId = json["peer_id"].toVariant().toLongLong();
             chat.peerUsername = json["peer_username"].toVariant().toString();
             return chat;
         }
@@ -76,7 +78,6 @@ namespace protocol
             if(dt.isValid())
             {
                 msg.displayTime = dt.toString("HH:mm");
-                qDebug() << msg.displayTime;
             }
             else
             {
@@ -239,16 +240,13 @@ namespace protocol
             if(msg.status == "ok")
             {
                 QJsonArray messagesArray = json["messages"].toArray();
-                qDebug() << "His Res msgs to Array";
                 msg.messages.reserve(messagesArray.size());
                 for(const QJsonValue& val : messagesArray)
                 {
-                    qDebug() << "fromJson chatId" <<val.toObject()["chat_id"];
                     MsgDeliv message = MsgDeliv::fromJson(val.toObject());
 
                     msg.messages.push_back(message);
                 }
-                qDebug() << "His Res Array to List";
             }
             else
             {
@@ -282,11 +280,9 @@ namespace protocol
                 if(dt.isValid())
                 {
                     msg.displayTime = dt.toString("HH:mm");
-                    qDebug() << msg.displayTime;
                 }
                 else
                 {
-                    qDebug() << "dt is not valid";
                     msg.displayTime = msg.timestamp;
                 }
             }

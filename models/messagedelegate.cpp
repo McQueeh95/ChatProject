@@ -5,7 +5,7 @@
 #include <QTextDocument>
 #include <QTextOption>
 #include <QListView>
-#include "chatroles.h"
+#include "approles.h"
 
 QSize MessageDelegate::sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const
 {
@@ -44,8 +44,8 @@ void MessageDelegate::paint(QPainter *painter, const QStyleOptionViewItem &optio
     painter->setRenderHint(QPainter::Antialiasing, true);
 
     QString text = index.data(Qt::DisplayRole).toString();
-    bool isMyMessage = index.data(Qt::UserRole).toBool();
-    QString time = index.data(ChatRoles::TimeRole).toString();
+    bool isMyMessage = index.data(AppRoles::IsMyMessageRole).toBool();
+    QString time = index.data(AppRoles::TimeRole).toString();
 
     int viewWidth = option.rect.width();
     if (const QListView *listView = qobject_cast<const QListView*>(option.widget)) {

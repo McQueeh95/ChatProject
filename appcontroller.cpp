@@ -1,6 +1,16 @@
 #include "appcontroller.h"
 #include <iostream>
 
+qint64 AppController::findChatIdByUserId(qint64 targetUserId)
+{
+    for(const auto &c: m_chats)
+    {
+        if(c.peerId == targetUserId)
+            return c.chatId;
+    }
+    return -1;
+}
+
 AppController::AppController() {
     m_networkClient = new NetworkClient(this);
 
@@ -44,7 +54,7 @@ void AppController::loadHistory(qint64 chatId)
     {
         emit historyReceived(chatId, m_chatsCache[chatId]);
     }
-    else
+    else if(chatId > 0)
     {
         sendHistoryReq(chatId);
     }
@@ -98,6 +108,31 @@ void AppController::searchUsers(const QString &query)
 qint64 AppController::getCurrentChatId()
 {
     return m_currentChatId;
+}
+
+void AppController::processChatSelection(qint64 chatId, qint64 userId, const QString &username)
+{
+    if(chatId <= 0 && userId > 0)
+    {
+        chatId = findChatIdByUserId(userId);
+    }
+
+    emit chatScreenRequested(username);
+
+    m_currentChatId = (chatId > 0) ? chatId : -1;
+    m_phantomTargetId = (chatId > 0) ? -1 : userId;
+
+
+    if(chatId > 0)
+    {
+        loadHistory(m_currentChatId);
+        qDebug() << "Current chat id" << chatId;
+    }
+    else if(userId > 0)
+    {
+        emit historyReceived(-1, {});
+        qDebug() << "Current user id" << userId;
+    }
 }
 
 void AppController::onJsonReceived(const QJsonObject& obj)
@@ -178,9 +213,6 @@ void AppController::onJsonReceived(const QJsonObject& obj)
                         messages[i].messageId = delAck.realId;
                         messages[i].timeStamp = delAck.timestamp;
                         messages[i].displayTime = delAck.displayTime;
-                        qDebug() << "TimeStamp " << delAck.timestamp;
-                        qDebug() << "DisplayTime i " << messages[i].displayTime;
-                        qDebug() << "DisplayTime delACk " << delAck.displayTime;
 
                         if(messages[i].chatId == m_currentChatId)
                         {
