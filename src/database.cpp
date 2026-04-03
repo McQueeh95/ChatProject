@@ -163,7 +163,7 @@ std::optional<int64_t> database::upsert_chat(int64_t user1_id, int64_t user2_id)
    try 
    {
         pqxx::work w(connection_);
-        pqxx::result r = w.exec(pqxx::prepped("upsert_msg"), pqxx::params{user1_id, user2_id});
+        pqxx::result r = w.exec(pqxx::prepped("upsert_chat"), pqxx::params{user1_id, user2_id});
         w.commit();
 
         if(r.empty()) return std::nullopt;

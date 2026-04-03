@@ -22,7 +22,8 @@ namespace server_protocol
         DELIV_ACK = 8,
         READ_ACK = 9,
         HISTORY_REQ = 10,
-        HISTORY_RES = 11
+        HISTORY_RES = 11,
+        CREATE_N_FORW = 12
     };
 
     struct login_req
@@ -48,6 +49,15 @@ namespace server_protocol
         int64_t chat_id;
         std::string payload;
         friend msg_forw_req tag_invoke(boost::json::value_to_tag<msg_forw_req>, 
+            const boost::json::value& jv);
+    };
+
+    struct create_n_forw_req
+    {
+        int64_t msg_local_id;
+        int64_t target_id;
+        std::string payload;
+        friend create_n_forw_req tag_invoke(boost::json::value_to_tag<create_n_forw_req>, 
             const boost::json::value& jv);
     };
 
@@ -170,6 +180,7 @@ namespace server_protocol
         int64_t real_id;
         std::string timestamp;
         std::string error_msg;
+        int64_t peer_id;
 
         friend void tag_invoke(boost::json::value_from_tag, boost::json::value& jv,
             const deliv_ack& msg);

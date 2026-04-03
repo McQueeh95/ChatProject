@@ -45,6 +45,16 @@ namespace server_protocol
         };
     }
 
+    create_n_forw_req tag_invoke(json::value_to_tag<create_n_forw_req>, const json::value& jv)
+    {
+        const auto& obj = jv.as_object();
+        return {
+            json::value_to<int64_t>(obj.at("local_id")),
+            json::value_to<int64_t>(obj.at("target_id")),
+            json::value_to<std::string>(obj.at("payload"))
+        };
+    }
+
     //json to read_ack_incoming
     read_conf_req tag_invoke(json::value_to_tag<read_conf_req>, const json::value& jv)
     {
@@ -149,23 +159,6 @@ namespace server_protocol
         jv = std::move(obj);
     }
 
-    /*void tag_invoke(json::value_from_tag, json::value& jv, const search_res& msg)
-    {
-        boost::json::object obj;
-        obj["type"] = static_cast<int8_t>(message_type::SEARCH_RES);
-        obj["status"] = msg.status;
-
-        if(msg.status == "ok")
-        {
-            obj["chat_id"] = msg.chat_id;
-            obj["peer_username"] = msg.peer_username;
-        }  
-        else
-            obj["error_msg"] = msg.error_msg;
-        
-        jv = std::move(obj);
-    }*/
-
     void tag_invoke(json::value_from_tag, json::value& jv, const deliv_ack& msg)
     {
         json::object obj;
@@ -178,6 +171,7 @@ namespace server_protocol
         {
             obj["real_id"] = msg.real_id; 
             obj["timestamp"] = msg.timestamp;
+            obj["peer_id"] = msg.peer_id;
         }
         else
         {

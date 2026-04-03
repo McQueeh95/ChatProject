@@ -160,7 +160,8 @@ void sessions_manager::on_data(int64_t sender_id, const std::string& raw)
 	auto packet = decode_packet(raw);
 	if(!packet.has_value() || packet->type == server_protocol::message_type::LOGIN
 					|| packet->type == server_protocol::message_type::REG || sender_id == -1) return;
-	std::cout << "on_data packet has value" << std::endl;;
+	std::cout << "on_data packet has value" << std::endl;
+	try{
 	switch (packet->type) {
 		case server_protocol::message_type::FORW:
 		{
@@ -189,11 +190,19 @@ void sessions_manager::on_data(int64_t sender_id, const std::string& raw)
 			remove_session(sender_id);
 			break;
 		}
+		case server_protocol::message_type::CREATE_N_FORW:
+		{
+			std::cout << "Create and Forward" << std::endl;
+			auto msg = boost::json::value_to<server_protocol::create_n_forw_req>(packet->jv);
+			handle_create_and_forward(sender_id, msg);
+			std::cout << "DEBUG: I successfully reached the break statement!" << std::endl;
+			break;
+		}
 		case server_protocol::message_type::HISTORY_REQ:
 		{
 			auto msg = boost::json::value_to<server_protocol::history_req>(packet->jv);
-			
 			handle_history_req(sender_id, msg.chat_id);
+			break;
 		}
 		case server_protocol::message_type::LOGIN:
 		case server_protocol::message_type::REG:
@@ -203,6 +212,12 @@ void sessions_manager::on_data(int64_t sender_id, const std::string& raw)
 		{
 			break;
 		}
+	}
+
+	} catch(const std::exception& e)
+	{
+		std::cerr << "CRITICAL JSON ERROR: " << e.what() << std::endl;
+    	std::cerr << "PACKET THAT CAUSED IT: " << raw << std::endl;
 	}
 }
 
@@ -226,6 +241,33 @@ void sessions_manager::handle_msg_forward(int64_t sender_id, const server_protoc
 		}
 	);
 }
+
+void sessions_manager::handle_create_and_forward(int64_t sender_id, const server_protocol::create_n_forw_req &incoming_msg)
+{
+	std::cout << "handle_create_and_forward" << std::endl;
+	db_->post_task([this, sender_id, msg = std::move(incoming_msg)](){
+			auto chat_id = db_->upsert_chat(sender_id, msg.target_id);
+			if(!chat_id)
+			{
+				std::cout << "Error creating chat" << std::endl;
+				return;
+			}
+			auto db_message = db_->insert_msg(*chat_id, sender_id, msg.payload);
+			if(!db_message.has_value())
+			{
+				std::cerr << "Failed to save message to DB" << std::endl;
+				return;
+			}
+			int64_t local_id = msg.msg_local_id;
+			int64_t recepeint_id = msg.target_id;
+			boost::asio::post(this->ioc_main_, [this, local_id, recepeint_id, msg = *db_message, sender_id]{
+				this->send_deliv_ack(sender_id, local_id, msg, recepeint_id);
+				this->send_to_recepient(recepeint_id, msg);
+			});
+		}
+	);
+}
+
 
 void sessions_manager::handle_history_req(int64_t sender_id, int64_t chat_id)
 {
@@ -318,11 +360,14 @@ void sessions_manager::send_to_recepient(int64_t recepeint_id, const db_protocol
 	deliver(recepeint_id, raw_data);
 }
 
-void sessions_manager::send_deliv_ack(int64_t sender_id, int64_t local_id, const db_protocol::message& msg)
+void sessions_manager::send_deliv_ack(int64_t sender_id, int64_t local_id, const db_protocol::message& msg, int64_t peer_id)
 {
 	server_protocol::deliv_ack deliv_ack = map_msg_db_to_ack(msg);
 	deliv_ack.local_id = local_id;
+	deliv_ack.peer_id = peer_id;
+	std::cout << "before json from deliva_ack" << std::endl;
 	auto jv = json::value_from(deliv_ack);
+	std::cout << "after json from deliva_ack" << std::endl;
 	std::string raw_data = json::serialize(jv);
 	deliver(sender_id, raw_data);
 }
