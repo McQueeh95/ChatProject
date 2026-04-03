@@ -20,7 +20,8 @@ namespace protocol
         DELIV_ACK = 8,
         READ_ACK = 9,
         HISTORY_REQ = 10,
-        HISTORY_RES = 11
+        HISTORY_RES = 11,
+        CREATE_N_FORW = 12
     };
 
     struct ChatInfo{
@@ -50,6 +51,23 @@ namespace protocol
             json["type"] = static_cast<qint8>(messageType::FORW);
             json["local_id"] = localId;
             json["chat_id"] = chatId;
+            json["payload"] = payload;
+            return json;
+        }
+    };
+
+    struct CreateAndForwardReq
+    {
+        qint64 msgLocalId;
+        qint64 targetId;
+        QString payload;
+
+        QJsonObject toJson() const
+        {
+            QJsonObject json;
+            json["type"] = static_cast<qint8>(messageType::CREATE_N_FORW);
+            json["local_id"] = msgLocalId;
+            json["target_id"] = targetId;
             json["payload"] = payload;
             return json;
         }
@@ -259,12 +277,13 @@ namespace protocol
     struct DelivAck
     {
         QString status;
-        qint64 chatId;
-        qint64 localId;
-        qint64 realId;
+        qint64 chatId = - 1;
+        qint64 localId = -1;
+        qint64 realId = -1;
         QString timestamp;
         QString displayTime;
         QString errorMsg;
+        qint64 peerId = -1;
 
         static DelivAck fromJson(const QJsonObject& json)
         {
@@ -277,14 +296,16 @@ namespace protocol
                 msg.realId = json["real_id"].toVariant().toLongLong();
                 msg.timestamp = json["timestamp"].toVariant().toString();
                 QDateTime dt = QDateTime::fromString(msg.timestamp, Qt::ISODate);
-                if(dt.isValid())
-                {
-                    msg.displayTime = dt.toString("HH:mm");
-                }
+                qint64 peerId = json["peer_id"].toVariant().toLongLong();
+                if(peerId > 0)
+                    msg.peerId = peerId;
                 else
-                {
+                    msg.peerId = -1;
+
+                if(dt.isValid())
+                    msg.displayTime = dt.toString("HH:mm");
+                else
                     msg.displayTime = msg.timestamp;
-                }
             }
             else
             {

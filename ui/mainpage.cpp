@@ -44,9 +44,12 @@ MainPage::MainPage(AppController *controller, QWidget *parent)
     connect(m_controller, &AppController::msgConfirmed, this, &MainPage::ChangeViewStatus);
     connect(m_controller, &AppController::chatScreenRequested, this, &MainPage::showChatScreen);
 
-    connect(ui->searchEdit, &QLineEdit::textEdited, this, &MainPage::onSearchInput);
+    connect(ui->searchEdit, &QLineEdit::textChanged, this, &MainPage::onSearchInput);
 
     connect(m_controller, &AppController::foundUsers, this, &MainPage::showSearchResult);
+    connect(m_controller, &AppController::updateChats, this, &MainPage::addNewChat);
+    connect(m_searchTimer, &QTimer::timeout, this, &MainPage::callSearch);
+
 }
 
 MainPage::~MainPage()
@@ -76,6 +79,7 @@ void MainPage::onChatClicked(const QModelIndex &index)
 void MainPage::sendMessage()
 {
     QString text = ui->messageEdit->toPlainText();
+    qDebug() << "MainPage send message";
     if(!text.isEmpty())
     {
         m_controller->sendMessage(text);
@@ -93,10 +97,7 @@ void MainPage::showChatHistory(qint64 chatId, const QList<protocol::MsgDeliv> &m
 
 void MainPage::addNewMessage(const protocol::MsgDeliv &msg)
 {
-    if(msg.chatId == m_controller->getCurrentChatId())
-    {
-        m_messages->appendMessage(msg);
-    }
+    m_messages->appendMessage(msg);
 }
 
 void MainPage::ChangeViewStatus(const protocol::MsgDeliv &msg)
@@ -107,25 +108,38 @@ void MainPage::ChangeViewStatus(const protocol::MsgDeliv &msg)
     }
 }
 
-void MainPage::onSearchInput()
+void MainPage::onSearchInput(const QString &text)
 {
-    QString toSearch = ui->searchEdit->text();
-    if(toSearch.length() > 1)
+    if(text.length() >= 2)
     {
-        ui->chatsList->setModel(m_searchResults);
-        m_controller->searchUsers(toSearch);
+
+        m_searchTimer->start(500);
     }
     else
     {
+        m_searchTimer->stop();
         ui->chatsList->setModel(m_chatsModel);
     }
 
 }
 
+void MainPage::addNewChat(const protocol::ChatInfo &chat)
+{
+    m_chatsModel->appendChat(chat);
+}
+
+void MainPage::callSearch()
+{
+    QString toSearch = ui->searchEdit->text();
+    m_controller->searchUsers(toSearch);
+}
+
 void MainPage::showSearchResult(const QList<protocol::UserSearch> &users)
 {
+    ui->chatsList->setModel(m_searchResults);
     m_searchResults->setSearchRes(users);
 }
+
 
 void MainPage::hideChatScreen()
 {

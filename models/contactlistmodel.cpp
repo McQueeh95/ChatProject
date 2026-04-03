@@ -17,7 +17,7 @@ int ContactListModel::rowCount(const QModelIndex &parent) const
     // other (valid) parents, rowCount() should return 0 so that it does not become a tree model.
     if (parent.isValid())
         return 0;
-    return m_сhats.size();
+    return m_chats.size();
     // FIXME: Implement me!
 }
 
@@ -26,10 +26,10 @@ QVariant ContactListModel::data(const QModelIndex &index, int role) const
     if (!index.isValid())
         return QVariant();
 
-    if (index.row() < 0 || index.row() >= m_сhats.size())
+    if (index.row() < 0 || index.row() >= m_chats.size())
         return QVariant();
 
-    const protocol::ChatInfo &chat = m_сhats.at(index.row());
+    const protocol::ChatInfo &chat = m_chats.at(index.row());
     if(role == Qt::DisplayRole)
     {
         return chat.peerUsername;
@@ -46,6 +46,16 @@ QVariant ContactListModel::data(const QModelIndex &index, int role) const
 void ContactListModel::setChats(const QList<protocol::ChatInfo> &chats)
 {
     beginResetModel();
-    m_сhats = chats;
+    m_chats = chats;
     endResetModel();
+}
+
+void ContactListModel::appendChat(const protocol::ChatInfo &chat)
+{
+    int newRow = m_chats.size();
+    beginInsertRows(QModelIndex(), newRow, newRow);
+
+    m_chats.append(chat);
+
+    endInsertRows();
 }

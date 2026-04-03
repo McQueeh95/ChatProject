@@ -24,9 +24,11 @@ public:
 
     void setChats(const QList<protocol::ChatInfo> &chats);
 
+    void appendChat(const protocol::ChatInfo &chat);
+
 
 private:
-    QList<protocol::ChatInfo> m_сhats;
+    QList<protocol::ChatInfo> m_chats;
 };
 
 #endif // CONTACTLISTMODEL_H

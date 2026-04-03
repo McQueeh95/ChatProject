@@ -12,9 +12,10 @@ private:
     NetworkClient* m_networkClient;
     QHash<qint64, protocol::ChatInfo> m_chats;
     qint64 m_userId;
-    qint64 m_currentChatId = -1;
-    qint64 m_phantomTargetId = -1;
-    QHash<qint64, QList<protocol::MsgDeliv>> m_chatsCache;
+    qint64 m_currentChatId = 0;
+    qint64 m_phantomTargetId = 0;
+    QHash<qint64, QList<protocol::MsgDeliv>> m_messagesCache;
+    QHash<qint64, QString> m_pendingPhantomNames;
     qint64 findChatIdByUserId(qint64 targetUserId);
 public:
     AppController();
@@ -38,6 +39,8 @@ signals:
     void msgConfirmed(const protocol::MsgDeliv &msg);
     void foundUsers(const QList<protocol::UserSearch> &users);
     void chatScreenRequested(const QString &username);
+    void updateChats(const protocol::ChatInfo &chat);
+    void phantomChatResolved(qint64 newChatId);
 };
 
 #endif // APPCONTROLLER_H

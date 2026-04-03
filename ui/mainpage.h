@@ -32,6 +32,8 @@ private:
     QTimer *m_searchTimer;
     void showChatScreen(const QString &username);
     void hideChatScreen();
+    void addNewChat(const protocol::ChatInfo &chat);
+    void callSearch();
 
 
 
@@ -41,7 +43,7 @@ private slots:
     void showChatHistory(qint64 chatId, const QList<protocol::MsgDeliv>& messages);
     void addNewMessage(const protocol::MsgDeliv &msg);
     void ChangeViewStatus(const protocol::MsgDeliv &msg);
-    void onSearchInput();
+    void onSearchInput(const QString &text);
     void showSearchResult(const QList<protocol::UserSearch> &users);
 
 };
