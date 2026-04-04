@@ -1,7 +1,6 @@
 
 #include "sessions_manager.hpp"
 #include "database.hpp"
-#include "message.hpp"
 #include "db_protocol.hpp"
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/post.hpp>
@@ -20,6 +19,8 @@
 #include <vector>
 #include "server_protocol.hpp"
 #include "session.hpp"
+
+namespace json = boost::json;
 
 namespace {
 	server_protocol::msg_deliv map_msg_db_to_net(const db_protocol::message& db_msg)
@@ -190,12 +191,10 @@ void sessions_manager::on_data(int64_t sender_id, const std::string& raw)
 			remove_session(sender_id);
 			break;
 		}
-		case server_protocol::message_type::CREATE_N_FORW:
+		case server_protocol::message_type::START_CHAT_REQ:
 		{
-			std::cout << "Create and Forward" << std::endl;
-			auto msg = boost::json::value_to<server_protocol::create_n_forw_req>(packet->jv);
+			auto msg = boost::json::value_to<server_protocol::start_chat_req>(packet->jv);
 			handle_create_and_forward(sender_id, msg);
-			std::cout << "DEBUG: I successfully reached the break statement!" << std::endl;
 			break;
 		}
 		case server_protocol::message_type::HISTORY_REQ:
@@ -203,6 +202,10 @@ void sessions_manager::on_data(int64_t sender_id, const std::string& raw)
 			auto msg = boost::json::value_to<server_protocol::history_req>(packet->jv);
 			handle_history_req(sender_id, msg.chat_id);
 			break;
+		}
+		case server_protocol::message_type::NEW_CHAT_EVENT:
+		{
+			
 		}
 		case server_protocol::message_type::LOGIN:
 		case server_protocol::message_type::REG:
@@ -242,7 +245,7 @@ void sessions_manager::handle_msg_forward(int64_t sender_id, const server_protoc
 	);
 }
 
-void sessions_manager::handle_create_and_forward(int64_t sender_id, const server_protocol::create_n_forw_req &incoming_msg)
+void sessions_manager::handle_create_and_forward(int64_t sender_id, const server_protocol::start_chat_req &incoming_msg)
 {
 	std::cout << "handle_create_and_forward" << std::endl;
 	db_->post_task([this, sender_id, msg = std::move(incoming_msg)](){
@@ -253,15 +256,24 @@ void sessions_manager::handle_create_and_forward(int64_t sender_id, const server
 				return;
 			}
 			auto db_message = db_->insert_msg(*chat_id, sender_id, msg.payload);
-			if(!db_message.has_value())
+			if(!db_message)
 			{
 				std::cerr << "Failed to save message to DB" << std::endl;
 				return;
 			}
+			auto sender_username = db_->get_username(sender_id);
+			if(!sender_username)
+			{
+				std::cerr << "Failed getting sender username" << std::endl;
+				return;
+			}
 			int64_t local_id = msg.msg_local_id;
 			int64_t recepeint_id = msg.target_id;
-			boost::asio::post(this->ioc_main_, [this, local_id, recepeint_id, msg = *db_message, sender_id]{
+			boost::asio::post(this->ioc_main_, [this, local_id, recepeint_id, msg = *db_message, sender_id, sender_username = *sender_username]{
+
+
 				this->send_deliv_ack(sender_id, local_id, msg, recepeint_id);
+				this->send_new_chat_event(recepeint_id, msg.chat_id, sender_id, sender_username);
 				this->send_to_recepient(recepeint_id, msg);
 			});
 		}
@@ -410,4 +422,18 @@ void sessions_manager::send_search_res(int64_t sender_id, std::vector<db_protoco
 	std::string raw_data = json::serialize(jv);
 
 	deliver(sender_id, raw_data);
+}
+
+void sessions_manager::send_new_chat_event(int64_t receiver_id, int64_t chat_id, int64_t sender_id, std::string sender_username)
+{
+	server_protocol::chat_info new_chat;
+	new_chat.chat_id = chat_id;
+	new_chat.peer_id = sender_id;
+	new_chat.peer_username = sender_username;
+
+	auto jv = json::value_from(new_chat);
+	jv.as_object()["type"] = static_cast<int8_t>(server_protocol::message_type::NEW_CHAT_EVENT);
+
+	std::string raw_data = boost::json::serialize(jv);
+	deliver(receiver_id, raw_data);
 }

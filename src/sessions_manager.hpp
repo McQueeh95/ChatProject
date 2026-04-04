@@ -31,7 +31,7 @@ private:
 	void handle_login(std::weak_ptr<session> session_ptr, const server_protocol::login_req &login_msg);
 	void handle_reg(std::weak_ptr<session> session_ptr, const server_protocol::reg_req &reg_msg);
 	void handle_msg_forward(int64_t sender_id, 	const server_protocol::msg_forw_req &incoming_msg);
-	void handle_create_and_forward(int64_t sender_id, const server_protocol::create_n_forw_req &incoming_msg);
+	void handle_create_and_forward(int64_t sender_id, const server_protocol::start_chat_req &incoming_msg);
 	void deliver(int64_t recepeint_id, std::string data);
 	void send_to_recepient(int64_t id, const db_protocol::message& msg);
 	void send_deliv_ack(int64_t sender_id, int64_t local_id, const db_protocol::message& msg, int64_t peer_id = -1);
@@ -43,6 +43,7 @@ private:
 	void send_search_res(int64_t sender_id, std::vector<db_protocol::found_user> users);
 	void handle_history_req(int64_t sender_id, int64_t chat_id);
 	void send_history(int64_t sender_id, int64_t chat_id, std::vector<db_protocol::message> db_messages);
+	void send_new_chat_event(int64_t receiver_id, int64_t chat_id, int64_t sender_id, std::string sender_username);
 	
 public:
 	//No copy semantics

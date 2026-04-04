@@ -1,6 +1,5 @@
 #pragma once
 #include "dependencies.hpp"
-#include "message.hpp"
 #include "server_protocol.hpp"
 #include "sessions_manager.hpp"
 #include <deque>
@@ -42,12 +41,6 @@ public:
 
 	void send_message(const std::string& message, std::function<void()> on_sent);
 	void on_close(beast::error_code ec);
-	void handle_connect(const message &msg);
-	void handle_disconnect(const message &msg);
-	void handle_forward(const message &msg, std::shared_ptr<session> receiver);
-	void handle_add_contact(const message &msg, std::shared_ptr<session> receiver);
-	void send_request(const std::string& msg);
-	void handle_message_before_forwarding(const message &msg, const std::string &string_data);
 	void set_session_id(const int64_t session_id);
 };
 

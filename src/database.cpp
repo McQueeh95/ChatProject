@@ -55,6 +55,8 @@ void database::prepare_statements()
     
     connection_.prepare("get_messages", "SELECT * FROM (SELECT id, chat_id, sender_id, encrypted_payload, created_at, is_read "
         "FROM messages WHERE chat_id = $1 ORDER BY id DESC LIMIT 50) AS sub ORDER BY id ASC" );
+    
+    connection_.prepare("get_username", "SELECT username FROM users WHERE id = $1");
 }
 
 database::~database()
@@ -248,4 +250,24 @@ std::vector<db_protocol::message> database::get_messages(int64_t chat_id)
         std::cerr << "DB error(get_messages): " << e.what() << std::endl;
     }
     return messages;
+}
+
+std::optional<std::string> database::get_username(int64_t user_id)
+{
+    try
+    {
+        pqxx::nontransaction n(connection_);
+        pqxx::result r(
+            n.exec(pqxx::prepped("get_username"), pqxx::params(user_id))
+        );
+        if(r.empty()) return std::nullopt;
+
+        std::string username = r[0][0].as<std::string>();
+        return username;
+    }
+    catch(const std::exception &e)
+    {
+        std::cerr << "DB error(get_username): " << e.what() << std::endl;
+        return std::nullopt;
+    }
 }

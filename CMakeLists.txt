@@ -16,7 +16,6 @@ add_executable (server "src/server.cpp" "src/server.hpp"
 "src/listener.cpp" "src/listener.hpp" 
 "src/dependencies.hpp" 
 "src/sessions_manager.cpp" "src/sessions_manager.hpp" 
-"src/message.hpp" "src/message.cpp" 
 "src/database.hpp" "src/database.cpp"
 "src/server_protocol.hpp" "src/server_protocol.cpp")
 

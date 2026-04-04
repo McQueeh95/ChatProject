@@ -45,7 +45,7 @@ namespace server_protocol
         };
     }
 
-    create_n_forw_req tag_invoke(json::value_to_tag<create_n_forw_req>, const json::value& jv)
+    start_chat_req tag_invoke(json::value_to_tag<start_chat_req>, const json::value& jv)
     {
         const auto& obj = jv.as_object();
         return {
