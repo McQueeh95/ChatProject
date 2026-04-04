@@ -38,14 +38,12 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
 
 
         models/contactiemdelegate.h models/contactlistmodel.cpp
-        ui/contactmodelwidget.h ui/contactmodelwidget.cpp ui/contactmodelwidget.ui
         models/contactiemdelegate.h models/contactiemdelegate.cpp
         appcontroller.h appcontroller.cpp
         networktypes.h
         ui/loginpage.h ui/loginpage.cpp ui/loginpage.ui
         resources.qrc
         styles.qss
-        ui/contactwidget.h ui/contactwidget.cpp ui/contactwidget.ui
         ui/mainpage.h ui/mainpage.cpp ui/mainpage.ui
         models/chatdelegate.h models/chatdelegate.cpp
         models/messagedelegate.h models/messagedelegate.cpp

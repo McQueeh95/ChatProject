@@ -21,7 +21,8 @@ namespace protocol
         READ_ACK = 9,
         HISTORY_REQ = 10,
         HISTORY_RES = 11,
-        CREATE_N_FORW = 12
+        START_CHAT_REQ = 12,
+        NEW_CHAT_EVENT = 13
     };
 
     struct ChatInfo{
@@ -56,7 +57,7 @@ namespace protocol
         }
     };
 
-    struct CreateAndForwardReq
+    struct StartChatReq
     {
         qint64 msgLocalId;
         qint64 targetId;
@@ -65,7 +66,7 @@ namespace protocol
         QJsonObject toJson() const
         {
             QJsonObject json;
-            json["type"] = static_cast<qint8>(messageType::CREATE_N_FORW);
+            json["type"] = static_cast<qint8>(messageType::START_CHAT_REQ);
             json["local_id"] = msgLocalId;
             json["target_id"] = targetId;
             json["payload"] = payload;

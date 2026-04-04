@@ -62,6 +62,12 @@
          </item>
          <item>
           <widget class="QLabel" name="usernameLabel">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
            <property name="text">
             <string>Username</string>
            </property>
@@ -92,7 +98,35 @@
         </widget>
        </item>
        <item>
+        <widget class="QLabel" name="chatHintLabel">
+         <property name="font">
+          <font>
+           <pointsize>13</pointsize>
+           <italic>false</italic>
+           <bold>true</bold>
+           <underline>false</underline>
+           <strikeout>false</strikeout>
+          </font>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">color : grey</string>
+         </property>
+         <property name="text">
+          <string>No messages here yet...</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignmentFlag::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item>
         <widget class="QListView" name="messagesList">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Expanding" vsizetype="MinimumExpanding">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
          <property name="minimumSize">
           <size>
            <width>300</width>

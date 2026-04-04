@@ -1,9 +1,10 @@
 #include "mainpage.h"
 #include "ui_mainpage.h"
-#include "contactwidget.h"
 #include "../models/chatdelegate.h"
 #include "../models/messagedelegate.h"
 #include "../models/approles.h"
+
+#include <QShortcut>
 
 MainPage::MainPage(AppController *controller, QWidget *parent)
     : QWidget(parent)
@@ -17,39 +18,9 @@ MainPage::MainPage(AppController *controller, QWidget *parent)
 
     hideChatScreen();
 
-    m_chatsModel = new ContactListModel(this);
-    ui->chatsList->setModel(m_chatsModel);
-    ui->chatsList->setItemDelegate(new ChatDelegate(this));
+    setupViews();
 
-    m_messages = new MessageViewModel(this);
-    ui->messagesList->setModel(m_messages);
-    ui->messagesList->setResizeMode(QListView::Adjust);
-    ui->messagesList->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    ui->messagesList->setWordWrap(true);
-    ui->messagesList->setItemDelegate(new MessageDelegate(this));
-
-    m_searchResults = new SearchViewModel(this);
-
-    connect(m_messages, &QAbstractListModel::modelReset, ui->messagesList, &QListView::scrollToBottom);
-    connect(m_messages, &QAbstractListModel::rowsInserted, ui->messagesList, &QListView::scrollToBottom);
-
-
-    connect(ui->chatsList, &QListView::clicked, this, &MainPage::onChatClicked);
-    connect(ui->sendMessageButton, &QPushButton::clicked, this, &MainPage::sendMessage);
-    connect(ui->backButton, &QPushButton::clicked, this, &MainPage::hideChatScreen);
-
-    connect(m_controller, &AppController::historyReceived, this, &MainPage::showChatHistory);
-    connect(m_controller, &AppController::newMessageReceived, this, &MainPage::addNewMessage);
-    connect(m_controller, &AppController::localMessageCreated, this, &MainPage::addNewMessage);
-    connect(m_controller, &AppController::msgConfirmed, this, &MainPage::ChangeViewStatus);
-    connect(m_controller, &AppController::chatScreenRequested, this, &MainPage::showChatScreen);
-
-    connect(ui->searchEdit, &QLineEdit::textChanged, this, &MainPage::onSearchInput);
-
-    connect(m_controller, &AppController::foundUsers, this, &MainPage::showSearchResult);
-    connect(m_controller, &AppController::updateChats, this, &MainPage::addNewChat);
-    connect(m_searchTimer, &QTimer::timeout, this, &MainPage::callSearch);
-
+    setupConnections();
 }
 
 MainPage::~MainPage()
@@ -68,6 +39,24 @@ void MainPage::setUserId(qint64 userId)
     m_messages->setUserId(userId);
 }
 
+bool MainPage::eventFilter(QObject *obj, QEvent *event)
+{
+    if(obj == ui->messageEdit && event->type() == QEvent::KeyPress)
+    {
+        QKeyEvent *keyEvent = static_cast<QKeyEvent *>(event);
+
+        if(keyEvent->key() == Qt::Key_Return || keyEvent->key() == Qt::Key_Enter)
+        {
+            if(!(keyEvent->modifiers() & Qt::ShiftModifier))
+            {
+                onMessageSubmitted();
+                return true;
+            }
+        }
+    }
+    return QWidget::eventFilter(obj, event);
+}
+
 void MainPage::onChatClicked(const QModelIndex &index)
 {
     QString username = index.data(Qt::DisplayRole).toString();
@@ -76,10 +65,9 @@ void MainPage::onChatClicked(const QModelIndex &index)
     m_controller->processChatSelection(chatId, userId, username);
 }
 
-void MainPage::sendMessage()
+void MainPage::onMessageSubmitted()
 {
     QString text = ui->messageEdit->toPlainText();
-    qDebug() << "MainPage send message";
     if(!text.isEmpty())
     {
         m_controller->sendMessage(text);
@@ -100,7 +88,7 @@ void MainPage::addNewMessage(const protocol::MsgDeliv &msg)
     m_messages->appendMessage(msg);
 }
 
-void MainPage::ChangeViewStatus(const protocol::MsgDeliv &msg)
+void MainPage::changeViewStatus(const protocol::MsgDeliv &msg)
 {
     if(msg.chatId == m_controller->getCurrentChatId())
     {
@@ -134,6 +122,54 @@ void MainPage::callSearch()
     m_controller->searchUsers(toSearch);
 }
 
+void MainPage::setupConnections()
+{
+
+    connect(m_messages, &QAbstractListModel::modelReset, ui->messagesList, &QListView::scrollToBottom);
+    connect(m_messages, &QAbstractListModel::rowsInserted, ui->messagesList, &QListView::scrollToBottom);
+
+    QShortcut *escShortcut = new QShortcut(QKeySequence(Qt::Key_Escape), this);
+    connect (escShortcut, &QShortcut::activated, this, &MainPage::hideChatScreen);
+    connect(ui->chatsList, &QListView::clicked, this, &MainPage::onChatClicked);
+    connect(ui->searchEdit, &QLineEdit::textChanged, this, &MainPage::onSearchInput);
+
+    connect(ui->sendMessageButton, &QPushButton::clicked, this, &MainPage::onMessageSubmitted);
+    connect(ui->backButton, &QPushButton::clicked, this, &MainPage::hideChatScreen);
+
+    connect(m_controller, &AppController::historyReceived, this, &MainPage::showChatHistory);
+    connect(m_controller, &AppController::newMessageReceived, this, &MainPage::addNewMessage);
+    connect(m_controller, &AppController::chatScreenRequested, this, &MainPage::showChatScreen);
+    connect(m_controller, &AppController::localMessageCreated, this, &MainPage::addNewMessage);
+    connect(m_controller, &AppController::msgConfirmed, this, &MainPage::changeViewStatus);
+    connect(m_controller, &AppController::foundUsers, this, &MainPage::showSearchResult);
+    connect(m_controller, &AppController::updateChats, this, &MainPage::addNewChat);
+    connect(m_controller, &AppController::noMessagesYet, this, &MainPage::showNoMessagesYet);
+
+    connect(m_searchTimer, &QTimer::timeout, this, &MainPage::callSearch);
+}
+
+void MainPage::setupViews()
+{
+    m_chatsModel = new ContactListModel(this);
+    ui->chatsList->setModel(m_chatsModel);
+    ui->chatsList->setItemDelegate(new ChatDelegate(this));
+
+    m_messages = new MessageViewModel(this);
+    ui->messagesList->setModel(m_messages);
+    ui->messagesList->setResizeMode(QListView::Adjust);
+    ui->messagesList->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    ui->messagesList->setWordWrap(true);
+    ui->messagesList->setItemDelegate(new MessageDelegate(this));
+
+    m_searchResults = new SearchViewModel(this);
+
+    ui->messageEdit->installEventFilter(this);
+    ui->messageEdit->setLineWrapMode(QPlainTextEdit::WidgetWidth);
+    ui->messageEdit->setWordWrapMode(QTextOption::WrapAtWordBoundaryOrAnywhere);
+
+    ui->chatHintLabel->hide();
+}
+
 void MainPage::showSearchResult(const QList<protocol::UserSearch> &users)
 {
     ui->chatsList->setModel(m_searchResults);
@@ -149,6 +185,7 @@ void MainPage::hideChatScreen()
     ui->messageEdit->hide();
     ui->backButton->hide();
     ui->selectChatLabel->show();
+    ui->chatsList->clearSelection();
 }
 
 void MainPage::showChatScreen(const QString &username)
@@ -160,4 +197,16 @@ void MainPage::showChatScreen(const QString &username)
     ui->messageEdit->show();
     ui->usernameLabel->show();
     ui->backButton->show();
+    ui->chatHintLabel->hide();
+}
+
+void MainPage::showNoMessagesYet(const QString &username)
+{
+    ui->usernameLabel->setText(username);
+    ui->selectChatLabel->hide();
+    ui->sendMessageButton->show();
+    ui->messagesList->hide();
+    ui->messageEdit->show();
+    ui->backButton->show();
+    ui->chatHintLabel->show();
 }

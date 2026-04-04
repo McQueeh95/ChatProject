@@ -20,8 +20,12 @@ class MainPage : public QWidget
 public:
     explicit MainPage(AppController* controller, QWidget *parent = nullptr);
     ~MainPage();
+
     void setChats(const QList<protocol::ChatInfo>& chats);
     void setUserId(qint64 userId);
+
+protected:
+    bool eventFilter(QObject *obj, QEvent *event) override;
 
 private:
     Ui::MainPage *ui;
@@ -30,22 +34,28 @@ private:
     MessageViewModel *m_messages;
     SearchViewModel *m_searchResults;
     QTimer *m_searchTimer;
+
     void showChatScreen(const QString &username);
     void hideChatScreen();
+
     void addNewChat(const protocol::ChatInfo &chat);
     void callSearch();
 
-
+    void setupConnections();
+    void setupViews();
 
 private slots:
+    //UI slots
     void onChatClicked(const QModelIndex& index);
-    void sendMessage();
+    void onMessageSubmitted();
+    void onSearchInput(const QString &text);
+
+    //Controller slots
     void showChatHistory(qint64 chatId, const QList<protocol::MsgDeliv>& messages);
     void addNewMessage(const protocol::MsgDeliv &msg);
-    void ChangeViewStatus(const protocol::MsgDeliv &msg);
-    void onSearchInput(const QString &text);
+    void changeViewStatus(const protocol::MsgDeliv &msg);
     void showSearchResult(const QList<protocol::UserSearch> &users);
-
+    void showNoMessagesYet(const QString &username);
 };
 
 #endif // MAINPAGE_H

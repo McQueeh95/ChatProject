@@ -1,16 +1,6 @@
 #include "appcontroller.h"
 #include <iostream>
 
-qint64 AppController::findChatIdByUserId(qint64 targetUserId)
-{
-    for(const auto &c: m_chats)
-    {
-        if(c.peerId == targetUserId)
-            return c.chatId;
-    }
-    return 0;
-}
-
 AppController::AppController() {
     m_networkClient = new NetworkClient(this);
 
@@ -26,11 +16,8 @@ void AppController::loginUser(const QString& username, const QString& password)
 
     QJsonObject jsonToSend = loginReq.toJson();
 
-    if(m_networkClient == nullptr)
-    {
-        return;
-    }
-    m_networkClient->sendJson(jsonToSend);
+    if(m_networkClient != nullptr)
+        m_networkClient->sendJson(jsonToSend);
 }
 
 void AppController::createUser(const QString& username, const QString& password)
@@ -38,67 +25,58 @@ void AppController::createUser(const QString& username, const QString& password)
     protocol::RegisterReq regReq;
     regReq.username = username;
     regReq.hashedPassword = password;
+
     QJsonObject jsonToSend = regReq.toJson();
 
-    if(m_networkClient == nullptr)
-        return;
-
-    m_networkClient->sendJson(jsonToSend);
+    if(m_networkClient != nullptr)
+        m_networkClient->sendJson(jsonToSend);
 }
 
 void AppController::loadHistory(qint64 chatId)
 {
-    this->m_currentChatId = chatId;
-
+    //Chat exist in cache no need to ask server
     if(m_messagesCache.contains(chatId))
     {
         emit historyReceived(chatId, m_messagesCache[chatId]);
     }
+    //Chat doesn't exist ask server
     else if(chatId > 0)
     {
         sendHistoryReq(chatId);
     }
 }
 
-void AppController::sendMessage(const QString &text)
+void AppController::processChatSelection(qint64 chatId, qint64 userId, const QString &username)
 {
-    qDebug() << "localId";
-    qint64 localId = QDateTime::currentMSecsSinceEpoch() * -1;
+    emit chatScreenRequested(username);
+    if(chatId == 0 && userId > 0)
+    {
+        chatId = findChatIdByUserId(userId);
+    }
 
-    protocol::MsgDeliv uiDraft;
-    QJsonObject jsonToSend;
-
+    m_currentChatId = (chatId > 0) ? chatId : (userId * (-1));
     if(m_currentChatId > 0)
     {
-        protocol::ForwardReq forReq;
-        forReq.chatId = m_currentChatId;
-        forReq.localId = localId;
-        forReq.payload = text;
-
-        uiDraft.chatId = forReq.chatId;
-
-        jsonToSend = forReq.toJson();
+        loadHistory(m_currentChatId);
     }
-    else if(m_phantomTargetId > 0 && m_currentChatId == 0)
+    else if(m_currentChatId < 0)
     {
-        qDebug() << "create and forward req";
-        protocol::CreateAndForwardReq cnfReq;
-        cnfReq.targetId = m_phantomTargetId;
-        cnfReq.msgLocalId = localId;
-        cnfReq.payload = text;
-        uiDraft.chatId = (m_phantomTargetId * -1);
-        jsonToSend = cnfReq.toJson();
+        m_pendingPhantomNames.insert(userId, username);
+        emit noMessagesYet(username);
+        //emit historyReceived(m_currentChatId, {});
     }
+}
 
-    uiDraft.localId = localId;
-    uiDraft.payload = text;
-    uiDraft.senderId = m_userId;
-    m_messagesCache[uiDraft.chatId].push_back(uiDraft);
+void AppController::sendMessage(const QString &text)
+{
+    qint64 localId = QDateTime::currentMSecsSinceEpoch() * -1;
 
-    if(m_currentChatId == uiDraft.chatId || m_phantomTargetId == uiDraft.chatId)
-        emit localMessageCreated(uiDraft);
-    this->m_networkClient->sendJson(jsonToSend);
-    qDebug() << "send message with local id " << localId;
+    protocol::MsgDeliv uiDraft = makeUiDraft(localId, text);
+
+    processLocalMessage(uiDraft);
+
+    QJsonObject jsonToSend = makeMessageJson(localId, text);
+    m_networkClient->sendJson(jsonToSend);
 }
 
 void AppController::sendHistoryReq(qint64 chatId)
@@ -106,57 +84,21 @@ void AppController::sendHistoryReq(qint64 chatId)
     protocol::HistoryReq hisReq;
     hisReq.chatId = chatId;
     QJsonObject jsonToSend = hisReq.toJson();
-    this->m_networkClient->sendJson(jsonToSend);
+    m_networkClient->sendJson(jsonToSend);
 }
 
 void AppController::searchUsers(const QString &query)
 {
-    qDebug() << "searchUsers start";
     protocol::SearchReq searchReq;
     searchReq.toFind = query;
 
     QJsonObject jsonToSend = searchReq.toJson();
-    this->m_networkClient->sendJson(jsonToSend);
-    qDebug() << "searchUsers sent";
+    m_networkClient->sendJson(jsonToSend);
 }
 
 qint64 AppController::getCurrentChatId()
 {
     return m_currentChatId;
-}
-
-void AppController::processChatSelection(qint64 chatId, qint64 userId, const QString &username)
-{
-    qDebug() << "=== CHAT SELECTION ===";
-    qDebug() << "1. Incoming -> chatId:" << chatId << "userId:" << userId << "username:" << username;
-    if(chatId == 0 && userId > 0)
-    {
-        chatId = findChatIdByUserId(userId);
-        qDebug() << "2. Checked existing chats. Found chatId:" << chatId;
-    }
-    emit chatScreenRequested(username);
-
-    m_currentChatId = (chatId > 0) ? chatId : 0;
-    m_phantomTargetId = (chatId > 0) ? 0 : userId;
-
-
-    if(chatId > 0)
-    {
-        loadHistory(chatId);
-        qDebug() << "3. Loading REAL history for chatId:" << m_currentChatId;
-    }
-    else if(userId > 0)
-    {
-        m_pendingPhantomNames.insert(userId, username);
-        qDebug() << "3. Emitting EMPTY history for phantom user:" << m_phantomTargetId;
-        qDebug() << "4. getCurrentChatId() returns:" << getCurrentChatId(); // ПЕРЕВІРКА!
-        emit historyReceived(0, {});
-        qDebug() << "Current user id" << m_phantomTargetId;
-    }
-    else
-    {
-        qDebug() << "🚨 ERROR: Both chatId and userId are 0! Model is broken!";
-    }
 }
 
 void AppController::onJsonReceived(const QJsonObject& obj)
@@ -169,128 +111,192 @@ void AppController::onJsonReceived(const QJsonObject& obj)
     protocol::messageType msgType = static_cast<protocol::messageType>(obj["type"].toInt());
     switch(msgType)
     {
-        case protocol::messageType::LOGIN_RES:
+        case protocol::messageType::LOGIN_RES: handleLoginRes(obj); break;
+        case protocol::messageType::REG_RES: handleRegistrationRes(obj); break;
+        case protocol::messageType::FORW: handleForwardedMessage(obj); break;
+        case protocol::messageType::HISTORY_RES: handleHistoryRes(obj); break;
+        case protocol::messageType::DELIV_ACK: handleMessagAck(obj); break;
+        case protocol::messageType::SEARCH_RES: handleSearchRes(obj); break;
+        case protocol::messageType::NEW_CHAT_EVENT: handleNewChatEvent(obj); break;
+    }
+}
+
+qint64 AppController::findChatIdByUserId(qint64 targetUserId)
+{
+    for(const auto &c: m_chats)
+    {
+        if(c.peerId == targetUserId)
+            return c.chatId;
+    }
+    return 0;
+}
+
+QJsonObject AppController::makeMessageJson(qint64 localId, const QString &text)
+{
+    if(m_currentChatId > 0)
+    {
+        protocol::ForwardReq forReq;
+        forReq.chatId = m_currentChatId;
+        forReq.localId = localId;
+        forReq.payload = text;
+
+        return forReq.toJson();
+    }
+    else if(m_currentChatId < 0)
+    {
+        protocol::StartChatReq startChatReq;
+        startChatReq.targetId = (m_currentChatId * -1);
+        startChatReq.msgLocalId = localId;
+        startChatReq.payload = text;
+
+        return startChatReq.toJson();
+    }
+}
+
+protocol::MsgDeliv AppController::makeUiDraft(qint64 localId, const QString &text)
+{
+    protocol::MsgDeliv uiDraft;
+    uiDraft.chatId = m_currentChatId;
+    uiDraft.localId = localId;
+    uiDraft.payload = text;
+    uiDraft.senderId = m_userId;
+    return uiDraft;
+}
+
+void AppController::processLocalMessage(const protocol::MsgDeliv &message)
+{
+    //Add message to chat to show in the UI
+    m_messagesCache[message.chatId].push_back(message);
+
+    //If chat still opened
+    if(m_currentChatId == message.chatId)
+        emit localMessageCreated(message);
+}
+
+void AppController::handleLoginRes(const QJsonObject &obj)
+{
+    protocol::LoginRes loginRes = protocol::LoginRes::fromJson(obj);
+    if(loginRes.status == "ok")
+    {
+        m_userId = loginRes.userId;
+
+        m_chats = loginRes.chats;
+
+        QList<protocol::ChatInfo> chatsList = m_chats.values();
+
+        std::sort(chatsList.begin(), chatsList.end(), [](const protocol::ChatInfo& a, const protocol::ChatInfo& b)
+                  {return a.peerUsername < b.peerUsername;});
+
+        emit loginSuccess(m_userId, chatsList);
+    }
+    else
+        emit loginFailure();
+}
+
+void AppController::handleRegistrationRes(const QJsonObject &obj)
+{
+    protocol::RegRes regRes = protocol::RegRes::fromJson(obj);
+    if(regRes.status == "ok")
+    {
+        m_userId = regRes.userId;
+
+        emit registrationSuccess(m_userId);
+    }
+    else
+        emit registrationFailure();
+}
+
+void AppController::handleForwardedMessage(const QJsonObject &obj)
+{
+    protocol::MsgDeliv msgDeliv = protocol::MsgDeliv::fromJson(obj);
+
+    m_messagesCache[msgDeliv.chatId].push_back(msgDeliv);
+    newMessageReceived(msgDeliv);
+}
+
+void AppController::handleHistoryRes(const QJsonObject &obj)
+{
+    protocol::HistoryRes hisRes = protocol::HistoryRes::fromJson(obj);
+    qint64 chatId = hisRes.chatId;
+    m_messagesCache[chatId] = hisRes.messages;
+    loadHistory(chatId);
+}
+
+void AppController::handleSearchRes(const QJsonObject &obj)
+{
+    protocol::SearchRes searchRes = protocol::SearchRes::fromJson(obj);
+    emit foundUsers(searchRes.foundUsers);
+}
+
+void AppController::handleMessagAck(const QJsonObject &obj)
+{
+    protocol::DelivAck delAck = protocol::DelivAck::fromJson(obj);
+    if(delAck.status != "ok"){
+        qDebug() << "Message delivery failed: " << delAck.errorMsg;
+        return;
+    }
+
+    if(delAck.peerId > 0)
+    {
+        promotePhantomChat(delAck);
+    }
+
+    confirmDeliveryMessage(delAck);
+}
+
+void AppController::handleNewChatEvent(const QJsonObject &obj)
+{
+    auto newChat = protocol::ChatInfo::fromJson(obj);
+    m_chats[newChat.chatId] = newChat;
+    emit updateChats(newChat);
+}
+
+void AppController::promotePhantomChat(const protocol::DelivAck &delAck)
+{
+    qint64 tempChatId = (delAck.peerId * -1);
+    if(m_messagesCache.contains(tempChatId))
+    {
+        QList<protocol::MsgDeliv> drafts = m_messagesCache.take(tempChatId);
+        for(auto& msg : drafts)
         {
-            protocol::LoginRes loginRes = protocol::LoginRes::fromJson(obj);
-            if(loginRes.status == "ok")
+            msg.chatId = delAck.chatId;
+        }
+        m_messagesCache.insert(delAck.chatId, drafts);
+    }
+
+    protocol::ChatInfo newChat;
+    newChat.chatId = delAck.chatId;
+    newChat.peerId = delAck.peerId;
+    newChat.peerUsername = m_pendingPhantomNames.take(newChat.peerId);
+
+    m_chats[delAck.chatId] = newChat;
+    emit updateChats(newChat);
+    if(m_currentChatId == (delAck.peerId * -1))
+    {
+        m_currentChatId = delAck.chatId;
+
+        processChatSelection(newChat.chatId, newChat.peerId, newChat.peerUsername);
+    }
+}
+
+void AppController::confirmDeliveryMessage(const protocol::DelivAck &delAck)
+{
+    if(!m_messagesCache.contains(delAck.chatId)) return;
+
+    QList<protocol::MsgDeliv> &messages = m_messagesCache[delAck.chatId];
+    for(qint64 i = messages.size() - 1; i >= 0; i--)
+    {
+        if(messages[i].localId == delAck.localId)
+        {
+            messages[i].messageId = delAck.realId;
+            messages[i].timeStamp = delAck.timestamp;
+            messages[i].displayTime = delAck.displayTime;
+
+            if(messages[i].chatId == m_currentChatId)
             {
-                this->m_userId = loginRes.userId;
-
-                this->m_chats = loginRes.chats;
-
-                QList<protocol::ChatInfo> chatsList = m_chats.values();
-
-                std::sort(chatsList.begin(), chatsList.end(), [](const protocol::ChatInfo& a, const protocol::ChatInfo& b)
-                          {return a.peerUsername < b.peerUsername;});
-
-                emit loginSuccess(m_userId, chatsList);
-            }
-            else
-            {
-                emit loginFailure();
+                emit msgConfirmed(messages[i]);
             }
             break;
-        }
-        case protocol::messageType::REG_RES:
-        {
-            protocol::RegRes regRes = protocol::RegRes::fromJson(obj);
-            if(regRes.status == "ok")
-            {
-                this->m_userId = regRes.userId;
-
-                emit registrationSuccess(m_userId);
-            }
-            break;
-        }
-        case protocol::messageType::FORW:
-        {
-            protocol::MsgDeliv msgDeliv = protocol::MsgDeliv::fromJson(obj);
-
-            m_messagesCache[msgDeliv.chatId].push_back(msgDeliv);
-            newMessageReceived(msgDeliv);
-            break;
-        }
-        case protocol::messageType::HISTORY_RES:
-        {
-            protocol::HistoryRes hisRes = protocol::HistoryRes::fromJson(obj);
-            qint64 chatId = hisRes.chatId;
-            m_messagesCache[chatId] = hisRes.messages;
-            loadHistory(chatId);
-            break;
-        }
-        case protocol::messageType::DELIV_ACK:
-        {
-            qDebug() << "Deliv ack";
-            protocol::DelivAck delAck = protocol::DelivAck::fromJson(obj);
-            //if(!m_messagesCache.contains(delAck.chatId))
-                //break;
-            qDebug() << "ACK msg with local id: "<< delAck.localId;
-            qDebug() << "delAck status " << delAck.status;
-            if(delAck.status != "ok"){
-                qDebug() << "Message delivery failed: " << delAck.errorMsg;
-                return;
-            }
-            qDebug() << "All keys in cache:" << m_messagesCache.keys();
-
-            if(delAck.peerId > 0)
-            {
-                qint64 tempChatId = (delAck.peerId * -1);
-                if(m_messagesCache.contains(tempChatId))
-                {
-                    QList<protocol::MsgDeliv> drafts = m_messagesCache.take(tempChatId);
-                    for(auto& msg : drafts)
-                    {
-                        msg.chatId = delAck.chatId;
-                        qDebug() << "msg local id" << msg.localId;
-                    }
-                    m_messagesCache.insert(delAck.chatId, drafts);
-                }
-
-                protocol::ChatInfo newChat;
-                newChat.chatId = delAck.chatId;
-                newChat.peerId = delAck.peerId;
-                newChat.peerUsername = m_pendingPhantomNames.take(newChat.peerId);
-
-                qDebug() << "Received ACK for new chat";
-                m_chats[delAck.chatId] = newChat;
-                emit updateChats(newChat);
-                if(m_phantomTargetId == delAck.peerId)
-                {
-                    m_currentChatId = delAck.chatId;
-                    m_phantomTargetId = 0;
-                    processChatSelection(newChat.chatId, newChat.peerId, newChat.peerUsername);
-                }
-            }
-            QList<protocol::MsgDeliv> &messages = m_messagesCache[delAck.chatId];
-            qDebug() << "2 All keys in cache:" << m_messagesCache.keys();
-            for(qint64 i = messages.size() - 1; i >= 0; i--)
-            {
-                qDebug() << "del ack loc id" << delAck.localId;
-                qDebug() << "msg[i] loc id" << delAck.localId;
-                if(messages[i].localId == delAck.localId)
-                {
-                    messages[i].messageId = delAck.realId;
-                    messages[i].timeStamp = delAck.timestamp;
-                    messages[i].displayTime = delAck.displayTime;
-
-                    if(messages[i].chatId == m_currentChatId)
-                    {
-                        emit msgConfirmed(messages[i]);
-                    }
-                    break;
-                }
-            }
-            break;
-        }
-        case protocol::messageType::SEARCH_RES:
-        {
-            qDebug() << "case searchres";
-            protocol::SearchRes searchRes = protocol::SearchRes::fromJson(obj);
-            for(auto u: searchRes.foundUsers)
-            {
-                qDebug() << "found: " << u.username;
-            }
-            emit foundUsers(searchRes.foundUsers);
         }
     }
 }
