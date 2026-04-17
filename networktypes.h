@@ -124,13 +124,22 @@ namespace protocol
     struct RegisterReq
     {
         QString username;
-        QString hashedPassword;
+        QByteArray authKey;
+        QByteArray salt;
+        QByteArray publicKey;
+        QByteArray encryptedVault;
+        QByteArray vaultNonce;
+
         QJsonObject toJson() const
         {
             QJsonObject json;
             json["type"] = static_cast<qint8>(messageType::REG);
             json["username"] = username;
-            json["hashed_password"] = hashedPassword;
+            json["auth_key"] = QString::fromLatin1(authKey.toBase64());
+            json["salt"] = QString::fromLatin1(salt.toBase64());
+            json["public_key"] = QString::fromLatin1(publicKey.toBase64());
+            json["encrypted_vault"] = QString::fromLatin1(encryptedVault.toBase64());
+            json["vault_nonce"] = QString::fromLatin1(vaultNonce.toBase64());
             return json;
         }
     };

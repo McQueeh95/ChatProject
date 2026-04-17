@@ -8,6 +8,7 @@ set(CMAKE_AUTORCC ON)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(ENV{PKG_CONFIG_PATH} "/usr/local/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}")
 add_compile_definitions(QT_FORCE_STDERR_LOGGING)
 
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets)
@@ -19,6 +20,12 @@ find_package(Qt6 REQUIRED COMPONENTS Core)
 find_package(Qt6 REQUIRED COMPONENTS Core)
 find_package(Qt6 REQUIRED COMPONENTS Core)
 find_package(Qt6 REQUIRED COMPONENTS Core)
+find_package(Qt6 REQUIRED COMPONENTS Core)
+find_path(SODIUM_INCLUDE_DIRS NAMES sodium.h HINTS /usr/include /usr/local/include)
+find_library(SODIUM_LIBRARIES NAMES sodium HINTS /usr/lib64 /usr/lib /usr/local/lib)
+
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(SODIUM REQUIRED libsodium)
 
 set(PROJECT_SOURCES
         main.cpp
@@ -35,8 +42,6 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         ui/registrationpage.h ui/registrationpage.cpp ui/registrationpage.ui
 
         network/networkclient.h network/networkclient.cpp
-
-
         models/contactiemdelegate.h models/contactlistmodel.cpp
         models/contactiemdelegate.h models/contactiemdelegate.cpp
         appcontroller.h appcontroller.cpp
@@ -50,6 +55,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         models/messageviewmodel.h models/messageviewmodel.cpp
         models/approles.h
         models/searchviewmodel.h models/searchviewmodel.cpp
+        cryptoservice.h cryptoservice.cpp
 
 
 
@@ -76,6 +82,9 @@ target_link_libraries(client PRIVATE Qt${QT_VERSION_MAJOR}::Widgets Qt6::Core Qt
 target_link_libraries(client PRIVATE Qt6::Core)
 target_link_libraries(client PRIVATE Qt6::Core)
 target_link_libraries(client PRIVATE Qt6::Core)
+target_link_libraries(client PRIVATE Qt6::Core)
+target_include_directories(client PRIVATE /usr/local/include ${SODIUM_INCLUDE_DIRS})
+target_link_libraries(client PRIVATE ${SODIUM_LIBRARIES})
 target_link_libraries(client PRIVATE Qt6::Core)
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.

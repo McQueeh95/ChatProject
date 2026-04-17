@@ -4,6 +4,7 @@
 #include <QObject>
 #include "network/networkclient.h"
 #include "networktypes.h"
+#include "cryptoservice.h"
 
 class AppController: public QObject
 {
@@ -60,6 +61,7 @@ private:
     void promotePhantomChat(const protocol::DelivAck &delAck);
     void confirmDeliveryMessage(const protocol::DelivAck &delAck);
 
+    CryptoService* m_cryptoService;
     NetworkClient* m_networkClient;
     QHash<qint64, protocol::ChatInfo> m_chats;
     qint64 m_userId;

@@ -11,6 +11,7 @@ AppController::AppController() {
 void AppController::loginUser(const QString& username, const QString& password)
 {
     protocol::LoginReq loginReq;
+
     loginReq.username = username;
     loginReq.hashedPassword = password;
 
@@ -22,11 +23,26 @@ void AppController::loginUser(const QString& username, const QString& password)
 
 void AppController::createUser(const QString& username, const QString& password)
 {
+    RegistrationData generatedData = m_cryptoService->generateNewAccount(password);
+
     protocol::RegisterReq regReq;
     regReq.username = username;
-    regReq.hashedPassword = password;
+    regReq.authKey = generatedData.authKey;
+    regReq.salt = generatedData.salt;
+    regReq.publicKey = generatedData.publicKey;
+    regReq.encryptedVault = generatedData.encryptedVault;
+    regReq.vaultNonce = generatedData.vaultNonce;
+
+
 
     QJsonObject jsonToSend = regReq.toJson();
+
+    qDebug() << "--- ВІДПРАВКА З КЛІЄНТА ---";
+    qDebug() << "Salt (Base64):" << regReq.salt.toBase64();
+    qDebug() << "AuthKey (Base64):" << regReq.authKey.toBase64();
+    qDebug() << "Encrypted Vault (Base64):" << regReq.encryptedVault.toBase64();
+    qDebug() << "VaultNonce (Base64):" << regReq.vaultNonce.toBase64();
+    qDebug() << "---------------------------";
 
     if(m_networkClient != nullptr)
         m_networkClient->sendJson(jsonToSend);
