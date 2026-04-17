@@ -119,6 +119,7 @@ void sessions_manager::on_auth_attempt(std::weak_ptr<session> session_ptr, const
 
 	}
 	else if(type == server_protocol::message_type::REG) {
+		std::cout << "In Reg" << std::endl;
 		auto msg = boost::json::value_to<server_protocol::reg_req>(packet->jv);
 		handle_reg(session_ptr, msg);
 	}
@@ -147,8 +148,10 @@ void sessions_manager::handle_login(std::weak_ptr<session> session_ptr, const se
 void sessions_manager::handle_reg(std::weak_ptr<session> session_ptr, const server_protocol::reg_req &reg_msg)
 {
 	db_->post_task([this, msg = std::move(reg_msg), session_ptr](){
-		std::optional<int64_t> user_id_opt = db_->create_user(msg.username, msg.hashed_password);
-
+		std::cout << "before reg db" << std::endl;
+		std::optional<int64_t> user_id_opt = db_->create_user(msg.username, msg.auth_key, 
+			msg.salt, msg.public_key, msg.ecnrypted_vault, msg.vault_nonce);
+		std::cout << "after reg db" << std::endl;
 		boost::asio::post(this->ioc_main_, [this, session_ptr, user_id_opt](){
 			this->send_reg_res(session_ptr, user_id_opt);
 		});

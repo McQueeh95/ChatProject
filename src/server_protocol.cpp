@@ -26,10 +26,13 @@ namespace server_protocol
     reg_req tag_invoke(json::value_to_tag<reg_req>, const json::value& jv)
     {
         const auto& obj = jv.as_object();
-
         return {
             json::value_to<std::string>(obj.at("username")),
-            json::value_to<std::string>(obj.at("hashed_password"))
+            json::value_to<std::string>(obj.at("auth_key")),
+            json::value_to<std::string>(obj.at("salt")),
+            json::value_to<std::string>(obj.at("public_key")),
+            json::value_to<std::string>(obj.at("encrypted_vault")),
+            json::value_to<std::string>(obj.at("vault_nonce"))
         };
 
     }

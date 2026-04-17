@@ -34,3 +34,18 @@ CREATE TABLE IF NOT EXISTS messages(
 CREATE INDEX IF NOT EXISTS idx_messages_chat_id ON messages(chat_id);
 CREATE INDEX IF NOT EXISTS idx_chats_user1 ON chats(user1_id);
 CREATE INDEX IF NOT EXISTS idx_chats_user2 ON chats(user2_id);
+
+CREATE TABLE IF NOT EXISTS users (
+    id BIGSERIAL PRIMARY KEY,
+    username VARCHAR(50) UNIQUE NOT NULL,
+    
+    auth_key VARCHAR(44) NOT NULL,
+    salt VARCHAR(24) NOT NULL,
+    
+    public_key VARCHAR(44) NOT NULL,
+    
+    encrypted_vault VARCHAR(64) NOT NULL,
+    vault_nonce VARCHAR(32) NOT NULL,
+	
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);

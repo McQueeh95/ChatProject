@@ -38,7 +38,11 @@ namespace server_protocol
     struct reg_req
     {
         std::string username;
-        std::string hashed_password;
+        std::string auth_key;
+        std::string salt;
+        std::string public_key;
+        std::string ecnrypted_vault;
+        std::string vault_nonce;
         friend reg_req tag_invoke(boost::json::value_to_tag<reg_req>, 
             const boost::json::value& jv);
     };
