@@ -2,6 +2,33 @@
     "version": 3,
     "configurePresets": [
         {
+            "name": "linux-base",
+            "description": "Default settings for cmake",
+            "hidden": true,
+            "generator": "Ninja",
+            "binaryDir": "${workspaceFolder}/build",
+            "cacheVariables": {
+                
+                "CMAKE_EXPORT_COMPILE_COMMANDS": "YES",
+                "CMAKE_C_COMPILER": "/usr/lib64/ccache/clang",
+                "CMAKE_CXX_COMPILER": "/usr/lib64/ccache/clang++"
+            }
+        },
+        {
+            "name": "debug",
+            "inherits": "linux-base",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
+        },
+        {
+            "name": "release",
+            "inherits": "linux-base",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release"
+            }
+        },
+        {
             "name": "windows-base",
             "hidden": true,
             "generator": "Ninja",
@@ -56,6 +83,12 @@
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release"
             }
+        },
+        {
+            "name": "server",
+            "description": "",
+            "displayName": "",
+            "inherits": []
         }
     ]
 }

@@ -1,14 +1,51 @@
-# Visual Studio
+# === OS ===
+.DS_Store
+Thumbs.db
+
+# ===IDE===
+.vscode/
 .vs/
+*.user
+*.user.*
+*.autosave
+*.pro.user
+*.qbs.user
+*.creator.*
+*.swp
 *.vcxproj*
 *.sln
 *.ipch/
 *.db
+
+# === C++/build ===
+*.o
 *.obj
+*.so
+*.dll
 *.exe
+*.a
+*.lib
+*.lo
+*.la
+*.pyc
+*.pyo
+*.class
 *.log
-CMakeFiles/
+.cache/
+
+# === CMake ===
 CMakeCache.txt
+CMakeFiles/
+Makefile
 cmake_install.cmake
-build/
-out/
+install_manifest.txt
+CMakeUserPresets.json
+
+# === Client Qt ===
+/client/build/
+/client/build-*/
+/client/data/
+
+# === Server Boost.Beast ===
+/server/build/
+/server/out/

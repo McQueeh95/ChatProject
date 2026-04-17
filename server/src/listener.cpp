@@ -1,8 +1,10 @@
-#include "listener.h"
-#include "session.h"
+#include "listener.hpp"
+#include "session.hpp"
+#include "sessions_manager.hpp"
 
-listener::listener(net::io_context& ioc, tcp::endpoint endpoint)
-	:ioc_(ioc), acceptor_(ioc)
+
+listener::listener(net::io_context& ioc, tcp::endpoint endpoint, std::shared_ptr<sessions_manager> manager)
+	:ioc_(ioc), acceptor_(ioc), manager_(std::move(manager))
 {
 	beast::error_code ec;
 
@@ -63,7 +65,7 @@ void listener::on_accept(beast::error_code ec, tcp::socket socket)
 		fail(ec, "accept");
 	else
 		//Create session and run it
-		std::make_shared<session>(std::move(socket))->run();
+		std::make_shared<session>(std::move(socket), manager_)->run();
 	//Accept another connetion
 	do_accept();
 }

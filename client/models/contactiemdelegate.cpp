@@ -1,0 +1,60 @@
+#include "contactiemdelegate.h"
+
+//ContactIemDelegate::ContactIemDelegate() {}
+
+ContactIemDelegate::ContactIemDelegate(QObject *parent)
+    :QStyledItemDelegate(parent)
+{}
+
+void ContactIemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const
+{
+    painter->save();
+
+    if (option.state & QStyle::State_Selected) {
+        painter->setBrush(QColor("#44475a")); // або інший колір підсвітки
+        painter->setPen(Qt::NoPen);
+        painter->drawRect(option.rect); // малюємо фон поверх усього елемента
+    }
+
+    QString username = index.data(Qt::DisplayRole).toString();
+
+    QRect rect = option.rect;
+
+    int margin = 10;
+    int avatarSize = rect.height() - 2 * margin;
+    QRect avatarRect(rect.left() + margin, rect.top() + margin, avatarSize, avatarSize);
+
+    painter->setBrush(Qt::gray);
+    painter->setPen(Qt::NoPen);
+    painter->drawEllipse(avatarRect);
+
+    painter->setPen(Qt::white);
+    QFont boldFont = option.font;
+    boldFont.setBold(true);
+    painter->setFont(boldFont);
+
+    QString initials = username.left(1).toUpper();
+    painter->drawText(avatarRect, Qt::AlignCenter, initials);
+
+    int textX = avatarRect.right() + margin;
+    QRect nameRect(textX, rect.top() + margin, rect.width() - textX - margin, rect.height() / 2 + margin);
+
+    painter->setPen(Qt::white);
+    QFont nameFont = option.font;
+    nameFont.setPointSize(nameFont.pointSize() + 1);
+    nameFont.setBold(true);
+    nameFont.setPixelSize(16);
+    painter->setFont(nameFont);
+    painter->drawText(nameRect, Qt::AlignVCenter | Qt::AlignLeft, username);
+
+    painter->restore();
+
+
+
+}
+
+QSize ContactIemDelegate::sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const
+{
+    Q_UNUSED(index);
+    return QSize(0, 60);
+}
