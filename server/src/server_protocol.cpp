@@ -6,7 +6,6 @@
 #include <boost/json/value_from.hpp>
 #include <boost/json/value_to.hpp>
 #include <cstdint>
-#include <iostream>
 
 namespace json = boost::json;
 
@@ -198,9 +197,9 @@ namespace server_protocol
         return { json::value_to<int64_t>(obj.at("chat_id"))};
     }
 
-    void tag_invoke(boost::json::value_from_tag, boost::json::value &jv, const history_res& msg)
+    void tag_invoke(json::value_from_tag, json::value &jv, const history_res& msg)
     {
-        boost::json::object obj;
+        json::object obj;
         obj["type"] = static_cast<int64_t>(message_type::HISTORY_RES);
         obj["status"] = msg.status;
         obj["chat_id"] = msg.chat_id;
@@ -212,6 +211,19 @@ namespace server_protocol
             obj["error_msg"] = msg.error_message;
         }
         jv = (std::move(obj));
+    }
+
+    void tag_invoke(json::value_from_tag, json::value &jv,const salt_res& msg)
+    {
+        jv = {"salt", msg.salt};
+    }
+
+    salt_req tag_invoke(json::value_to_tag<salt_req>, const json::value &jv)
+    {
+        const auto& obj = jv.as_object();
+        return{
+            json::value_to<std::string>(obj.at("username"))
+        };
     }
 
 }

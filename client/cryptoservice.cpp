@@ -46,3 +46,21 @@ RegistrationData CryptoService::generateNewAccount(const QString &password)
 
     return data;
 }
+
+DerivedKeys CryptoService::generateHashedPassword(const char* password, const QByteArray& salt)
+{
+    DerivedKeys keys;
+    const qint8 TOTAL_KEY_LEN = 64;
+    unsigned char fullKey[TOTAL_KEY_LEN];
+
+    if(crypto_pwhash
+        (fullKey, TOTAL_KEY_LEN, password, sizeof(password),
+         reinterpret_cast<const unsigned char*>(salt.constData()),
+         crypto_pwhash_OPSLIMIT_INTERACTIVE, crypto_pwhash_MEMLIMIT_INTERACTIVE,
+         crypto_pwhash_ALG_DEFAULT) != 0)
+    {
+        qDebug() << "Out of memory crypto_pwhash";
+    }
+    keys.authKey = QByteArray(reinterpret_cast<char*>(fullKey), 32);
+    keys.localEncryptKey = QByteArray(reinterpret_cast<char*>(fullKey)+32, 32);
+}

@@ -56,6 +56,8 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         models/approles.h
         models/searchviewmodel.h models/searchviewmodel.cpp
         cryptoservice.h cryptoservice.cpp
+        securebuffer.h
+
 
 
 

@@ -5,6 +5,7 @@
 #include "network/networkclient.h"
 #include "networktypes.h"
 #include "cryptoservice.h"
+#include "securebuffer.h"
 
 class AppController: public QObject
 {
@@ -14,6 +15,7 @@ public:
     AppController();
 
     void loginUser(const QString& username, const QString& password);
+    void requestSalt(const QString& username, const QString& password);
     void createUser(const QString& username, const QString& password);
 
     void loadHistory(qint64 chatId);
@@ -51,6 +53,7 @@ private:
     void processLocalMessage(const protocol::MsgDeliv &message);
 
     //Handles server's responses
+    void handleSaltRes (const QJsonObject &obj);
     void handleLoginRes(const QJsonObject &obj);
     void handleRegistrationRes(const QJsonObject &obj);
     void handleForwardedMessage(const QJsonObject &obj);
@@ -63,6 +66,7 @@ private:
 
     CryptoService* m_cryptoService;
     NetworkClient* m_networkClient;
+    SecureBuffer m_pendingPassword;
     QHash<qint64, protocol::ChatInfo> m_chats;
     qint64 m_userId;
     qint64 m_currentChatId = 0;

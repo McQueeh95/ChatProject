@@ -8,6 +8,19 @@ AppController::AppController() {
     connect(m_networkClient, &NetworkClient::jsonReceived, this, &AppController::onJsonReceived);
 }
 
+void AppController::requestSalt(const QString& username, const QString& password)
+{
+    m_pendingPassword.load(password);
+
+    protocol::SaltReq saltReq;
+
+    saltReq.username = username;
+    QJsonObject jsonToSend = saltReq.toJson();
+
+    if(m_networkClient != nullptr)
+        m_networkClient->sendJson(jsonToSend);
+}
+
 void AppController::loginUser(const QString& username, const QString& password)
 {
     protocol::LoginReq loginReq;
@@ -33,16 +46,7 @@ void AppController::createUser(const QString& username, const QString& password)
     regReq.encryptedVault = generatedData.encryptedVault;
     regReq.vaultNonce = generatedData.vaultNonce;
 
-
-
     QJsonObject jsonToSend = regReq.toJson();
-
-    qDebug() << "--- ВІДПРАВКА З КЛІЄНТА ---";
-    qDebug() << "Salt (Base64):" << regReq.salt.toBase64();
-    qDebug() << "AuthKey (Base64):" << regReq.authKey.toBase64();
-    qDebug() << "Encrypted Vault (Base64):" << regReq.encryptedVault.toBase64();
-    qDebug() << "VaultNonce (Base64):" << regReq.vaultNonce.toBase64();
-    qDebug() << "---------------------------";
 
     if(m_networkClient != nullptr)
         m_networkClient->sendJson(jsonToSend);
@@ -127,6 +131,7 @@ void AppController::onJsonReceived(const QJsonObject& obj)
     protocol::messageType msgType = static_cast<protocol::messageType>(obj["type"].toInt());
     switch(msgType)
     {
+        case protocol::messageType::SALT_RES: handleSaltRes(obj); break;
         case protocol::messageType::LOGIN_RES: handleLoginRes(obj); break;
         case protocol::messageType::REG_RES: handleRegistrationRes(obj); break;
         case protocol::messageType::FORW: handleForwardedMessage(obj); break;
@@ -187,6 +192,18 @@ void AppController::processLocalMessage(const protocol::MsgDeliv &message)
     //If chat still opened
     if(m_currentChatId == message.chatId)
         emit localMessageCreated(message);
+}
+
+void AppController::handleSaltRes(const QJsonObject &obj)
+{
+    protocol::SaltRes saltRes = protocol::SaltRes::fromJson(obj);
+    if(!saltRes.salt.isEmpty())
+    {
+        m_cryptoService->generateHashedPassword(m_pendingPassword.data(), saltRes.salt);
+    }
+    else{
+        emit loginFailure();
+    }
 }
 
 void AppController::handleLoginRes(const QJsonObject &obj)

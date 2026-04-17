@@ -9,6 +9,7 @@
 #include <boost/json/fwd.hpp>
 #include <boost/json/parse.hpp>
 #include <boost/json/serialize.hpp>
+#include <boost/json/value.hpp>
 #include <boost/json/value_from.hpp>
 #include <exception>
 #include <iostream>
@@ -123,6 +124,11 @@ void sessions_manager::on_auth_attempt(std::weak_ptr<session> session_ptr, const
 		auto msg = boost::json::value_to<server_protocol::reg_req>(packet->jv);
 		handle_reg(session_ptr, msg);
 	}
+	else if(type == server_protocol::message_type::SALT_REQ)
+	{
+		auto msg = boost::json::value_to<server_protocol::salt_req>(packet->jv);
+		handle_salt_req(session_ptr, msg);
+	}
 }
 
 void sessions_manager::handle_login(std::weak_ptr<session> session_ptr, const server_protocol::login_req &login_msg)
@@ -154,6 +160,16 @@ void sessions_manager::handle_reg(std::weak_ptr<session> session_ptr, const serv
 		std::cout << "after reg db" << std::endl;
 		boost::asio::post(this->ioc_main_, [this, session_ptr, user_id_opt](){
 			this->send_reg_res(session_ptr, user_id_opt);
+		});
+	});
+}
+
+void sessions_manager::handle_salt_req(std::weak_ptr<session> session_ptr, const server_protocol::salt_req &salt_req)
+{
+	db_->post_task([this, msg = std::move(salt_req), session_ptr](){
+		std::string user_salt = db_->get_salt(msg.username);
+		boost::asio::post(this->ioc_main_, [this, session_ptr, user_salt](){
+			this->send_salt_res(session_ptr, user_salt);
 		});
 	});
 }
@@ -204,18 +220,6 @@ void sessions_manager::on_data(int64_t sender_id, const std::string& raw)
 		{
 			auto msg = boost::json::value_to<server_protocol::history_req>(packet->jv);
 			handle_history_req(sender_id, msg.chat_id);
-			break;
-		}
-		case server_protocol::message_type::NEW_CHAT_EVENT:
-		{
-			
-		}
-		case server_protocol::message_type::LOGIN:
-		case server_protocol::message_type::REG:
-		case server_protocol::message_type::LOGIN_RES:
-		case server_protocol::message_type::REG_RES:
-		case server_protocol::message_type::SEARCH_RES:
-		{
 			break;
 		}
 	}
@@ -340,6 +344,16 @@ void sessions_manager::send_login_res(std::weak_ptr<session> session_ptr, std::o
 		res.error_msg = "Invalid credentials";
 	}
 	auto jv = json::value_from(res);
+	s->send(json::serialize(jv));
+}
+
+void sessions_manager::send_salt_res(std::weak_ptr<session> session_ptr, const std::string& user_salt)
+{
+	auto s = session_ptr.lock();
+	if(!s) return;
+
+	server_protocol::salt_res salt_res;
+	auto jv = json::value_from(salt_res);
 	s->send(json::serialize(jv));
 }
 

@@ -22,7 +22,9 @@ namespace protocol
         HISTORY_REQ = 10,
         HISTORY_RES = 11,
         START_CHAT_REQ = 12,
-        NEW_CHAT_EVENT = 13
+        NEW_CHAT_EVENT = 13,
+        SALT_REQ = 14,
+        SALT_RES = 15
     };
 
     struct ChatInfo{
@@ -107,6 +109,30 @@ namespace protocol
         }
     };
 
+    struct SaltReq
+    {
+        QString username;
+
+        QJsonObject toJson() const
+        {
+            QJsonObject json;
+            json["type"] = static_cast<qint8>(messageType::SALT_REQ);
+            json["username"] = username;
+        }
+    };
+
+    struct SaltRes
+    {
+        QByteArray salt;
+        static SaltRes fromJson(const QJsonObject& json)
+        {
+            SaltRes saltRes;
+            QString saltString = json["salt"].toVariant().toString();
+            saltRes.salt = QByteArray::fromBase64(saltString.toLatin1());
+            return saltRes;
+        }
+    };
+
     struct LoginReq
     {
         QString username;
@@ -120,6 +146,8 @@ namespace protocol
             return json;
         }
     };
+
+
 
     struct RegisterReq
     {

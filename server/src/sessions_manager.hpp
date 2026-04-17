@@ -30,11 +30,13 @@ private:
 	
 	void handle_login(std::weak_ptr<session> session_ptr, const server_protocol::login_req &login_msg);
 	void handle_reg(std::weak_ptr<session> session_ptr, const server_protocol::reg_req &reg_msg);
+	void handle_salt_req(std::weak_ptr<session> session_ptr, const server_protocol::salt_req &salt_req);
 	void handle_msg_forward(int64_t sender_id, 	const server_protocol::msg_forw_req &incoming_msg);
 	void handle_create_and_forward(int64_t sender_id, const server_protocol::start_chat_req &incoming_msg);
 	void deliver(int64_t recepeint_id, std::string data);
 	void send_to_recepient(int64_t id, const db_protocol::message& msg);
 	void send_deliv_ack(int64_t sender_id, int64_t local_id, const db_protocol::message& msg, int64_t peer_id = -1);
+	void send_salt_res(std::weak_ptr<session> session_ptr, const std::string& user_salt);
 	void send_login_res(std::weak_ptr<session> session_ptr, std::optional<int64_t> user_id_opt, 
 		std::vector<server_protocol::chat_info> chats);
 	void send_reg_res(std::weak_ptr<session> session_ptr, std::optional<int64_t> user_id_opt);

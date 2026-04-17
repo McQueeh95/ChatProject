@@ -26,6 +26,8 @@ database::database(const std::string& connection_string):
 
 void database::prepare_statements()
 {
+    connection_.prepare("get_salt", "SELECT auth_key FROM users WHERE username = $1");
+
     connection_.prepare("login", "SELECT id, auth_key FROM users WHERE username = $1");
     
     connection_.prepare("get_recepeint_id", "SELECT user1_id, user2_id FROM chats WHERE id = $1");
@@ -92,6 +94,23 @@ std::optional<int64_t> database::create_user(const std::string &username, const 
     catch(const std::exception& e){
         std::cerr << "DB error (create_user): " << e.what();
         return std::nullopt;
+    }
+}
+
+std::string database::get_salt(const std::string &username)
+{
+    try {
+        pqxx::nontransaction n(connection_);
+        pqxx::result r(
+            n.exec(pqxx::prepped("get_salt"), pqxx::params{username})
+        );
+        std::string salt = r[0][0].as<std::string>();
+
+        return salt;
+    }
+    catch (const std::exception &e) {
+        std::cerr << "DB error(get_salt): " << e.what() << std::endl;
+        return {};
     }
 }
 

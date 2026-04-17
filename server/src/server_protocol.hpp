@@ -24,7 +24,9 @@ namespace server_protocol
         HISTORY_REQ = 10,
         HISTORY_RES = 11,
         START_CHAT_REQ = 12,
-        NEW_CHAT_EVENT = 13
+        NEW_CHAT_EVENT = 13,
+        SALT_REQ = 14,
+        SALT_RES = 15
     };
 
     struct login_req
@@ -197,6 +199,22 @@ namespace server_protocol
 
         friend void tag_invoke(boost::json::value_from_tag, boost::json::value &jv,
             const history_res& msg);
+    };
+
+    struct salt_req
+    {
+        std::string username;
+
+        friend salt_req tag_invoke(boost::json::value_to_tag<salt_req>, 
+            const boost::json::value &jv);
+    };
+
+    struct salt_res
+    {
+        std::string salt;
+
+        friend void tag_invoke(boost::json::value_from_tag, boost::json::value &jv,
+            const salt_res& msg);
     };
 
     struct new_chat_event

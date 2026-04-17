@@ -28,6 +28,7 @@ class database
     std::optional<int64_t> create_user(const std::string &username, const std::string &auth_key, 
         const std::string &salt, const std::string & public_key, 
         const std::string &encrypted_vault, const std::string &vault_nonce);
+    std::string get_salt(const std::string &username);
     std::optional<int64_t> login_user(const std::string &username, const std::string &password);
     std::optional<int64_t> get_recepeint_id(int64_t chat_id, int64_t sender_id);
     std::optional<db_protocol::message> insert_msg(int64_t chat_id, int64_t sender_id, const std::string& text);
