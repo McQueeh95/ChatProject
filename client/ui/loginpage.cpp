@@ -35,7 +35,7 @@ void LoginPage::onLoginClicked()
         ui->errorLabel->show();
         return;
     }
-    m_controller->loginUser(username, password);
+    m_controller->requestSalt(username, password);
 }
 
 void LoginPage::onLoginSucces()

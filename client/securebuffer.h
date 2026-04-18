@@ -5,6 +5,7 @@
 #include <QByteArray>
 #include <sodium.h>
 #include <cstring>
+#include <QDebug>
 
 class SecureBuffer
 {

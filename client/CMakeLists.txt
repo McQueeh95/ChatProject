@@ -42,8 +42,9 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         ui/registrationpage.h ui/registrationpage.cpp ui/registrationpage.ui
 
         network/networkclient.h network/networkclient.cpp
-        models/contactiemdelegate.h models/contactlistmodel.cpp
+        models/contactiemdelegate.h
         models/contactiemdelegate.h models/contactiemdelegate.cpp
+        models/contactlistmodel.h models/contactlistmodel.cpp
         appcontroller.h appcontroller.cpp
         networktypes.h
         ui/loginpage.h ui/loginpage.cpp ui/loginpage.ui

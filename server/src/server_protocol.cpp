@@ -17,7 +17,7 @@ namespace server_protocol
 
         return {
             json::value_to<std::string>(obj.at("username")),
-            json::value_to<std::string>(obj.at("hashed_password"))
+            json::value_to<std::string>(obj.at("auth_key"))
         };
 
     }
@@ -119,7 +119,7 @@ namespace server_protocol
 
         if(msg.status == "ok")
         {
-            obj["user_id"] = msg.user_id;
+            obj["user_info"] =json::value_from(msg.user_info);
             obj["chats"] = json::value_from(msg.chats);
         }
         else
@@ -182,6 +182,15 @@ namespace server_protocol
         jv = std::move(obj);
     }
 
+    void tag_invoke(json::value_from_tag, json::value& jv, const user_info& msg)
+    {
+        jv = {
+            {"user_id", msg.user_id},
+            {"encrypted_vault", msg.encrypted_vault},
+            {"vault_nonce", msg.vault_nonce}
+        };
+    }
+
     void tag_invoke(json::value_from_tag, json::value& jv, const chat_info& msg)
     {
         jv = {
@@ -215,7 +224,10 @@ namespace server_protocol
 
     void tag_invoke(json::value_from_tag, json::value &jv,const salt_res& msg)
     {
-        jv = {"salt", msg.salt};
+        json::object obj;
+        obj["type"] = static_cast<uint8_t>(server_protocol::message_type::SALT_RES);
+        obj["salt"] = msg.salt;
+        jv = std::move(obj);
     }
 
     salt_req tag_invoke(json::value_to_tag<salt_req>, const json::value &jv)

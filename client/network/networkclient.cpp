@@ -35,9 +35,14 @@ void NetworkClient::onTextMessageReceived(const QString& rawString)
     if(!doc.isNull())
     {
         if(doc.isObject())
+        {
             obj = doc.object();
+        }
         else
+        {
             qDebug() << "Json is not an object (onTextMessageReceived)";
+            return;
+        }
     }
     else
     {

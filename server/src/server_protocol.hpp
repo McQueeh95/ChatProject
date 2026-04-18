@@ -32,7 +32,7 @@ namespace server_protocol
     struct login_req
     {
         std::string username;
-        std::string hashed_password;
+        std::string auth_key;
         friend login_req tag_invoke(boost::json::value_to_tag<login_req>, 
             const boost::json::value& jv);
     };
@@ -123,6 +123,15 @@ namespace server_protocol
             const read_conf_req& msg);
     };
 
+    struct user_info
+    {
+        int64_t user_id;
+        std::string encrypted_vault;
+        std::string vault_nonce;
+        friend void tag_invoke(boost::json::value_from_tag, boost::json::value& jv, 
+            const user_info& msg);
+    };
+
     struct chat_info{
         int64_t chat_id;
         int64_t peer_id;
@@ -135,7 +144,7 @@ namespace server_protocol
     struct login_res
     {
         std::string status;
-        int64_t user_id;
+        server_protocol::user_info user_info;
         std::string error_msg;
         std::vector<chat_info> chats;
         friend void tag_invoke(boost::json::value_from_tag, boost::json::value& jv, 

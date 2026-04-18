@@ -14,7 +14,6 @@ class AppController: public QObject
 public:
     AppController();
 
-    void loginUser(const QString& username, const QString& password);
     void requestSalt(const QString& username, const QString& password);
     void createUser(const QString& username, const QString& password);
 
@@ -67,8 +66,10 @@ private:
     CryptoService* m_cryptoService;
     NetworkClient* m_networkClient;
     SecureBuffer m_pendingPassword;
+    SecureBuffer m_pendingLocalKey;
     QHash<qint64, protocol::ChatInfo> m_chats;
-    qint64 m_userId;
+    QString m_username;
+    qint64 m_userId = 0;
     qint64 m_currentChatId = 0;
     qint64 m_phantomTargetId = 0;
     QHash<qint64, QList<protocol::MsgDeliv>> m_messagesCache;

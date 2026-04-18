@@ -29,11 +29,13 @@ public:
     explicit CryptoService(QObject *parent = nullptr);
 
     RegistrationData generateNewAccount(const QString &password);
-    DerivedKeys generateHashedPassword(const char* password, const QByteArray& salt);
+    DerivedKeys generateHashedPassword(const char* password, size_t pwdLen, const QByteArray& salt);
+    void decryptSecretKey(const QByteArray& encryptedVault, const QByteArray& nonce, const char* key);
 signals:
 
 private:
-    unsigned char m_secretKey[crypto_box_SECRETKEYBYTES];
+    unsigned char* m_secretKey = nullptr;
+    //unsigned char m_secretKey[crypto_box_SECRETKEYBYTES];
 };
 
 #endif // CRYPTOSERVICE_H

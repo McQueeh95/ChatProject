@@ -3,6 +3,7 @@
 
 AppController::AppController() {
     m_networkClient = new NetworkClient(this);
+    m_cryptoService = new CryptoService(this);
 
     m_networkClient->connectToServer(QUrl("ws://127.0.0.1:8080"));
     connect(m_networkClient, &NetworkClient::jsonReceived, this, &AppController::onJsonReceived);
@@ -11,6 +12,7 @@ AppController::AppController() {
 void AppController::requestSalt(const QString& username, const QString& password)
 {
     m_pendingPassword.load(password);
+    m_username = username;
 
     protocol::SaltReq saltReq;
 
@@ -21,21 +23,10 @@ void AppController::requestSalt(const QString& username, const QString& password
         m_networkClient->sendJson(jsonToSend);
 }
 
-void AppController::loginUser(const QString& username, const QString& password)
-{
-    protocol::LoginReq loginReq;
-
-    loginReq.username = username;
-    loginReq.hashedPassword = password;
-
-    QJsonObject jsonToSend = loginReq.toJson();
-
-    if(m_networkClient != nullptr)
-        m_networkClient->sendJson(jsonToSend);
-}
-
 void AppController::createUser(const QString& username, const QString& password)
 {
+    m_username = username;
+
     RegistrationData generatedData = m_cryptoService->generateNewAccount(password);
 
     protocol::RegisterReq regReq;
@@ -199,7 +190,16 @@ void AppController::handleSaltRes(const QJsonObject &obj)
     protocol::SaltRes saltRes = protocol::SaltRes::fromJson(obj);
     if(!saltRes.salt.isEmpty())
     {
-        m_cryptoService->generateHashedPassword(m_pendingPassword.data(), saltRes.salt);
+        DerivedKeys keys = m_cryptoService->generateHashedPassword(m_pendingPassword.data(), m_pendingPassword.size(), saltRes.salt);
+        m_pendingLocalKey.load(keys.localEncryptKey);
+
+        protocol::LoginReq loginReq;
+        loginReq.username = m_username;
+        loginReq.authKey = keys.authKey;
+
+        QJsonObject jsonToSend = loginReq.toJson();
+
+        m_networkClient->sendJson(jsonToSend);
     }
     else{
         emit loginFailure();
@@ -211,8 +211,9 @@ void AppController::handleLoginRes(const QJsonObject &obj)
     protocol::LoginRes loginRes = protocol::LoginRes::fromJson(obj);
     if(loginRes.status == "ok")
     {
-        m_userId = loginRes.userId;
+        protocol::UserInfo user = loginRes.userInfo;
 
+        m_userId = user.userId;
         m_chats = loginRes.chats;
 
         QList<protocol::ChatInfo> chatsList = m_chats.values();
@@ -220,6 +221,7 @@ void AppController::handleLoginRes(const QJsonObject &obj)
         std::sort(chatsList.begin(), chatsList.end(), [](const protocol::ChatInfo& a, const protocol::ChatInfo& b)
                   {return a.peerUsername < b.peerUsername;});
 
+        m_cryptoService->decryptSecretKey(user.encryptedVault, user.vaultNonce, m_pendingLocalKey.data());
         emit loginSuccess(m_userId, chatsList);
     }
     else

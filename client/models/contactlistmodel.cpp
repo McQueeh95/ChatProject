@@ -6,11 +6,6 @@ ContactListModel::ContactListModel(QObject *parent)
     : QAbstractListModel(parent)
 {}
 
-QVariant ContactListModel::headerData(int section, Qt::Orientation orientation, int role) const
-{
-    // FIXME: Implement me!
-}
-
 int ContactListModel::rowCount(const QModelIndex &parent) const
 {
     // For list models only the root node (an invalid parent) should return the list's size. For all

@@ -42,6 +42,24 @@ namespace protocol
         }
     };
 
+    struct UserInfo
+    {
+        qint64 userId;
+        QByteArray encryptedVault;
+        QByteArray vaultNonce;
+
+        static UserInfo fromJson(const QJsonObject& json)
+        {
+            UserInfo user;
+            QString vaultString = json["encrypted_vault"].toVariant().toString();
+            QString nonceString = json["vault_nonce"].toVariant().toString();
+            user.userId = json["user_id"].toVariant().toLongLong();
+            user.encryptedVault = QByteArray::fromBase64(vaultString.toLatin1());
+            user.vaultNonce = QByteArray::fromBase64(nonceString.toLatin1());
+            return user;
+        }
+    };
+
     struct ForwardReq
     {
         qint64 localId;
@@ -118,6 +136,7 @@ namespace protocol
             QJsonObject json;
             json["type"] = static_cast<qint8>(messageType::SALT_REQ);
             json["username"] = username;
+            return json;
         }
     };
 
@@ -136,13 +155,14 @@ namespace protocol
     struct LoginReq
     {
         QString username;
-        QString hashedPassword;
+        QByteArray authKey;
         QJsonObject toJson() const
         {
             QJsonObject json;
             json["type"] = static_cast<qint8>(messageType::LOGIN);
             json["username"] = username;
-            json["hashed_password"] = hashedPassword;
+            json["auth_key"] = QString::fromLatin1(authKey.toBase64());
+            qDebug() << "LoginReq authKey: " << authKey;
             return json;
         }
     };
@@ -175,7 +195,7 @@ namespace protocol
     struct LoginRes
     {
         QString status;
-        qint64 userId;
+        UserInfo userInfo;
         QString errorMsg;
         QHash<qint64, ChatInfo> chats;
 
@@ -185,7 +205,9 @@ namespace protocol
             msg.status = json["status"].toVariant().toString();
             if(msg.status == "ok")
             {
-                msg.userId = json["user_id"].toVariant().toLongLong();
+                qDebug() << "Login Res to json before";
+                msg.userInfo = UserInfo::fromJson(json["user_info"].toObject());
+                qDebug() << "Login Res to json after";
                 QJsonArray chatsArray = json["chats"].toArray();
                 msg.chats.reserve(chatsArray.size());
                 for(const QJsonValue& val: chatsArray)

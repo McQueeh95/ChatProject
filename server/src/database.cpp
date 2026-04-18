@@ -26,9 +26,9 @@ database::database(const std::string& connection_string):
 
 void database::prepare_statements()
 {
-    connection_.prepare("get_salt", "SELECT auth_key FROM users WHERE username = $1");
+    connection_.prepare("get_salt", "SELECT salt FROM users WHERE username = $1");
 
-    connection_.prepare("login", "SELECT id, auth_key FROM users WHERE username = $1");
+    connection_.prepare("login", "SELECT auth_key, id, encrypted_vault, vault_nonce FROM users WHERE username = $1");
     
     connection_.prepare("get_recepeint_id", "SELECT user1_id, user2_id FROM chats WHERE id = $1");
 
@@ -105,7 +105,7 @@ std::string database::get_salt(const std::string &username)
             n.exec(pqxx::prepped("get_salt"), pqxx::params{username})
         );
         std::string salt = r[0][0].as<std::string>();
-
+        std::cout << "DB(get salt) salt: " << salt << std::endl;
         return salt;
     }
     catch (const std::exception &e) {
@@ -114,9 +114,9 @@ std::string database::get_salt(const std::string &username)
     }
 }
 
-std::optional<int64_t> database::login_user(const std::string &username, const std::string &password)
+std::optional<db_protocol::user_info> database::login(const std::string &username, const std::string &auth_key)
 {
-    std::cout << "database::login_user" << std::endl;
+    std::cout << "database::login" << std::endl;
     try {
         pqxx::nontransaction n(connection_);
         pqxx::result r(
@@ -125,14 +125,23 @@ std::optional<int64_t> database::login_user(const std::string &username, const s
 
         if(r.empty()) 
             return std::nullopt;
-        int64_t user_id = r[0][0].as<int64_t>();
-        std::string stored_hash = r[0][1].as<std::string>();
-        if(stored_hash != password)
+        
+        std::string stored_auth_key = r[0][0].as<std::string>();
+        std::cout << "db login(auth_key) << " << auth_key << std::endl;
+        std::cout << "db login(auth_key_stored) << " << stored_auth_key << std::endl;
+        if(auth_key != stored_auth_key)
             return std::nullopt;
-        return user_id;
+
+        db_protocol::user_info user_info;
+        user_info.id = r[0][1].as<int64_t>();
+        user_info.encypted_vault = r[0][2].as<std::string>();
+        user_info.vaule_nonce = r[0][3].as<std::string>();
+        std::cout << "db login(user_id): " << user_info.id << std::endl; 
+        std::cout << "db login(encypted_vault)" << user_info.encypted_vault << std::endl;
+        return user_info;
     }
     catch (const std::exception &e) {
-        std::cerr << "DB error(login_user): " << e.what() << std::endl;
+        std::cerr << "DB error(login): " << e.what() << std::endl;
         return std::nullopt;
     }
 }

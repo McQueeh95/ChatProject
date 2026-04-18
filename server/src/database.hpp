@@ -29,7 +29,7 @@ class database
         const std::string &salt, const std::string & public_key, 
         const std::string &encrypted_vault, const std::string &vault_nonce);
     std::string get_salt(const std::string &username);
-    std::optional<int64_t> login_user(const std::string &username, const std::string &password);
+    std::optional<db_protocol::user_info> login(const std::string &username, const std::string &password);
     std::optional<int64_t> get_recepeint_id(int64_t chat_id, int64_t sender_id);
     std::optional<db_protocol::message> insert_msg(int64_t chat_id, int64_t sender_id, const std::string& text);
     std::optional<int64_t> upsert_chat(int64_t user1_id, int64_t user2_id);

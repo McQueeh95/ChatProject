@@ -36,6 +36,15 @@ namespace {
 		return net_msg;
 	}
 
+	server_protocol::user_info map_user_db_to_net(const db_protocol::user_info& db_user)
+	{
+		server_protocol::user_info net_user;
+		net_user.user_id = db_user.id;
+		net_user.encrypted_vault = db_user.encypted_vault;
+		net_user.vault_nonce = db_user.vaule_nonce;
+		return net_user;
+	}
+
 	server_protocol::chat_info map_chat_db_to_net(const db_protocol::user_chat& db_chat)
 	{
 		server_protocol::chat_info net_chat;
@@ -109,7 +118,8 @@ void sessions_manager::on_auth_attempt(std::weak_ptr<session> session_ptr, const
 {
 	auto packet = decode_packet(raw);
 	if(!packet || (packet->type != server_protocol::message_type::LOGIN &&
-					packet->type != server_protocol::message_type::REG)) return;
+					packet->type != server_protocol::message_type::REG &&
+				packet->type != server_protocol::message_type::SALT_REQ)) return;
 	//login 
 	std::cout << "Started login" << std::endl;
 	auto type = packet->type;
@@ -134,19 +144,22 @@ void sessions_manager::on_auth_attempt(std::weak_ptr<session> session_ptr, const
 void sessions_manager::handle_login(std::weak_ptr<session> session_ptr, const server_protocol::login_req &login_msg)
 {
 	db_->post_task([this, msg = std::move(login_msg), session_ptr](){
-		std::optional<int64_t> user_id_opt = db_->login_user(msg.username, msg.hashed_password);
+		server_protocol::user_info user_net{};
 		std::vector<server_protocol::chat_info> chats;
-		if(user_id_opt)
+
+		auto user_db = db_->login(msg.username, msg.auth_key);
+		if(user_db)
 		{
-			auto db_chats = db_->get_user_chats(*user_id_opt);
+			user_net = map_user_db_to_net(*user_db);
+			auto db_chats = db_->get_user_chats(user_db->id);
 			chats.reserve(db_chats.size());
 			for(const auto& c: db_chats)
 			{
 				chats.push_back({c.chat_id, c.peer_id ,c.peer_username});
 			}
 		}
-		boost::asio::post(this->ioc_main_, [this, session_ptr, user_id_opt, chats = std::move(chats)](){
-			this->send_login_res(session_ptr, user_id_opt, chats);
+		boost::asio::post(this->ioc_main_, [this, session_ptr, user = std::move(user_net), chats = std::move(chats)](){
+			this->send_login_res(session_ptr, user, chats);
 		});
 	});
 }
@@ -168,6 +181,7 @@ void sessions_manager::handle_salt_req(std::weak_ptr<session> session_ptr, const
 {
 	db_->post_task([this, msg = std::move(salt_req), session_ptr](){
 		std::string user_salt = db_->get_salt(msg.username);
+		std::cout << "handle_salt_req salt: " << user_salt << std::endl;
 		boost::asio::post(this->ioc_main_, [this, session_ptr, user_salt](){
 			this->send_salt_res(session_ptr, user_salt);
 		});
@@ -323,20 +337,20 @@ void sessions_manager::send_history(int64_t sender_id, int64_t chat_id, std::vec
 	deliver(sender_id, json::serialize(jv));
 }
 
-void sessions_manager::send_login_res(std::weak_ptr<session> session_ptr, std::optional<int64_t> user_id_opt, 
+void sessions_manager::send_login_res(std::weak_ptr<session> session_ptr, const server_protocol::user_info &user_info, 
 		std::vector<server_protocol::chat_info> chats)
 {
 	auto s = session_ptr.lock();
 	if(!s) return;
 	
 	server_protocol::login_res res;
-	if(user_id_opt)
+	if(user_info.user_id > 0)
 	{
 		res.status = "ok";
-		res.user_id = *user_id_opt;
+		res.user_info = user_info;
 		res.chats = chats;
-		this->add_session(*user_id_opt, session_ptr);
-		s->set_session_id(*user_id_opt);
+		this->add_session(user_info.user_id, session_ptr);
+		s->set_session_id(user_info.user_id);
 	}
 	else 
 	{
@@ -353,6 +367,7 @@ void sessions_manager::send_salt_res(std::weak_ptr<session> session_ptr, const s
 	if(!s) return;
 
 	server_protocol::salt_res salt_res;
+	salt_res.salt = user_salt;
 	auto jv = json::value_from(salt_res);
 	s->send(json::serialize(jv));
 }

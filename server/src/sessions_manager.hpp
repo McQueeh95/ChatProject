@@ -37,7 +37,7 @@ private:
 	void send_to_recepient(int64_t id, const db_protocol::message& msg);
 	void send_deliv_ack(int64_t sender_id, int64_t local_id, const db_protocol::message& msg, int64_t peer_id = -1);
 	void send_salt_res(std::weak_ptr<session> session_ptr, const std::string& user_salt);
-	void send_login_res(std::weak_ptr<session> session_ptr, std::optional<int64_t> user_id_opt, 
+	void send_login_res(std::weak_ptr<session> session_ptr, const server_protocol::user_info &user_info, 
 		std::vector<server_protocol::chat_info> chats);
 	void send_reg_res(std::weak_ptr<session> session_ptr, std::optional<int64_t> user_id_opt);
 	void handle_search(int64_t sender_id, const server_protocol::search_req &search_req);

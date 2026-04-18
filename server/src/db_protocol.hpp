@@ -13,6 +13,13 @@ namespace db_protocol
         bool is_read = false;
     };
 
+    struct user_info
+    {
+        int64_t id;
+        std::string encypted_vault;
+        std::string vaule_nonce;
+    };
+
     struct user_chat
     {
         int64_t chat_id;
