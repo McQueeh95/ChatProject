@@ -25,12 +25,14 @@ namespace db_protocol
         int64_t chat_id;
         int64_t peer_id;
         std::string peer_username;
+        std::string public_key;
     };
 
     struct found_user
     {
         int64_t user_id;
         std::string username;
+        std::string public_key;
     };
 
 }

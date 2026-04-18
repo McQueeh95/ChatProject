@@ -44,10 +44,11 @@ void database::prepare_statements()
         "DO UPDATE SET created_at = EXCLUDED.created_at "
         "RETURNING id;");
     
-    connection_.prepare("get_searched_users", "SELECT id, username FROM users WHERE username ILIKE $1 || '%' LIMIT 10");
+    connection_.prepare("get_searched_users", "SELECT id, username, public_key FROM users WHERE username ILIKE $1 || '%' LIMIT 10");
 
     connection_.prepare("get_user_chats", 
-                        "SELECT c.id AS chat_id , u.id AS peer_id, u.username AS peer_name FROM chats c "
+                        "SELECT c.id AS chat_id , u.id AS peer_id, u.username AS peer_name, "
+                        "u.public_key AS public_key FROM chats c "
                             "JOIN users u ON u.id = CASE  "
                                     "WHEN "
                                     "c.user1_id = $1 THEN c.user2_id "
@@ -225,7 +226,8 @@ std::vector<db_protocol::found_user> database::get_searched_users(const std::str
         {
             users.push_back({
                 row[0].as<int64_t>(),
-                row[1].as<std::string>()
+                row[1].as<std::string>(),
+                row[2].as<std::string>()
             });
         }  
     } catch (const std::exception& e) {
@@ -247,7 +249,8 @@ std::vector<db_protocol::user_chat> database::get_user_chats(int64_t user_id)
             chats.push_back({
                 row[0].as<int64_t>(),
                 row[1].as<int64_t>(),
-                row[2].as<std::string>()
+                row[2].as<std::string>(),
+                row[3].as<std::string>()
             });
         }
     }

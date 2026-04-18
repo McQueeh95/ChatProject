@@ -31,13 +31,16 @@ namespace protocol
         qint64 chatId;
         qint64 peerId;
         QString peerUsername;
+        QByteArray publicKey;
 
         static ChatInfo fromJson(const QJsonObject& json)
         {
             ChatInfo chat;
+            QString publicKeyString = json["public_key"].toVariant().toString();
             chat.chatId = json["chat_id"].toVariant().toLongLong();
             chat.peerId = json["peer_id"].toVariant().toLongLong();
             chat.peerUsername = json["peer_username"].toVariant().toString();
+            chat.publicKey = QByteArray::fromBase64(publicKeyString.toLatin1());
             return chat;
         }
     };
@@ -261,12 +264,15 @@ namespace protocol
     {
         qint64 userId;
         QString username;
+        QByteArray publicKey;
 
         static UserSearch fromJson(const QJsonObject& json)
         {
             UserSearch user;
+            QString publicKeyString = json["public_key"].toVariant().toString();
             user.userId = json["user_id"].toVariant().toLongLong();
             user.username = json["username"].toVariant().toString();
+            user.publicKey = QByteArray::fromBase64(publicKeyString.toLatin1());
             return user;
         }
     };

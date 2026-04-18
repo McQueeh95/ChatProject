@@ -136,6 +136,7 @@ namespace server_protocol
         int64_t chat_id;
         int64_t peer_id;
         std::string peer_username;
+        std::string public_key;
 
         friend void tag_invoke(boost::json::value_from_tag, boost::json::value& jv, 
             const chat_info& msg);
@@ -164,6 +165,7 @@ namespace server_protocol
     {
         int64_t user_id;
         std::string username;
+        std::string public_key;
 
         friend void tag_invoke(boost::json::value_from_tag, boost::json::value& jv, 
             const user_search& msg);

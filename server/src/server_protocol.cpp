@@ -148,7 +148,8 @@ namespace server_protocol
     {
         jv = {
             {"user_id", msg.user_id},
-            {"username", msg.username}
+            {"username", msg.username},
+            {"public_key", msg.public_key}
         };
     }
 
@@ -196,7 +197,8 @@ namespace server_protocol
         jv = {
             {"chat_id", msg.chat_id},
             {"peer_id", msg.peer_id},
-            {"peer_username", msg.peer_username}
+            {"peer_username", msg.peer_username},
+            {"public_key", msg.public_key}
         };
     }
 

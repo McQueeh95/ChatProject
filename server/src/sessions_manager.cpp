@@ -50,6 +50,7 @@ namespace {
 		server_protocol::chat_info net_chat;
 		net_chat.chat_id = db_chat.chat_id;
 		net_chat.peer_username = db_chat.peer_username;
+		net_chat.public_key = db_chat.public_key;
 		return net_chat;
 	}
 
@@ -68,6 +69,7 @@ namespace {
 		server_protocol::user_search user_search;
 		user_search.user_id = db_user.user_id;
 		user_search.username = db_user.username;
+		user_search.public_key = db_user.public_key;
 		return user_search;
 	}
 }
@@ -153,9 +155,9 @@ void sessions_manager::handle_login(std::weak_ptr<session> session_ptr, const se
 			user_net = map_user_db_to_net(*user_db);
 			auto db_chats = db_->get_user_chats(user_db->id);
 			chats.reserve(db_chats.size());
-			for(const auto& c: db_chats)
+			for(const auto& chat: db_chats)
 			{
-				chats.push_back({c.chat_id, c.peer_id ,c.peer_username});
+				chats.push_back(map_chat_db_to_net(chat));
 			}
 		}
 		boost::asio::post(this->ioc_main_, [this, session_ptr, user = std::move(user_net), chats = std::move(chats)](){
