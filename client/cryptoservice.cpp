@@ -11,11 +11,10 @@ RegistrationData CryptoService::generateNewAccount(const QString &password)
     data.salt.resize(crypto_pwhash_SALTBYTES);
     randombytes_buf(data.salt.data(), data.salt.size());
 
-    const qint8 TOTAL_KEY_LEN = 64;
-    unsigned char fullKey[TOTAL_KEY_LEN];
+    unsigned char masterkey[crypto_kdf_KEYBYTES];
 
     if(crypto_pwhash
-        (fullKey, TOTAL_KEY_LEN, password.toUtf8().constData(), password.toUtf8().size(),
+        (masterkey, sizeof(masterkey), password.toUtf8().constData(), password.toUtf8().size(),
                       reinterpret_cast<const unsigned char*>(data.salt.constData()),
                     crypto_pwhash_OPSLIMIT_INTERACTIVE, crypto_pwhash_MEMLIMIT_INTERACTIVE,
                       crypto_pwhash_ALG_DEFAULT) != 0)
@@ -23,11 +22,17 @@ RegistrationData CryptoService::generateNewAccount(const QString &password)
         qDebug() << "Out of memory crypto_pwhash";
     }
 
-    data.authKey = QByteArray(reinterpret_cast<char*>(fullKey), 32);
-    unsigned char localEncryptKey[32];
-    memcpy(localEncryptKey, fullKey + 32, 32);
+    data.authKey.resize(AUTH_KEY_LEN);
+    crypto_kdf_derive_from_key(reinterpret_cast<unsigned char*>(data.authKey.data()), data.authKey.size(),
+                               static_cast<uint64_t>(KdfConfig::KeyId::ServerAuth),
+                               KdfConfig::CONTEXT_SERVER, masterkey);
 
-    sodium_memzero(fullKey, sizeof(fullKey));
+    unsigned char localEncryptKey[LOCAL_ENC_KEY_LEN];
+    crypto_kdf_derive_from_key(localEncryptKey, LOCAL_ENC_KEY_LEN,
+                               static_cast<uint64_t>(KdfConfig::KeyId::LocalVault),
+                               KdfConfig::CONTEXT_VAULT, masterkey);
+
+    sodium_memzero(masterkey, sizeof(masterkey));
 
     //Keypair generation
     data.publicKey.resize(crypto_box_PUBLICKEYBYTES);
@@ -39,7 +44,7 @@ RegistrationData CryptoService::generateNewAccount(const QString &password)
     unsigned char cipheredSecretKey[crypto_secretbox_MACBYTES + 32];
     randombytes_buf(data.vaultNonce.data(), sizeof(data.vaultNonce));
 
-    crypto_secretbox_easy(cipheredSecretKey, m_secretKey, 32, reinterpret_cast<const unsigned char*>(data.vaultNonce.constData()),
+    crypto_secretbox_easy(cipheredSecretKey, m_secretKey, crypto_box_SECRETKEYBYTES, reinterpret_cast<const unsigned char*>(data.vaultNonce.constData()),
                           localEncryptKey);
     sodium_memzero(localEncryptKey, sizeof(localEncryptKey));
 
@@ -51,11 +56,10 @@ RegistrationData CryptoService::generateNewAccount(const QString &password)
 DerivedKeys CryptoService::generateHashedPassword(const char* password, size_t pwdLen, const QByteArray& salt)
 {
     DerivedKeys keys;
-    const size_t TOTAL_KEY_LEN = 64;
-    unsigned char fullKey[TOTAL_KEY_LEN];
+    unsigned char masterkey[crypto_kdf_KEYBYTES];
 
     if(crypto_pwhash
-        (fullKey, TOTAL_KEY_LEN, password, pwdLen,
+        (masterkey, sizeof(masterkey), password, pwdLen,
          reinterpret_cast<const unsigned char*>(salt.constData()),
          crypto_pwhash_OPSLIMIT_INTERACTIVE, crypto_pwhash_MEMLIMIT_INTERACTIVE,
          crypto_pwhash_ALG_DEFAULT) != 0)
@@ -63,18 +67,27 @@ DerivedKeys CryptoService::generateHashedPassword(const char* password, size_t p
         qDebug() << "Out of memory crypto_pwhash";
         return keys;
     }
-    keys.authKey = QByteArray(reinterpret_cast<char*>(fullKey), 32);
-    keys.localEncryptKey = QByteArray(reinterpret_cast<char*>(fullKey) + 32, 32);
-    sodium_memzero(fullKey, TOTAL_KEY_LEN);
+
+    keys.authKey.resize(AUTH_KEY_LEN);
+    crypto_kdf_derive_from_key(reinterpret_cast<unsigned char*>(keys.authKey.data()), keys.authKey.size(),
+                               static_cast<uint64_t>(KdfConfig::KeyId::ServerAuth),
+                               KdfConfig::CONTEXT_SERVER, masterkey);
+
+    keys.localEncryptKey.resize(LOCAL_ENC_KEY_LEN);
+    crypto_kdf_derive_from_key(reinterpret_cast<unsigned char*>(keys.localEncryptKey.data()), keys.localEncryptKey.size(),
+                               static_cast<uint64_t>(KdfConfig::KeyId::LocalVault),
+                               KdfConfig::CONTEXT_VAULT, masterkey);
+
+    sodium_memzero(masterkey, MASTER_KEY_LEN);
+
     return keys;
 }
 
-void CryptoService::decryptSecretKey(const QByteArray &encryptedVault, const QByteArray& nonce, const char* key)
+void CryptoService::decryptSecretKey(const QByteArray &encryptedVault, const QByteArray& nonce, const unsigned char* key)
 {
     m_secretKey = static_cast<unsigned char*>(sodium_malloc(crypto_box_SECRETKEYBYTES));
     if(crypto_secretbox_open_easy(m_secretKey, reinterpret_cast<const unsigned char*>(encryptedVault.constData()),
-                               encryptedVault.size(), reinterpret_cast<const unsigned char*>(nonce.constData()),
-                                   reinterpret_cast<const unsigned char*>(key)) != 0)
+                               encryptedVault.size(), reinterpret_cast<const unsigned char*>(nonce.constData()), (key)) != 0)
     {
         qDebug() << "Message forged!";
     }

@@ -12,7 +12,6 @@ int main(int argc, char *argv[])
         qDebug() << "Critical Error: Not able to initialize libsodium!";
         return -1;
     }
-    qDebug() << "qDebug working!";
     QApplication a(argc, argv);
     AppController controller;
     //Creating window

@@ -190,7 +190,7 @@ void AppController::handleSaltRes(const QJsonObject &obj)
     protocol::SaltRes saltRes = protocol::SaltRes::fromJson(obj);
     if(!saltRes.salt.isEmpty())
     {
-        DerivedKeys keys = m_cryptoService->generateHashedPassword(m_pendingPassword.data(), m_pendingPassword.size(), saltRes.salt);
+        DerivedKeys keys = m_cryptoService->generateHashedPassword(m_pendingPassword.dataChar(), m_pendingPassword.size(), saltRes.salt);
         m_pendingLocalKey.load(keys.localEncryptKey);
 
         protocol::LoginReq loginReq;
@@ -221,7 +221,7 @@ void AppController::handleLoginRes(const QJsonObject &obj)
         std::sort(chatsList.begin(), chatsList.end(), [](const protocol::ChatInfo& a, const protocol::ChatInfo& b)
                   {return a.peerUsername < b.peerUsername;});
 
-        m_cryptoService->decryptSecretKey(user.encryptedVault, user.vaultNonce, m_pendingLocalKey.data());
+        m_cryptoService->decryptSecretKey(user.encryptedVault, user.vaultNonce, m_pendingLocalKey.dataUCHar());
         emit loginSuccess(m_userId, chatsList);
     }
     else

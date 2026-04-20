@@ -30,8 +30,25 @@ public:
         utf8.fill('\0');
     }
 
+    void load(const unsigned char* data, size_t size)
+    {
+        clear();
+        m_size = size;
+        m_data = static_cast<char*>(sodium_malloc(m_size));
+
+        if(m_data){
+            memcpy(m_data, data, m_size);
+        }
+    }
+
+    void load(const QByteArray &bytes)
+    {
+        load(reinterpret_cast<const unsigned char*>(bytes.constData()), bytes.size());
+    }
+
     bool isEmpty() const { return m_data == nullptr; }
-    const char* data() const { return m_data; }
+    const char* dataChar() const { return static_cast<char*>(m_data); }
+    const unsigned char* dataUCHar() const {return static_cast<unsigned char*>(m_data); }
     size_t size() const {return m_size; }
     void clear()
     {
@@ -47,7 +64,7 @@ public:
     SecureBuffer& operator=(const SecureBuffer&) = delete;
 
 private:
-    char* m_data = nullptr;
+    void* m_data = nullptr;
     size_t m_size = 0;
 };
 

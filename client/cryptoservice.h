@@ -9,6 +9,16 @@
 #define AUTH_KEY_SIZE 32U
 #define LOCAL_ENCRYPT_KEY_SIZE 32U
 
+namespace KdfConfig{
+    enum class KeyId: uint64_t{
+        ServerAuth = 1,
+        LocalVault = 2
+    };
+
+    constexpr char CONTEXT_SERVER[] = "ServerAu";
+    constexpr char CONTEXT_VAULT[] = "LocalEnc";
+}
+
 struct RegistrationData{
     QByteArray authKey;
     QByteArray salt;
@@ -30,7 +40,11 @@ public:
 
     RegistrationData generateNewAccount(const QString &password);
     DerivedKeys generateHashedPassword(const char* password, size_t pwdLen, const QByteArray& salt);
-    void decryptSecretKey(const QByteArray& encryptedVault, const QByteArray& nonce, const char* key);
+    void decryptSecretKey(const QByteArray& encryptedVault, const QByteArray& nonce, const unsigned char* key);
+
+    static constexpr size_t MASTER_KEY_LEN = 32;
+    static constexpr size_t AUTH_KEY_LEN = 32;
+    static constexpr size_t LOCAL_ENC_KEY_LEN = 32;
 signals:
 
 private:
