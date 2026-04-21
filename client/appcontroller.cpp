@@ -48,6 +48,7 @@ void AppController::loadHistory(qint64 chatId)
     //Chat exist in cache no need to ask server
     if(m_messagesCache.contains(chatId))
     {
+        qDebug() << "Public key for:" << chatId <<m_chats[chatId].publicKey.toBase64();
         emit historyReceived(chatId, m_messagesCache[chatId]);
     }
     //Chat doesn't exist ask server
@@ -217,7 +218,10 @@ void AppController::handleLoginRes(const QJsonObject &obj)
         m_chats = loginRes.chats;
 
         QList<protocol::ChatInfo> chatsList = m_chats.values();
-
+        for(const auto &c: chatsList)
+        {
+            qDebug() << c.publicKey.toBase64();
+        }
         std::sort(chatsList.begin(), chatsList.end(), [](const protocol::ChatInfo& a, const protocol::ChatInfo& b)
                   {return a.peerUsername < b.peerUsername;});
 
@@ -260,6 +264,11 @@ void AppController::handleHistoryRes(const QJsonObject &obj)
 void AppController::handleSearchRes(const QJsonObject &obj)
 {
     protocol::SearchRes searchRes = protocol::SearchRes::fromJson(obj);
+    m_searchCache.clear();
+    for(const auto &s: searchRes.foundUsers)
+    {
+        m_searchCache.insert(s.userId, s);
+    }
     emit foundUsers(searchRes.foundUsers);
 }
 
@@ -304,6 +313,16 @@ void AppController::promotePhantomChat(const protocol::DelivAck &delAck)
     newChat.peerId = delAck.peerId;
     newChat.peerUsername = m_pendingPhantomNames.take(newChat.peerId);
 
+    if(m_searchCache.contains(delAck.peerId))
+    {
+        newChat.publicKey = m_searchCache.value(delAck.peerId).publicKey;
+    }
+    else
+    {
+        qDebug() << "User was not found in search cache";
+    }
+
+    qDebug() << newChat.publicKey.toBase64();
     m_chats[delAck.chatId] = newChat;
     emit updateChats(newChat);
     if(m_currentChatId == (delAck.peerId * -1))
