@@ -291,13 +291,17 @@ void sessions_manager::handle_create_and_forward(int64_t sender_id, const server
 				std::cerr << "Failed getting sender username" << std::endl;
 				return;
 			}
+			auto sender_public_key = db_->get_public_key(sender_id);
+			if(!sender_username)
+			{
+				std::cerr << "Failed getting sender public key" << std::endl;
+				return;
+			}
 			int64_t local_id = msg.msg_local_id;
 			int64_t recepeint_id = msg.target_id;
-			boost::asio::post(this->ioc_main_, [this, local_id, recepeint_id, msg = *db_message, sender_id, sender_username = *sender_username]{
-
-
+			boost::asio::post(this->ioc_main_, [this, local_id, recepeint_id, msg = *db_message, sender_id, sender_username = *sender_username, sender_public_key = *sender_public_key]{
 				this->send_deliv_ack(sender_id, local_id, msg, recepeint_id);
-				this->send_new_chat_event(recepeint_id, msg.chat_id, sender_id, sender_username);
+				this->send_new_chat_event(recepeint_id, msg.chat_id, sender_id, sender_username, sender_public_key);
 				this->send_to_recepient(recepeint_id, msg);
 			});
 		}
@@ -459,12 +463,13 @@ void sessions_manager::send_search_res(int64_t sender_id, std::vector<db_protoco
 	deliver(sender_id, raw_data);
 }
 
-void sessions_manager::send_new_chat_event(int64_t receiver_id, int64_t chat_id, int64_t sender_id, std::string sender_username)
+void sessions_manager::send_new_chat_event(int64_t receiver_id, int64_t chat_id, int64_t sender_id, std::string sender_username, std::string public_key)
 {
 	server_protocol::chat_info new_chat;
 	new_chat.chat_id = chat_id;
 	new_chat.peer_id = sender_id;
 	new_chat.peer_username = sender_username;
+	new_chat.public_key = public_key;
 
 	auto jv = json::value_from(new_chat);
 	jv.as_object()["type"] = static_cast<int8_t>(server_protocol::message_type::NEW_CHAT_EVENT);

@@ -60,6 +60,8 @@ void database::prepare_statements()
         "FROM messages WHERE chat_id = $1 ORDER BY id DESC LIMIT 50) AS sub ORDER BY id ASC" );
     
     connection_.prepare("get_username", "SELECT username FROM users WHERE id = $1");
+
+    connection_.prepare("get_public_key", "SELECT public_key FROM users WHERE id = $1");
 }
 
 database::~database()
@@ -304,6 +306,26 @@ std::optional<std::string> database::get_username(int64_t user_id)
     catch(const std::exception &e)
     {
         std::cerr << "DB error(get_username): " << e.what() << std::endl;
+        return std::nullopt;
+    }
+}
+
+std::optional<std::string> database::get_public_key(int64_t user_id)
+{
+    try
+    {
+        pqxx::nontransaction n(connection_);
+        pqxx::result r(
+            n.exec(pqxx::prepped("get_public_key"), pqxx::params(user_id))
+        );
+        if(r.empty()) return std::nullopt;
+
+        std::string public_key = r[0][0].as<std::string>();
+        return public_key;
+    }
+    catch(const std::exception &e)
+    {
+        std::cerr << "DB error(get_public_key): " << e.what() << std::endl;
         return std::nullopt;
     }
 }

@@ -37,5 +37,6 @@ class database
     std::vector<db_protocol::user_chat> get_user_chats(int64_t user_id);
     std::vector<db_protocol::message> get_messages(int64_t chat_id);
     std::optional<std::string> get_username(int64_t user_id);
+    std::optional<std::string> get_public_key(int64_t user_id);
 
 };

@@ -45,7 +45,7 @@ private:
 	void send_search_res(int64_t sender_id, std::vector<db_protocol::found_user> users);
 	void handle_history_req(int64_t sender_id, int64_t chat_id);
 	void send_history(int64_t sender_id, int64_t chat_id, std::vector<db_protocol::message> db_messages);
-	void send_new_chat_event(int64_t receiver_id, int64_t chat_id, int64_t sender_id, std::string sender_username);
+	void send_new_chat_event(int64_t receiver_id, int64_t chat_id, int64_t sender_id, std::string sender_username, std::string public_key);
 	
 public:
 	//No copy semantics
