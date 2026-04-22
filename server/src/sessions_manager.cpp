@@ -31,6 +31,7 @@ namespace {
 		net_msg.chat_id = db_msg.chat_id;
 		net_msg.sender_id = db_msg.sender_id;
 		net_msg.payload = db_msg.encrypted_payload;
+		net_msg.nonce = db_msg.nonce;
 		net_msg.timestamp = db_msg.created_at;
 		net_msg.is_read = db_msg.is_read;
 		return net_msg;
@@ -253,7 +254,7 @@ void sessions_manager::handle_msg_forward(int64_t sender_id, const server_protoc
 	db_->post_task([this, sender_id, msg = std::move(incoming_msg)](){
 			auto recepeint_id = db_->get_recepeint_id(msg.chat_id, sender_id);
 			if(!recepeint_id.has_value()) return;
-			auto db_message = db_->insert_msg(msg.chat_id, sender_id, msg.payload);
+			auto db_message = db_->insert_msg(msg.chat_id, sender_id, msg.payload, msg.nonce);
 			if(!db_message.has_value())
 			{
 				std::cerr << "Failed to save message to DB" << std::endl;
@@ -278,7 +279,7 @@ void sessions_manager::handle_create_and_forward(int64_t sender_id, const server
 				std::cout << "Error creating chat" << std::endl;
 				return;
 			}
-			auto db_message = db_->insert_msg(*chat_id, sender_id, msg.payload);
+			auto db_message = db_->insert_msg(*chat_id, sender_id, msg.payload, msg.nonce);
 			if(!db_message)
 			{
 				std::cerr << "Failed to save message to DB" << std::endl;

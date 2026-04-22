@@ -51,9 +51,9 @@ private slots:
     void onSearchInput(const QString &text);
 
     //Controller slots
-    void showChatHistory(qint64 chatId, const QList<protocol::MsgDeliv>& messages);
-    void addNewMessage(const protocol::MsgDeliv &msg);
-    void changeViewStatus(const protocol::MsgDeliv &msg);
+    void showChatHistory(qint64 chatId, const QList<UiStruct::Message>& messages);
+    void addNewMessage(const UiStruct::Message &msg);
+    void changeViewStatus(const UiStruct::Message &msg);
     void showSearchResult(const QList<protocol::UserSearch> &users);
     void showNoMessagesYet(const QString &username);
 };

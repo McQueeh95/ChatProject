@@ -32,8 +32,8 @@ void database::prepare_statements()
     
     connection_.prepare("get_recepeint_id", "SELECT user1_id, user2_id FROM chats WHERE id = $1");
 
-    connection_.prepare("insert_msg", "INSERT INTO messages (chat_id, sender_id, encrypted_payload) "
-        "VALUES ($1, $2, $3) RETURNING id, created_at");
+    connection_.prepare("insert_msg", "INSERT INTO messages (chat_id, sender_id, encrypted_payload, nonce) "
+        "VALUES ($1, $2, $3, $4) RETURNING id, created_at");
 
     connection_.prepare("create_user", "INSERT INTO users (username, auth_key, salt, public_key, encrypted_vault, vault_nonce) "
         "VALUES ($1, $2, $3, $4, $5, $6) RETURNING id");
@@ -56,7 +56,7 @@ void database::prepare_statements()
                                     "END "
                                 "WHERE c.user1_id = $1 OR c.user2_id = $1;");
     
-    connection_.prepare("get_messages", "SELECT * FROM (SELECT id, chat_id, sender_id, encrypted_payload, created_at, is_read "
+    connection_.prepare("get_messages", "SELECT * FROM (SELECT id, chat_id, sender_id, encrypted_payload, nonce, created_at, is_read "
         "FROM messages WHERE chat_id = $1 ORDER BY id DESC LIMIT 50) AS sub ORDER BY id ASC" );
     
     connection_.prepare("get_username", "SELECT username FROM users WHERE id = $1");
@@ -168,11 +168,11 @@ std::optional<int64_t> database::get_recepeint_id(int64_t chat_id, int64_t sende
     }
 }
 
-std::optional<db_protocol::message> database::insert_msg(int64_t chat_id, int64_t sender_id, const std::string& text)
+std::optional<db_protocol::message> database::insert_msg(int64_t chat_id, int64_t sender_id, const std::string& text, const std::string &nonce)
 {
     try{
         pqxx::work w(connection_);
-        pqxx::result r = w.exec(pqxx::prepped("insert_msg"), pqxx::params{chat_id, sender_id, text});
+        pqxx::result r = w.exec(pqxx::prepped("insert_msg"), pqxx::params{chat_id, sender_id, text, nonce});
         w.commit();
         
         if(r.empty()) return std::nullopt;
@@ -181,10 +181,10 @@ std::optional<db_protocol::message> database::insert_msg(int64_t chat_id, int64_
         message.chat_id = chat_id;
         message.sender_id = sender_id;
         message.encrypted_payload = text;
+        message.nonce = nonce;
         message.id = r[0][0].as<int64_t>();
         message.created_at = r[0][1].as<std::string>();
         return message;
-       
     }
     catch(const std::exception& e)
     {
@@ -276,7 +276,8 @@ std::vector<db_protocol::message> database::get_messages(int64_t chat_id)
                 row[2].as<int64_t>(),
                 row[3].as<std::string>(),
                 row[4].as<std::string>(),
-                row[5].as<bool>()
+                row[5].as<std::string>(),
+                row[6].as<bool>()
             });
         }
     }

@@ -43,7 +43,8 @@ namespace server_protocol
         return {
             json::value_to<int64_t>(obj.at("local_id")),
             json::value_to<int64_t>(obj.at("chat_id")),
-            json::value_to<std::string>(obj.at("payload"))
+            json::value_to<std::string>(obj.at("payload")),
+            json::value_to<std::string>(obj.at("nonce"))
         };
     }
 
@@ -53,7 +54,8 @@ namespace server_protocol
         return {
             json::value_to<int64_t>(obj.at("local_id")),
             json::value_to<int64_t>(obj.at("target_id")),
-            json::value_to<std::string>(obj.at("payload"))
+            json::value_to<std::string>(obj.at("payload")),
+            json::value_to<std::string>(obj.at("nonce"))
         };
     }
 
@@ -85,6 +87,7 @@ namespace server_protocol
             {"chat_id", msg.chat_id},
             {"sender_id", msg.sender_id},
             {"payload", msg.payload},
+            {"nonce", msg.nonce},
             {"timestamp", msg.timestamp},
             {"is_read", msg.is_read}
         };

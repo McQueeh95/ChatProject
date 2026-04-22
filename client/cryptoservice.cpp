@@ -92,3 +92,35 @@ void CryptoService::decryptSecretKey(const QByteArray &encryptedVault, const QBy
         qDebug() << "Message forged!";
     }
 }
+
+EncryptedMessage CryptoService::encryptMessage(const QString &text, const QByteArray &peerPublicKey)
+{
+    EncryptedMessage msg;
+    size_t textLen = text.toUtf8().size();
+    msg.nonce.resize(crypto_box_NONCEBYTES);
+    msg.cipherText.resize(crypto_box_MACBYTES + textLen);
+    randombytes_buf(reinterpret_cast<unsigned char*>(msg.nonce.data()), msg.nonce.size());
+    if(crypto_box_easy(reinterpret_cast<unsigned char*>(msg.cipherText.data()),
+                        reinterpret_cast<const unsigned char*>(text.toUtf8().constData()), textLen,
+                        reinterpret_cast<const unsigned char*>(msg.nonce.constData()),
+                        reinterpret_cast<const unsigned char*>(peerPublicKey.constData()), m_secretKey) != 0)
+    {
+        qDebug() << "message encryption failed";
+    }
+    return msg;
+}
+
+QString CryptoService::decryptMessage(const QByteArray &cipheredText, const QByteArray &peerPublicKey, const QByteArray &nonce)
+{
+    QByteArray decryptedBytes;
+    decryptedBytes.resize(cipheredText.size() - crypto_box_MACBYTES);
+    if(crypto_box_open_easy(reinterpret_cast<unsigned char*>(decryptedBytes.data()),
+                             reinterpret_cast<const unsigned char*>(cipheredText.constData()),
+                             cipheredText.size(),
+                             reinterpret_cast<const unsigned char*>(nonce.constData()),
+                             reinterpret_cast<const unsigned char*>(peerPublicKey.constData()), m_secretKey) != 0)
+    {
+        qDebug() << "Message forged on decryption";
+    }
+    return QString::fromUtf8(decryptedBytes);
+}

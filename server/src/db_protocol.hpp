@@ -9,6 +9,7 @@ namespace db_protocol
         int64_t chat_id;
         int64_t sender_id;
         std::string encrypted_payload;
+        std::string nonce;
         std::string created_at;
         bool is_read = false;
     };

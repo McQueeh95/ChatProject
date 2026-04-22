@@ -55,6 +55,7 @@ namespace server_protocol
         int64_t local_id;
         int64_t chat_id;
         std::string payload;
+        std::string nonce;
         friend msg_forw_req tag_invoke(boost::json::value_to_tag<msg_forw_req>, 
             const boost::json::value& jv);
     };
@@ -64,6 +65,7 @@ namespace server_protocol
         int64_t msg_local_id;
         int64_t target_id;
         std::string payload;
+        std::string nonce;
         friend start_chat_req tag_invoke(boost::json::value_to_tag<start_chat_req>, 
             const boost::json::value& jv);
     };
@@ -84,6 +86,7 @@ namespace server_protocol
         int64_t chat_id;
         int64_t sender_id;
         std::string payload;
+        std::string nonce;
         std::string timestamp;
         bool is_read;
         friend void tag_invoke(boost::json::value_from_tag,

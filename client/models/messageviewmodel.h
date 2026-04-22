@@ -3,7 +3,7 @@
 
 #include <QAbstractListModel>
 #include <QObject>
-#include "../networktypes.h"
+#include "../uitypes.h"
 
 class MessageViewModel : public QAbstractListModel
 {
@@ -16,15 +16,15 @@ public:
 public:
     int rowCount(const QModelIndex &parent) const override;
     QVariant data(const QModelIndex &index, int role) const override;
-    void setMessages(const QList<protocol::MsgDeliv> &messages);
+    void setMessages(const QList<UiStruct::Message> &messages);
     void setUserId(qint64 userId);
 
-    void appendMessage(const protocol::MsgDeliv &msg);
-    void updateMessage(const protocol::MsgDeliv &msg);
+    void appendMessage(const UiStruct::Message &msg);
+    void updateMessage(const UiStruct::Message &msg);
     void clearMessages();
 
 private:
-    QList<protocol::MsgDeliv> m_messages;
+    QList<UiStruct::Message> m_messages;
     qint64 m_userId = 0;
 };
 

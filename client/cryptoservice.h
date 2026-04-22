@@ -32,6 +32,11 @@ struct DerivedKeys{
     QByteArray localEncryptKey;
 };
 
+struct EncryptedMessage{
+    QByteArray cipherText;
+    QByteArray nonce;
+};
+
 class CryptoService : public QObject
 {
     Q_OBJECT
@@ -41,6 +46,8 @@ public:
     RegistrationData generateNewAccount(const QString &password);
     DerivedKeys generateHashedPassword(const char* password, size_t pwdLen, const QByteArray& salt);
     void decryptSecretKey(const QByteArray& encryptedVault, const QByteArray& nonce, const unsigned char* key);
+    EncryptedMessage encryptMessage(const QString& text, const QByteArray& peerPublicKey);
+    QString decryptMessage(const QByteArray &cipheredText, const QByteArray& peerPublicKey, const QByteArray &nonce);
 
     static constexpr size_t MASTER_KEY_LEN = 32;
     static constexpr size_t AUTH_KEY_LEN = 32;

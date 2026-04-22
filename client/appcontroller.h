@@ -6,6 +6,7 @@
 #include "networktypes.h"
 #include "cryptoservice.h"
 #include "securebuffer.h"
+#include "uitypes.h"
 
 class AppController: public QObject
 {
@@ -31,10 +32,10 @@ signals:
     void registrationSuccess(qint64 userId);
     void registrationFailure();
 
-    void historyReceived(qint64 chatId, QList<protocol::MsgDeliv> messagesList);
-    void newMessageReceived(const protocol::MsgDeliv &msg);
-    void localMessageCreated(const protocol::MsgDeliv &msg);
-    void msgConfirmed(const protocol::MsgDeliv &msg);
+    void historyReceived(qint64 chatId, QList<UiStruct::Message> messagesList);
+    void newMessageReceived(const UiStruct::Message &msg);
+    void localMessageCreated(const UiStruct::Message &msg);
+    void msgConfirmed(const UiStruct::Message &msg);
     void foundUsers(const QList<protocol::UserSearch> &users);
     void chatScreenRequested(const QString &username);
     void noMessagesYet(const QString &username);
@@ -48,8 +49,8 @@ private:
     //Helpers
     qint64 findChatIdByUserId(qint64 targetUserId);
     QJsonObject makeMessageJson(qint64 localId, const QString &text);
-    protocol::MsgDeliv makeUiDraft(qint64 localId, const QString &text);
-    void processLocalMessage(const protocol::MsgDeliv &message);
+    UiStruct::Message makeUiDraft(qint64 localId, const QString &text);
+    void processLocalMessage(const UiStruct::Message &message);
 
     //Handles server's responses
     void handleSaltRes (const QJsonObject &obj);
@@ -62,6 +63,7 @@ private:
     void handleNewChatEvent(const QJsonObject &obj);
     void promotePhantomChat(const protocol::DelivAck &delAck);
     void confirmDeliveryMessage(const protocol::DelivAck &delAck);
+    UiStruct::Message mapToUi(const protocol::MsgDeliv &netMsg, const QByteArray &peerPublicKey);
 
     CryptoService* m_cryptoService;
     NetworkClient* m_networkClient;
@@ -72,7 +74,8 @@ private:
     qint64 m_userId = 0;
     qint64 m_currentChatId = 0;
     qint64 m_phantomTargetId = 0;
-    QHash<qint64, QList<protocol::MsgDeliv>> m_messagesCache;
+    //QHash<qint64, QList<protocol::MsgDeliv>> m_messagesCache;
+    QHash<qint64, QList<UiStruct::Message>> m_messagesCache;
     QHash<qint64, QString> m_pendingPhantomNames;
     QHash<qint64, protocol::UserSearch> m_searchCache;
 };

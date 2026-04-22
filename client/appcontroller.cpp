@@ -1,5 +1,6 @@
 #include "appcontroller.h"
 #include <iostream>
+#include <QDateTime>
 
 AppController::AppController() {
     m_networkClient = new NetworkClient(this);
@@ -48,7 +49,7 @@ void AppController::loadHistory(qint64 chatId)
     //Chat exist in cache no need to ask server
     if(m_messagesCache.contains(chatId))
     {
-        qDebug() << "Public key for:" << chatId <<m_chats[chatId].publicKey.toBase64();
+        qDebug() << "Public key for:" << chatId << m_chats[chatId].publicKey.toBase64();
         emit historyReceived(chatId, m_messagesCache[chatId]);
     }
     //Chat doesn't exist ask server
@@ -83,7 +84,7 @@ void AppController::sendMessage(const QString &text)
 {
     qint64 localId = QDateTime::currentMSecsSinceEpoch() * -1;
 
-    protocol::MsgDeliv uiDraft = makeUiDraft(localId, text);
+    UiStruct::Message uiDraft = makeUiDraft(localId, text);
 
     processLocalMessage(uiDraft);
 
@@ -148,10 +149,12 @@ QJsonObject AppController::makeMessageJson(qint64 localId, const QString &text)
 {
     if(m_currentChatId > 0)
     {
+        EncryptedMessage msg = m_cryptoService->encryptMessage(text, m_chats[m_currentChatId].publicKey);
         protocol::ForwardReq forReq;
         forReq.chatId = m_currentChatId;
         forReq.localId = localId;
-        forReq.payload = text;
+        forReq.payload = msg.cipherText;
+        forReq.nonce = msg.nonce;
 
         return forReq.toJson();
     }
@@ -160,23 +163,27 @@ QJsonObject AppController::makeMessageJson(qint64 localId, const QString &text)
         protocol::StartChatReq startChatReq;
         startChatReq.targetId = (m_currentChatId * -1);
         startChatReq.msgLocalId = localId;
-        startChatReq.payload = text;
+
+        EncryptedMessage msg = m_cryptoService->encryptMessage(text, m_searchCache[startChatReq.targetId].publicKey);
+
+        startChatReq.payload = msg.cipherText;
+        startChatReq.nonce = msg.nonce;
 
         return startChatReq.toJson();
     }
 }
 
-protocol::MsgDeliv AppController::makeUiDraft(qint64 localId, const QString &text)
+UiStruct::Message AppController::makeUiDraft(qint64 localId, const QString &text)
 {
-    protocol::MsgDeliv uiDraft;
+    UiStruct::Message uiDraft;
     uiDraft.chatId = m_currentChatId;
     uiDraft.localId = localId;
-    uiDraft.payload = text;
+    uiDraft.text = text;
     uiDraft.senderId = m_userId;
     return uiDraft;
 }
 
-void AppController::processLocalMessage(const protocol::MsgDeliv &message)
+void AppController::processLocalMessage(const UiStruct::Message &message)
 {
     //Add message to chat to show in the UI
     m_messagesCache[message.chatId].push_back(message);
@@ -248,16 +255,34 @@ void AppController::handleRegistrationRes(const QJsonObject &obj)
 void AppController::handleForwardedMessage(const QJsonObject &obj)
 {
     protocol::MsgDeliv msgDeliv = protocol::MsgDeliv::fromJson(obj);
-
-    m_messagesCache[msgDeliv.chatId].push_back(msgDeliv);
-    newMessageReceived(msgDeliv);
+    QByteArray chatPublicKey = m_chats[msgDeliv.chatId].publicKey;
+    qDebug() << "Public Key: " << chatPublicKey.toBase64();
+    QString decryptedText = m_cryptoService->decryptMessage(msgDeliv.payload,
+                                chatPublicKey, msgDeliv.nonce);
+    qDebug() << "Msg text:" << decryptedText;
+    UiStruct::Message uiMsg = UiStruct::Message::fromNetwork(msgDeliv, decryptedText);
+    qDebug() << "Msg text:" << uiMsg.text;
+    m_messagesCache[msgDeliv.chatId].push_back(uiMsg);
+    newMessageReceived(uiMsg);
 }
 
 void AppController::handleHistoryRes(const QJsonObject &obj)
 {
     protocol::HistoryRes hisRes = protocol::HistoryRes::fromJson(obj);
     qint64 chatId = hisRes.chatId;
-    m_messagesCache[chatId] = hisRes.messages;
+    QByteArray chatPublicKey = m_chats[chatId].publicKey;
+
+    QList<UiStruct::Message> uiMessages;
+
+    for(const auto &netMsg: hisRes.messages)
+    {
+        QString decryptedText = m_cryptoService->decryptMessage(
+            netMsg.payload, chatPublicKey, netMsg.nonce);
+
+        uiMessages.append(UiStruct::Message::fromNetwork(netMsg, decryptedText));
+    }
+
+    m_messagesCache[chatId] = uiMessages;
     loadHistory(chatId);
 }
 
@@ -300,7 +325,7 @@ void AppController::promotePhantomChat(const protocol::DelivAck &delAck)
     qint64 tempChatId = (delAck.peerId * -1);
     if(m_messagesCache.contains(tempChatId))
     {
-        QList<protocol::MsgDeliv> drafts = m_messagesCache.take(tempChatId);
+        QList<UiStruct::Message> drafts = m_messagesCache.take(tempChatId);
         for(auto& msg : drafts)
         {
             msg.chatId = delAck.chatId;
@@ -337,14 +362,13 @@ void AppController::confirmDeliveryMessage(const protocol::DelivAck &delAck)
 {
     if(!m_messagesCache.contains(delAck.chatId)) return;
 
-    QList<protocol::MsgDeliv> &messages = m_messagesCache[delAck.chatId];
+    QList<UiStruct::Message> &messages = m_messagesCache[delAck.chatId];
     for(qint64 i = messages.size() - 1; i >= 0; i--)
     {
         if(messages[i].localId == delAck.localId)
         {
             messages[i].messageId = delAck.realId;
-            messages[i].timeStamp = delAck.timestamp;
-            messages[i].displayTime = delAck.displayTime;
+            messages[i].displayTime = UiStruct::Message::formatTime(delAck.timestamp);
 
             if(messages[i].chatId == m_currentChatId)
             {

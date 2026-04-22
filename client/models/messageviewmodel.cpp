@@ -20,11 +20,12 @@ QVariant MessageViewModel::data(const QModelIndex &index, int role) const
     if(index.row() < 0 || index.row() >= m_messages.size())
         return QVariant();
 
-    const protocol::MsgDeliv message = m_messages.at(index.row());
+    const UiStruct::Message message = m_messages.at(index.row());
+    //const protocol::MsgDeliv message = m_messages.at(index.row());
 
     if(role == Qt::DisplayRole)
     {
-        return message.payload;
+        return message.text;
     }
     if(role == AppRoles::MessageIdRole)
     {
@@ -32,7 +33,7 @@ QVariant MessageViewModel::data(const QModelIndex &index, int role) const
     }
     if(role == AppRoles::TimeRole)
     {
-        if(message.messageId == 0 || message.timeStamp.isEmpty())
+        if(message.messageId == 0 || message.displayTime.isEmpty())
         {
             return "sending...";
         }
@@ -47,7 +48,7 @@ QVariant MessageViewModel::data(const QModelIndex &index, int role) const
 }
 
 
-void MessageViewModel::setMessages(const QList<protocol::MsgDeliv> &messages)
+void MessageViewModel::setMessages(const QList<UiStruct::Message> &messages)
 {
     beginResetModel();
     m_messages = messages;
@@ -59,7 +60,7 @@ void MessageViewModel::setUserId(qint64 userId)
     this->m_userId = userId;
 }
 
-void MessageViewModel::appendMessage(const protocol::MsgDeliv &msg)
+void MessageViewModel::appendMessage(const UiStruct::Message &msg)
 {
     int newRow = m_messages.size();
     beginInsertRows(QModelIndex(), newRow, newRow);
@@ -69,14 +70,13 @@ void MessageViewModel::appendMessage(const protocol::MsgDeliv &msg)
     endInsertRows();
 }
 
-void MessageViewModel::updateMessage(const protocol::MsgDeliv &msg)
+void MessageViewModel::updateMessage(const UiStruct::Message &msg)
 {
     beginResetModel();
     for(qint64 i = m_messages.size() - 1; i >= 0; i--)
     {
         if(m_messages[i].localId == msg.localId)
         {
-            m_messages[i].timeStamp = msg.timeStamp;
             m_messages[i].displayTime = msg.displayTime;
             m_messages[i].messageId = msg.messageId;
         }

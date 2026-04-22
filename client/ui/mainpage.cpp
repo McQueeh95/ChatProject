@@ -75,7 +75,7 @@ void MainPage::onMessageSubmitted()
     }
 }
 
-void MainPage::showChatHistory(qint64 chatId, const QList<protocol::MsgDeliv> &messages)
+void MainPage::showChatHistory(qint64 chatId, const QList<UiStruct::Message> &messages)
 {
     if(chatId == m_controller->getCurrentChatId())
     {
@@ -83,12 +83,12 @@ void MainPage::showChatHistory(qint64 chatId, const QList<protocol::MsgDeliv> &m
     }
 }
 
-void MainPage::addNewMessage(const protocol::MsgDeliv &msg)
+void MainPage::addNewMessage(const UiStruct::Message &msg)
 {
     m_messages->appendMessage(msg);
 }
 
-void MainPage::changeViewStatus(const protocol::MsgDeliv &msg)
+void MainPage::changeViewStatus(const UiStruct::Message &msg)
 {
     if(msg.chatId == m_controller->getCurrentChatId())
     {

@@ -67,7 +67,8 @@ namespace protocol
     {
         qint64 localId;
         qint64 chatId;
-        QString payload;
+        QByteArray payload;
+        QByteArray nonce;
 
         QJsonObject toJson() const
         {
@@ -75,7 +76,8 @@ namespace protocol
             json["type"] = static_cast<qint8>(messageType::FORW);
             json["local_id"] = localId;
             json["chat_id"] = chatId;
-            json["payload"] = payload;
+            json["payload"] = QString::fromLatin1(payload.toBase64());
+            json["nonce"] = QString::fromLatin1(nonce.toBase64());
             return json;
         }
     };
@@ -84,7 +86,8 @@ namespace protocol
     {
         qint64 msgLocalId;
         qint64 targetId;
-        QString payload;
+        QByteArray payload;
+        QByteArray nonce;
 
         QJsonObject toJson() const
         {
@@ -92,10 +95,12 @@ namespace protocol
             json["type"] = static_cast<qint8>(messageType::START_CHAT_REQ);
             json["local_id"] = msgLocalId;
             json["target_id"] = targetId;
-            json["payload"] = payload;
+            json["payload"] = QString::fromLatin1(payload.toBase64());
+            json["nonce"] = QString::fromLatin1(nonce.toBase64());
             return json;
         }
     };
+
 
     struct MsgDeliv
     {
@@ -103,29 +108,22 @@ namespace protocol
         qint64 localId;
         qint64 chatId;
         qint64 senderId;
-        QString payload;
+        QByteArray payload;
+        QByteArray nonce;
         QString timeStamp;
-        QString displayTime;
 
         static MsgDeliv fromJson(const QJsonObject& json)
         {
+            QString cipheredPayloadString = json["payload"].toString();
+            QString nonceString = json["nonce"].toString();
             MsgDeliv msg;
             msg.messageId = json["message_id"].toVariant().toLongLong();
             msg.localId = json["local_id"].toVariant().toLongLong();
             msg.chatId = json["chat_id"].toVariant().toLongLong();
             msg.senderId = json["sender_id"].toVariant().toLongLong();
-            msg.payload = json["payload"].toVariant().toString();
+            msg.payload = QByteArray::fromBase64(cipheredPayloadString.toLatin1());
+            msg.nonce = QByteArray::fromBase64(nonceString.toLatin1());
             msg.timeStamp = json["timestamp"].toVariant().toString();
-            QDateTime dt = QDateTime::fromString(msg.timeStamp, Qt::ISODate);
-            if(dt.isValid())
-            {
-                msg.displayTime = dt.toString("HH:mm");
-            }
-            else
-            {
-                qDebug() << "dt is not valid";
-                msg.displayTime = msg.timeStamp;
-            }
             return msg;
         }
     };
