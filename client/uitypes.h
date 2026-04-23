@@ -39,6 +39,13 @@ namespace UiStruct {
         }
 
     };
+
+    struct PhantomChat
+    {
+        qint64 tempChatId;
+        QString username;
+        QByteArray publicKey;
+    };
 }
 
 

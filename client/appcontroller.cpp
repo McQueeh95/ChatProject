@@ -49,7 +49,6 @@ void AppController::loadHistory(qint64 chatId)
     //Chat exist in cache no need to ask server
     if(m_messagesCache.contains(chatId))
     {
-        qDebug() << "Public key for:" << chatId << m_chats[chatId].publicKey.toBase64();
         emit historyReceived(chatId, m_messagesCache[chatId]);
     }
     //Chat doesn't exist ask server
@@ -74,9 +73,13 @@ void AppController::processChatSelection(qint64 chatId, qint64 userId, const QSt
     }
     else if(m_currentChatId < 0)
     {
-        m_pendingPhantomNames.insert(userId, username);
+        UiStruct::PhantomChat phantom;
+        phantom.tempChatId = (userId * -1);
+        phantom.username = username;
+        phantom.publicKey = m_searchCache[userId].publicKey;
+
+        m_pendingPhantoms.insert(userId, phantom);
         emit noMessagesYet(username);
-        //emit historyReceived(m_currentChatId, {});
     }
 }
 
@@ -164,7 +167,7 @@ QJsonObject AppController::makeMessageJson(qint64 localId, const QString &text)
         startChatReq.targetId = (m_currentChatId * -1);
         startChatReq.msgLocalId = localId;
 
-        EncryptedMessage msg = m_cryptoService->encryptMessage(text, m_searchCache[startChatReq.targetId].publicKey);
+        EncryptedMessage msg = m_cryptoService->encryptMessage(text, m_pendingPhantoms[startChatReq.targetId].publicKey);
 
         startChatReq.payload = msg.cipherText;
         startChatReq.nonce = msg.nonce;
@@ -256,12 +259,9 @@ void AppController::handleForwardedMessage(const QJsonObject &obj)
 {
     protocol::MsgDeliv msgDeliv = protocol::MsgDeliv::fromJson(obj);
     QByteArray chatPublicKey = m_chats[msgDeliv.chatId].publicKey;
-    qDebug() << "Public Key: " << chatPublicKey.toBase64();
     QString decryptedText = m_cryptoService->decryptMessage(msgDeliv.payload,
                                 chatPublicKey, msgDeliv.nonce);
-    qDebug() << "Msg text:" << decryptedText;
     UiStruct::Message uiMsg = UiStruct::Message::fromNetwork(msgDeliv, decryptedText);
-    qDebug() << "Msg text:" << uiMsg.text;
     m_messagesCache[msgDeliv.chatId].push_back(uiMsg);
     newMessageReceived(uiMsg);
 }
@@ -315,7 +315,7 @@ void AppController::handleMessagAck(const QJsonObject &obj)
 
 void AppController::handleNewChatEvent(const QJsonObject &obj)
 {
-    auto newChat = protocol::ChatInfo::fromJson(obj);
+    protocol::ChatInfo newChat = protocol::ChatInfo::fromJson(obj);
     m_chats[newChat.chatId] = newChat;
     emit updateChats(newChat);
 }
@@ -332,15 +332,16 @@ void AppController::promotePhantomChat(const protocol::DelivAck &delAck)
         }
         m_messagesCache.insert(delAck.chatId, drafts);
     }
-
     protocol::ChatInfo newChat;
+    UiStruct::PhantomChat phantom = m_pendingPhantoms.take(newChat.peerId);
     newChat.chatId = delAck.chatId;
     newChat.peerId = delAck.peerId;
-    newChat.peerUsername = m_pendingPhantomNames.take(newChat.peerId);
+    newChat.peerUsername = phantom.username;
+    newChat.publicKey = phantom.publicKey;
 
-    if(m_searchCache.contains(delAck.peerId))
+    if(m_pendingPhantoms.contains(delAck.peerId))
     {
-        newChat.publicKey = m_searchCache.value(delAck.peerId).publicKey;
+        newChat.publicKey = m_pendingPhantoms.value(delAck.peerId).publicKey;
     }
     else
     {

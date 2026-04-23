@@ -76,7 +76,7 @@ private:
     qint64 m_phantomTargetId = 0;
     //QHash<qint64, QList<protocol::MsgDeliv>> m_messagesCache;
     QHash<qint64, QList<UiStruct::Message>> m_messagesCache;
-    QHash<qint64, QString> m_pendingPhantomNames;
+    QHash<qint64, UiStruct::PhantomChat> m_pendingPhantoms;
     QHash<qint64, protocol::UserSearch> m_searchCache;
 };
 

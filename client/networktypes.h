@@ -271,7 +271,6 @@ namespace protocol
             user.userId = json["user_id"].toVariant().toLongLong();
             user.username = json["username"].toVariant().toString();
             user.publicKey = QByteArray::fromBase64(publicKeyString.toLatin1());
-            qDebug() << "User public key:" << user.publicKey.toBase64();
             return user;
         }
     };
