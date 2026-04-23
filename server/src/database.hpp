@@ -33,7 +33,7 @@ class database
     std::optional<int64_t> get_recepeint_id(int64_t chat_id, int64_t sender_id);
     std::optional<db_protocol::message> insert_msg(int64_t chat_id, int64_t sender_id, const std::string& text, const std::string &nonce);
     std::optional<int64_t> upsert_chat(int64_t user1_id, int64_t user2_id);
-    std::vector<db_protocol::found_user> get_searched_users(const std::string &query);
+    std::vector<db_protocol::found_user> get_searched_users(const std::string &query, int64_t sender_id);
     std::vector<db_protocol::user_chat> get_user_chats(int64_t user_id);
     std::vector<db_protocol::message> get_messages(int64_t chat_id);
     std::optional<std::string> get_username(int64_t user_id);

@@ -439,7 +439,7 @@ void sessions_manager::handle_search(int64_t sender_id, const server_protocol::s
 {
 	std::string query = search_req.to_find;
 	db_->post_task([this, sender_id, search_req, query](){
-		auto found_users = db_->get_searched_users(query);
+		auto found_users = db_->get_searched_users(query, sender_id);
 
 		boost::asio::post(ioc_main_, [this, sender_id, found_users](){
 			send_search_res(sender_id, found_users);

@@ -44,7 +44,7 @@ void database::prepare_statements()
         "DO UPDATE SET created_at = EXCLUDED.created_at "
         "RETURNING id;");
     
-    connection_.prepare("get_searched_users", "SELECT id, username, public_key FROM users WHERE username ILIKE $1 || '%' LIMIT 10");
+    connection_.prepare("get_searched_users", "SELECT id, username, public_key FROM users WHERE username ILIKE $1 || '%' AND id != $2");
 
     connection_.prepare("get_user_chats", 
                         "SELECT c.id AS chat_id , u.id AS peer_id, u.username AS peer_name, "
@@ -215,13 +215,13 @@ std::optional<int64_t> database::upsert_chat(int64_t user1_id, int64_t user2_id)
    } 
 }
 
-std::vector<db_protocol::found_user> database::get_searched_users(const std::string &query)
+std::vector<db_protocol::found_user> database::get_searched_users(const std::string &query, int64_t sender_id)
 {
     std::vector<db_protocol::found_user> users;
     try {
         pqxx::nontransaction n(connection_);
         pqxx::result r (
-            n.exec(pqxx::prepped("get_searched_users"), pqxx::params{query})
+            n.exec(pqxx::prepped("get_searched_users"), pqxx::params{query, sender_id})
         );
         
         for(auto const row: r)
