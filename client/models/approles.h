@@ -8,7 +8,9 @@ namespace AppRoles
         MessageIdRole = Qt::UserRole + 1,
         TimeRole = Qt::UserRole + 2,
         StatusRole = Qt::UserRole + 3,
-        IsMyMessageRole = Qt::UserRole + 4
+        IsMyMessageRole = Qt::UserRole + 4,
+        ShowDateRole = Qt::UserRole + 5,
+        DateRole = Qt::UserRole + 6
     };
 
     enum ChatRoles

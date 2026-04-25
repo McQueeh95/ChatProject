@@ -19,7 +19,7 @@ public:
     void setMessages(const QList<UiStruct::Message> &messages);
     void setUserId(qint64 userId);
 
-    void appendMessage(const UiStruct::Message &msg);
+    void appendMessage(UiStruct::Message msg);
     void updateMessage(const UiStruct::Message &msg);
     void clearMessages();
 

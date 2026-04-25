@@ -28,6 +28,10 @@ signals:
 private:
     Ui::LoginPage *ui;
     AppController* m_controller;
+    void handleErrorInput();
+    void handleEmptyFields();
+    void clearErrorState();
+
 };
 
 #endif // LOGINPAGE_H

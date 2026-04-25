@@ -28,7 +28,7 @@
      <property name="sizeHint" stdset="0">
       <size>
        <width>17</width>
-       <height>89</height>
+       <height>86</height>
       </size>
      </property>
     </spacer>
@@ -135,7 +135,7 @@
               <property name="minimumSize">
                <size>
                 <width>300</width>
-                <height>0</height>
+                <height>30</height>
                </size>
               </property>
               <property name="maximumSize">
@@ -148,6 +148,9 @@
                <font>
                 <pointsize>12</pointsize>
                </font>
+              </property>
+              <property name="error" stdset="0">
+               <bool>false</bool>
               </property>
              </widget>
             </item>
@@ -170,7 +173,7 @@
               <property name="minimumSize">
                <size>
                 <width>300</width>
-                <height>0</height>
+                <height>30</height>
                </size>
               </property>
               <property name="maximumSize">
@@ -187,6 +190,9 @@
               </property>
               <property name="echoMode">
                <enum>QLineEdit::EchoMode::Password</enum>
+              </property>
+              <property name="error" stdset="0">
+               <bool>false</bool>
               </property>
              </widget>
             </item>
@@ -206,6 +212,12 @@
             </item>
             <item>
              <widget class="QLineEdit" name="confirmPasswordEdit">
+              <property name="minimumSize">
+               <size>
+                <width>0</width>
+                <height>30</height>
+               </size>
+              </property>
               <property name="maximumSize">
                <size>
                 <width>1000</width>
@@ -219,6 +231,9 @@
               </property>
               <property name="echoMode">
                <enum>QLineEdit::EchoMode::Password</enum>
+              </property>
+              <property name="error" stdset="0">
+               <bool>false</bool>
               </property>
              </widget>
             </item>
@@ -295,7 +310,7 @@
      <property name="sizeHint" stdset="0">
       <size>
        <width>17</width>
-       <height>89</height>
+       <height>86</height>
       </size>
      </property>
     </spacer>

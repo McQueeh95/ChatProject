@@ -43,6 +43,14 @@ QVariant MessageViewModel::data(const QModelIndex &index, int role) const
     {
         return message.senderId == m_userId;
     }
+    if(role == AppRoles::ShowDateRole)
+    {
+        return message.showDate;
+    }
+    if(role == AppRoles::DateRole)
+    {
+        return message.displayDate;
+    }
 
     return QVariant();
 }
@@ -52,6 +60,17 @@ void MessageViewModel::setMessages(const QList<UiStruct::Message> &messages)
 {
     beginResetModel();
     m_messages = messages;
+
+    QString lastDate = "";
+    for(int i = 0; i < m_messages.size(); i++)
+    {
+        if(m_messages[i].displayDate != lastDate)
+        {
+            m_messages[i].showDate = true;
+            lastDate = m_messages[i].displayDate;
+        }
+    }
+
     endResetModel();
 }
 
@@ -60,11 +79,24 @@ void MessageViewModel::setUserId(qint64 userId)
     this->m_userId = userId;
 }
 
-void MessageViewModel::appendMessage(const UiStruct::Message &msg)
+void MessageViewModel::appendMessage(UiStruct::Message msg)
 {
     int newRow = m_messages.size();
     beginInsertRows(QModelIndex(), newRow, newRow);
 
+    if(!m_messages.isEmpty())
+    {
+        QString lastDate = m_messages.last().displayDate;
+
+        if(msg.displayDate != lastDate)
+        {
+            msg.showDate = true;
+        }
+    }
+    else
+    {
+        msg.showDate = true;
+    }
     m_messages.append(msg);
 
     endInsertRows();

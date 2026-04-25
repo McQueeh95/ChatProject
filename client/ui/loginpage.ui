@@ -153,7 +153,7 @@
               <property name="minimumSize">
                <size>
                 <width>0</width>
-                <height>0</height>
+                <height>30</height>
                </size>
               </property>
               <property name="maximumSize">
@@ -161,6 +161,12 @@
                 <width>1000</width>
                 <height>16777215</height>
                </size>
+              </property>
+              <property name="placeholderText">
+               <string/>
+              </property>
+              <property name="error" stdset="0">
+               <bool>false</bool>
               </property>
              </widget>
             </item>
@@ -183,8 +189,20 @@
             </item>
             <item>
              <widget class="QLineEdit" name="passwordEdit">
+              <property name="minimumSize">
+               <size>
+                <width>0</width>
+                <height>30</height>
+               </size>
+              </property>
               <property name="echoMode">
                <enum>QLineEdit::EchoMode::Password</enum>
+              </property>
+              <property name="placeholderText">
+               <string/>
+              </property>
+              <property name="error" stdset="0">
+               <bool>false</bool>
               </property>
              </widget>
             </item>

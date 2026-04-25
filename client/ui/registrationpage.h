@@ -19,17 +19,24 @@ public:
 private:
     Ui::RegistrationPage *ui;
     AppController *m_controller;
+
+    void handleErrorInput();
+    void handleEmptyFields();
+    void handleShortUsername();
+    void handleInvalidUsername();
+    void handleShortPassword();
+    void handleDifferentPasswords();
+    void clearErrorState();
 signals:
     void loginRequested();
     void registrationRequested(const QString& username, const QString& password);
     void goToMainW(const QString& username);
     void usernameInputted(const QString& username);
 private slots:
-    //void onSignUpClicked();
     void onLoginClicked();
+    void onRegistrationFailure();
 public slots:
     void onSignUpClicked();
-    //void onUsernameButtonClicked();
 };
 
 #endif // REGISTRATIONPAGE_H

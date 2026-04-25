@@ -183,6 +183,7 @@ UiStruct::Message AppController::makeUiDraft(qint64 localId, const QString &text
     uiDraft.localId = localId;
     uiDraft.text = text;
     uiDraft.senderId = m_userId;
+    uiDraft.displayDate = QDateTime::currentDateTime().toString("dd.MM.yyyy");
     return uiDraft;
 }
 

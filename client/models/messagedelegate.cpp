@@ -10,6 +10,11 @@
 QSize MessageDelegate::sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const
 {
     QString text = index.data(Qt::DisplayRole).toString();
+
+    bool showHeaderDate = index.data(AppRoles::ShowDateRole).toBool();
+
+    int dateHeaderHeight = showHeaderDate ? 40 : 0;
+
     int viewWidth = option.rect.width();
     if (const QListView *listView = qobject_cast<const QListView*>(option.widget)) {
         viewWidth = listView->viewport()->width();
@@ -31,8 +36,7 @@ QSize MessageDelegate::sizeHint(const QStyleOptionViewItem &option, const QModel
     int padding = 20;
     int margin = 10;
 
-    // doc.size().height() тепер поверне ідеально точну висоту тексту!
-    return QSize(viewWidth, doc.size().height() + padding + margin + 15);
+    return QSize(viewWidth, doc.size().height() + padding + margin + 15 + dateHeaderHeight);
 }
 
 void MessageDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const
@@ -44,11 +48,38 @@ void MessageDelegate::paint(QPainter *painter, const QStyleOptionViewItem &optio
     bool isMyMessage = index.data(AppRoles::IsMyMessageRole).toBool();
     QString time = index.data(AppRoles::TimeRole).toString();
 
+    bool showDateHeader = index.data(AppRoles::ShowDateRole).toBool();
+    QString dateText = index.data(AppRoles::DateRole).toString();
+
     int viewWidth = option.rect.width();
     if (const QListView *listView = qobject_cast<const QListView*>(option.widget)) {
         viewWidth = listView->viewport()->width();
     }
     int maxBubbleWidth = viewWidth * 0.7;
+
+    int currentY = option.rect.top();
+    if(showDateHeader)
+    {
+        QFont dateFont("Inter");
+        dateFont.setPointSize(9);
+        dateFont.setBold(true);
+        painter->setFont(dateFont);
+        QFontMetrics dateFm(dateFont);
+
+        int dateWidth = dateFm.horizontalAdvance(dateText) + 24;
+        int dateHeight = 24;
+
+        QRect dateRect((viewWidth - dateWidth) / 2, currentY + 10, dateWidth, dateHeight);
+
+        painter->setBrush(QColor(0, 0, 0, 100));
+        painter->setPen(Qt::NoPen);
+        painter->drawRoundedRect(dateRect, 12, 12);
+
+        painter->setPen(Qt::white);
+        painter->drawText(dateRect, Qt::AlignCenter, dateText);
+
+        currentY += 40;
+    }
 
     QTextDocument doc;
     QFont font("Inter");
@@ -74,7 +105,7 @@ void MessageDelegate::paint(QPainter *painter, const QStyleOptionViewItem &optio
 
     int bubbleHeight = doc.size().height() + 20 + 15;
 
-    int yPos = option.rect.top() + 5;
+    int yPos = currentY + 5;
     QRect bubbleRect;
 
     if (isMyMessage) {

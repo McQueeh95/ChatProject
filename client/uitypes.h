@@ -11,6 +11,8 @@ namespace UiStruct {
         qint64 senderId = 0;
         QString text;
         QString displayTime;
+        QString displayDate;
+        bool showDate;
 
         static QString formatTime(const QString &isoTime)
         {
@@ -26,6 +28,20 @@ namespace UiStruct {
             }
         }
 
+        static QString formatDate(const QString &isoTime)
+        {
+            QDateTime dt = QDateTime::fromString(isoTime, Qt::ISODate);
+            if(dt.isValid())
+            {
+                return dt.toString("dd.MM.yyyy");
+            }
+            else
+            {
+                qDebug() << "dt is not valid:" << isoTime;
+                return "";
+            }
+        }
+
         static Message fromNetwork(const protocol::MsgDeliv &netMsg, const QString &decryptedText)
         {
             Message uiMsg;
@@ -35,6 +51,9 @@ namespace UiStruct {
             uiMsg.senderId = netMsg.senderId;
             uiMsg.text = decryptedText;
             uiMsg.displayTime = formatTime(netMsg.timeStamp);
+            uiMsg.displayDate = formatDate(netMsg.timeStamp);
+
+            uiMsg.showDate = false;
             return uiMsg;
         }
 

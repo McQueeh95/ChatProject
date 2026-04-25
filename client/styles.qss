@@ -104,11 +104,11 @@ QLabel#loginLabel, QLabel#createAccountLabel
 
 QLabel#usernameLabel, QLabel#passwordLabel, QLabel#confirmPasswordEdit
 {
-    font-size: 10pt;
+    font-size: 11pt;
     font-weight: normal;
 }
 
-QWidget#loginCard QLineEdit#usernameEdit, QLineEdit#passwordEdit
+QLineEdit#usernameEdit, QLineEdit#passwordEdit, QLineEdit#confirmPasswordEdit
 {
     font-size: 12pt;
     font-weight: normal;
@@ -124,6 +124,11 @@ QPushButton#createAccountButton, QPushButton#loginHereButton{
     background-color: transparent;
     color: #8774e1;
     font-size: 10.5pt;
+}
+
+QWidget#loginCard QLineEdit[error="true"], QWidget#registrationCard QLineEdit[error="true"]{
+    border: 1 px solid #ff5555;
+    background-color: rgba(255, 85, 85, 0.1);
 }
 
 /*=================================================================
