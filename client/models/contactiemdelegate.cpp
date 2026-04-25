@@ -11,10 +11,17 @@ void ContactIemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
     painter->save();
 
     if (option.state & QStyle::State_Selected) {
-        painter->setBrush(QColor("#44475a")); // або інший колір підсвітки
+        painter->setBrush(QColor("#1A1A1A"));
         painter->setPen(Qt::NoPen);
-        painter->drawRect(option.rect); // малюємо фон поверх усього елемента
+        painter->drawRect(option.rect);
     }
+    else if (option.state & QStyle::State_MouseOver) {
+        painter->setBrush(QColor("#212121"));
+        painter->setPen(Qt::NoPen);
+        painter->drawRect(option.rect);
+    }
+
+
 
     QString username = index.data(Qt::DisplayRole).toString();
 

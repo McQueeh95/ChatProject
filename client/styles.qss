@@ -1,0 +1,113 @@
+QPushButton#sendMessageButton{
+    background-color: transparent;
+    border: none;
+    padding: 0px 0px;
+    image: url(:/icons/icons/send_msg_icon.svg);
+}
+
+QPushButton#backButton{
+    background-color: transparent;
+    border: none;
+    padding: 0px 0px;
+    image: url(:/icons/icons/back_button.svg);
+}
+
+QWidget{
+    font-family: "Inter";
+    font-size: 11pt;
+    font-weight: normal;
+}
+
+QWidget#leftPanel{
+    background-color: #1e1e1e;
+    border-right: 1px solid #3e3e42;
+}
+
+QWidget#rightPanel {
+    background-color: #121212;
+}
+
+QListView#chatsList
+{
+    background-color: #1e1e1e;
+}
+
+QListView#messagesList
+{
+    background-color: #121212;
+    border: 0px;
+}
+
+QWidget#MainPage{
+    background-color: #121212;
+}
+
+
+QWidget#MainWindow{
+    background-color: #121212;
+}
+
+QPushButton{
+    background-color: #8774e1;
+    color: #ffffff;
+    border: none;
+    padding: 4px 8px;
+    outline: none;
+    border-radius: 4px;
+}
+
+QPushButton:hover {
+    background-color: #9888e5;
+}
+
+QPushButton:pressed {
+    background-color: #6c5cb5;
+}
+
+QPushButton#createAccountButton, QPushButton#loginHereButton{
+    background-color: transparent;
+    color: #8774e1;
+}
+
+QPlainTextEdit#messageEdit{
+    background-color: #252526;
+    border-radius: 2px;
+}
+
+QLineEdit
+{
+    background-color: #252526;
+    color: #ffffff;
+}
+
+QLabel
+{
+    color: #ffffff;
+}
+
+QLabel#peerUsernameLabel
+{
+    font-size: 12pt;
+    font-weight: bold;
+}
+
+QSplitter::handle{
+    image: none;
+}
+
+QSplitter::handle:hover {
+    background-color: #8774e1;
+    width: 1px;
+}
+
+
+
+
+QListView::item:hover {
+    background-color: transparent;
+}
+
+QListView::item:selected {
+    background-color: transparent;
+}
+

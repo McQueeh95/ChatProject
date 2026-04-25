@@ -21,6 +21,8 @@ MainPage::MainPage(AppController *controller, QWidget *parent)
     setupViews();
 
     setupConnections();
+
+    renameObjects();
 }
 
 MainPage::~MainPage()
@@ -153,6 +155,7 @@ void MainPage::setupViews()
     m_chatsModel = new ContactListModel(this);
     ui->chatsList->setModel(m_chatsModel);
     ui->chatsList->setItemDelegate(new ChatDelegate(this));
+    ui->chatsList->setMouseTracking(true);
 
     m_messages = new MessageViewModel(this);
     ui->messagesList->setModel(m_messages);
@@ -170,6 +173,12 @@ void MainPage::setupViews()
     ui->chatHintLabel->hide();
 }
 
+void MainPage::renameObjects()
+{
+    ui->splitter->widget(0)->setObjectName("leftPanel");
+    ui->splitter->widget(1)->setObjectName("rightPanel");
+}
+
 void MainPage::showSearchResult(const QList<protocol::UserSearch> &users)
 {
     ui->chatsList->setModel(m_searchResults);
@@ -179,30 +188,31 @@ void MainPage::showSearchResult(const QList<protocol::UserSearch> &users)
 
 void MainPage::hideChatScreen()
 {
-    ui->usernameLabel->hide();
+    ui->peerUsernameLabel->hide();
     ui->sendMessageButton->hide();
     ui->messagesList->hide();
     ui->messageEdit->hide();
     ui->backButton->hide();
     ui->selectChatLabel->show();
     ui->chatsList->clearSelection();
+    ui->chatHintLabel->hide();
 }
 
 void MainPage::showChatScreen(const QString &username)
 {
-    ui->usernameLabel->setText(username);
+    ui->peerUsernameLabel->setText(username);
     ui->selectChatLabel->hide();
     ui->sendMessageButton->show();
     ui->messagesList->show();
     ui->messageEdit->show();
-    ui->usernameLabel->show();
+    ui->peerUsernameLabel->show();
     ui->backButton->show();
     ui->chatHintLabel->hide();
 }
 
 void MainPage::showNoMessagesYet(const QString &username)
 {
-    ui->usernameLabel->setText(username);
+    ui->peerUsernameLabel->setText(username);
     ui->selectChatLabel->hide();
     ui->sendMessageButton->show();
     ui->messagesList->hide();

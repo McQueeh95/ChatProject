@@ -8,7 +8,7 @@ RegistrationPage::RegistrationPage(AppController *controller, QWidget *parent)
 {
     ui->setupUi(this);
     ui->errorLabel->hide();
-    connect(ui->loginButton, &QPushButton::clicked, this, &RegistrationPage::onLoginClicked);
+    connect(ui->loginHereButton, &QPushButton::clicked, this, &RegistrationPage::onLoginClicked);
     connect(ui->signUpButton, &QPushButton::clicked, this, &RegistrationPage::onSignUpClicked);
     //connect(ui->signUpButton, &QPushButton::clicked, this, &RegistrationPage::onUsernameButtonClicked);
 }

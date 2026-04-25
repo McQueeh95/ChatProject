@@ -15,14 +15,14 @@ void ChatDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, 
     //Background
     if(option.state & QStyle::State_Selected)
     {
-        painter->setBrush(QColor("#969d96"));
+        painter->setBrush(QColor("#3D3D3D"));
         painter->setPen(Qt::NoPen);
 
         painter->drawRoundedRect(option.rect.adjusted(-2, -2, -2, -2), 8, 8);
     }
     else if (option.state & QStyle::State_MouseOver)
     {
-        painter->setBrush(QColor("#f9f9f9"));
+        painter->setBrush(QColor("#2E2E2E"));
         painter->setPen(Qt::NoPen);
 
         painter->drawRoundedRect(option.rect.adjusted(-2, -2, -2, -2), 8, 8);
@@ -44,7 +44,7 @@ void ChatDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, 
     painter->drawEllipse(avatarRect);
 
     painter->setPen(Qt::white);
-    QFont boldFont = option.font;
+    QFont boldFont("Inter");
     boldFont.setBold(true);
     boldFont.setPointSize(12);
     painter->setFont(boldFont);
@@ -53,9 +53,10 @@ void ChatDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, 
     painter->drawText(avatarRect, Qt::AlignCenter, initial);
 
     //Username
-    painter->setPen(QColor("#000000"));
-    QFont nameFont = option.font;
+    QFont nameFont("Inter");
+    painter->setPen(QColor("#ffffff"));
     nameFont.setPointSize(11);
+    nameFont.setBold(false);
     painter->setFont(nameFont);
 
     painter->drawText(textRect, Qt::AlignVCenter | Qt::AlignLeft, username);

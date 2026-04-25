@@ -44,6 +44,7 @@ private:
     void setupConnections();
     void setupViews();
 
+    void renameObjects();
 private slots:
     //UI slots
     void onChatClicked(const QModelIndex& index);
