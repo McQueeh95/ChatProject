@@ -242,7 +242,7 @@ void AppController::handleLoginRes(const QJsonObject &obj)
                   {return a.peerUsername < b.peerUsername;});
 
         m_cryptoService->decryptSecretKey(user.encryptedVault, user.vaultNonce, m_pendingLocalKey.dataUCHar());
-        emit loginSuccess(m_userId, chatsList);
+        emit loginSuccess(m_userId, chatsList, m_username);
     }
     else
         emit loginFailure();
@@ -255,7 +255,7 @@ void AppController::handleRegistrationRes(const QJsonObject &obj)
     {
         m_userId = regRes.userId;
 
-        emit registrationSuccess(m_userId);
+        emit registrationSuccess(m_userId, m_username);
     }
     else
         emit registrationFailure();

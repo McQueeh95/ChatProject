@@ -32,7 +32,7 @@ void LoginPage::onLoginClicked()
         handleEmptyFields();
         return;
     }
-    if(username.length() < 2 || password.length() < 8)
+    if(username.length() < 4 || username.length() > 16 || password.length() < 8)
     {
         handleErrorInput();
         return;

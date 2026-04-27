@@ -67,6 +67,17 @@ void RegistrationPage::onSignUpClicked()
         handleInvalidUsername();
         return;
     }
+    if(username.length() > 16)
+    {
+        handleLongUsername();
+        return;
+    }
+    if(username.length() < 4)
+    {
+        handleShortUsername();
+        return;
+    }
+
     if(password.length() < 8)
     {
         handleShortPassword();
@@ -108,15 +119,7 @@ void RegistrationPage::handleEmptyFields()
     ui->errorLabel->show();
 }
 
-void RegistrationPage::handleShortUsername()
-{
-    ui->usernameEdit->setProperty("error", true);
-    ui->usernameEdit->style()->unpolish(ui->usernameEdit);
-    ui->usernameEdit->style()->polish(ui->usernameEdit);
 
-    ui->errorLabel->setText("Username must be at leat 2 characters!");
-    ui->errorLabel->show();
-}
 
 void RegistrationPage::handleInvalidUsername()
 {
@@ -125,6 +128,26 @@ void RegistrationPage::handleInvalidUsername()
     ui->usernameEdit->style()->polish(ui->usernameEdit);
 
     ui->errorLabel->setText("Invalid symbols in the username");
+    ui->errorLabel->show();
+}
+
+void RegistrationPage::handleLongUsername()
+{
+    ui->usernameEdit->setProperty("error", true);
+    ui->usernameEdit->style()->unpolish(ui->usernameEdit);
+    ui->usernameEdit->style()->polish(ui->usernameEdit);
+
+    ui->errorLabel->setText("Username must be less than 16 symbols");
+    ui->errorLabel->show();
+}
+
+void RegistrationPage::handleShortUsername()
+{
+    ui->usernameEdit->setProperty("error", true);
+    ui->usernameEdit->style()->unpolish(ui->usernameEdit);
+    ui->usernameEdit->style()->polish(ui->usernameEdit);
+
+    ui->errorLabel->setText("Username must be at least 4 symbols");
     ui->errorLabel->show();
 }
 

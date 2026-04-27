@@ -153,6 +153,16 @@ QWidget#MainWindow{
     background-color: #121212;
 }
 
+QFrame#ProfilePopUp{
+    background-color: #282828;
+    border: 1px solid #3d3d3d;
+    border-radius: 12px;
+}
+
+QFrame#ProfilePopUp QLabel{
+    font-size: 11pt;
+}
+
 QPushButton#sendMessageButton{
     background-color: transparent;
     border: none;
@@ -165,6 +175,27 @@ QPushButton#backButton{
     border: none;
     padding: 0px 0px;
     image: url(:/icons/icons/back_button.svg);
+}
+
+QPushButton#profileButton{
+    background-color: transparent;
+    border: none;
+    padding: 0px 0px;
+    image: url(:/icons/icons/profile_button.svg);
+}
+
+QPushButton#logoutButton
+{
+    background-color: transparent;
+    border: none;
+    padding: 8px;
+    color: #FF595A;
+    font-weight: bold;
+}
+
+QPushButton::hover#logoutButton
+{
+    background-color: #322525;
 }
 
 QListView ChatList

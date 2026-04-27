@@ -22,8 +22,9 @@ private:
 
     void handleErrorInput();
     void handleEmptyFields();
-    void handleShortUsername();
     void handleInvalidUsername();
+    void handleLongUsername();
+    void handleShortUsername();
     void handleShortPassword();
     void handleDifferentPasswords();
     void clearErrorState();

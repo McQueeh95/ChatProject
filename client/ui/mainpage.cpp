@@ -42,6 +42,11 @@ void MainPage::setUserId(qint64 userId)
     m_messages->setUserId(userId);
 }
 
+void MainPage::setUsername(const QString &username)
+{
+    m_profilePopUp->setUsername(username);
+}
+
 bool MainPage::eventFilter(QObject *obj, QEvent *event)
 {
     if(obj == ui->messageEdit && event->type() == QEvent::KeyPress)
@@ -138,6 +143,7 @@ void MainPage::setupConnections()
 
     connect(ui->sendMessageButton, &QPushButton::clicked, this, &MainPage::onMessageSubmitted);
     connect(ui->backButton, &QPushButton::clicked, this, &MainPage::hideChatScreen);
+    connect(ui->profileButton, &QPushButton::clicked, this, &MainPage::showPopUp);
 
     connect(ui->messageEdit, &QTextEdit::textChanged, this, &MainPage::adjustMessageHeight);
 
@@ -155,8 +161,10 @@ void MainPage::setupConnections()
 
 void MainPage::setupViews()
 {
+    m_profilePopUp = new ProfilePopUp(this);
+    m_profilePopUp->setWindowFlags(Qt::Popup | Qt::FramelessWindowHint | Qt::NoDropShadowWindowHint);
     QList<qint32> sizes;
-    sizes << 250 << 1000;
+    sizes << 280 << 1000;
     ui->splitter->setSizes(sizes);
 
     m_chatsModel = new ContactListModel(this);
@@ -253,4 +261,14 @@ void MainPage::showNoMessagesYet(const QString &username)
     ui->messageEdit->show();
     ui->backButton->show();
     ui->chatHintLabel->show();
+}
+
+void MainPage::showPopUp()
+{
+    QPoint globalPos = ui->profileButton->mapToGlobal(QPoint(0, ui->profileButton->height()));
+
+    globalPos.setY(globalPos.y() + 10);
+    globalPos.setX(globalPos.x() + 10);
+    m_profilePopUp->move(globalPos);
+    m_profilePopUp->show();
 }

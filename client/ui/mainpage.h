@@ -8,6 +8,7 @@
 #include "../models/messageviewmodel.h"
 #include "../models/searchviewmodel.h"
 #include <QTimer>
+#include "./profilepopup.h"
 
 namespace Ui {
 class MainPage;
@@ -23,6 +24,7 @@ public:
 
     void setChats(const QList<protocol::ChatInfo>& chats);
     void setUserId(qint64 userId);
+    void setUsername(const QString& username);
 
 protected:
     bool eventFilter(QObject *obj, QEvent *event) override;
@@ -34,6 +36,7 @@ private:
     MessageViewModel *m_messages;
     SearchViewModel *m_searchResults;
     QTimer *m_searchTimer;
+    ProfilePopUp *m_profilePopUp;
 
     void showChatScreen(const QString &username);
     void hideChatScreen();
@@ -59,6 +62,7 @@ private slots:
     void changeViewStatus(const UiStruct::Message &msg);
     void showSearchResult(const QList<protocol::UserSearch> &users);
     void showNoMessagesYet(const QString &username);
+    void showPopUp();
 };
 
 #endif // MAINPAGE_H

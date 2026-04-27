@@ -5,6 +5,7 @@
     <qresource prefix="/icons">
         <file>icons/send_msg_icon.svg</file>
         <file>icons/back_button.svg</file>
+        <file>icons/profile_button.svg</file>
     </qresource>
     <qresource prefix="/fonts">
         <file>fonts/Inter_28pt-ThinItalic.ttf</file>

@@ -59,6 +59,8 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         cryptoservice.h cryptoservice.cpp
         securebuffer.h
         uitypes.h
+        ui/profilepopup.h ui/profilepopup.cpp ui/profilepopup.ui
+
 
 
 

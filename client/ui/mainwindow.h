@@ -33,43 +33,12 @@ private:
     RegistrationPage* m_registrationPage;
     MainPage* m_mainPage;
     Ui::MainWindow *ui;
-    //NetworkClient *client;
-    //DataBaseManager *db;
-    //Generates uuid and save in DB
-    //void handleUserRegistration(const QString& username);
-    //Procceed to open main widget
-    //void userHasUuid(const QString &uuid, const QString& username);
-    //We create registration widget only one time, so better to delete
-    //Possible to change logic for deleting other window just add passing value
-    //void removeRegistrationPage();
-    //void sendMessage(int contactId, const QString& text);
-    //void connectSlotForMainPage();
-protected:
-    //void closeEvent(QCloseEvent *event) override;
+
 private slots:
     void showRegistrationPage();
     void showLoginPage();
-    //void onMessageReceived(const Message& message);
-    void onLoginSuccess(qint64 userId, const QList<protocol::ChatInfo> chats);
-    void onRegistrationSuccess(qint64 userId);
-
-    //REQUEST LIST METHODS
-    //GET WHOLE
-    //void sendAddContactRequest(const QString& contactUuid);
-    //void onRequestForRequests();
-    //void onLoginSuccess();
-
-
-    //void onRequestAction(int contactId, const QString &action);
-    //void onWindowClosing();
-    //void onGetMessages(int contactId);
-    //void onAddContactRequestSent(const Message &message);
-    //void onInsertSelfUuidIntoClipboard();
-signals:
-    //void sendRequestsToMainWidget(const QList<std::pair<int, QString>> &requests);
-    //void sendContactsToMainWidget(const QList<Contact> &contacts);
-    //void sendMessagesToMainWidget(const QList<DatabaseMessage> &messages);
-
+    void onLoginSuccess(qint64 userId, const QList<protocol::ChatInfo> chats, const QString &username);
+    void onRegistrationSuccess(qint64 userId, const QString &username);
 
 };
 #endif // MAINWINDOW_H

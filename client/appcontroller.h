@@ -28,9 +28,9 @@ public:
     QString getUsername();
 
 signals:
-    void loginSuccess(qint64 userId, QList<protocol::ChatInfo> chatsList);
+    void loginSuccess(qint64 userId, QList<protocol::ChatInfo> chatsList, const QString& username);
     void loginFailure();
-    void registrationSuccess(qint64 userId);
+    void registrationSuccess(qint64 userId, const QString &username);
     void registrationFailure();
 
     void historyReceived(qint64 chatId, QList<UiStruct::Message> messagesList);

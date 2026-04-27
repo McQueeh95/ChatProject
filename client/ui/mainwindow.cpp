@@ -51,18 +51,20 @@ void MainWindow::showLoginPage()
     this->m_stackedWidget->setCurrentWidget(m_loginPage);
 }
 
-void MainWindow::onLoginSuccess(qint64 userId, const QList<protocol::ChatInfo> chats)
+void MainWindow::onLoginSuccess(qint64 userId, const QList<protocol::ChatInfo> chats, const QString &username)
 {
     m_mainPage->setChats(chats);
     m_mainPage->setUserId(userId);
+    m_mainPage->setUsername(username);
     QString title = "Chat - " + m_controller->getUsername();
     this->setWindowTitle(title);
     this->m_stackedWidget->setCurrentWidget(m_mainPage);
 }
 
-void MainWindow::onRegistrationSuccess(qint64 userId)
+void MainWindow::onRegistrationSuccess(qint64 userId, const QString &username)
 {
     m_mainPage->setUserId(userId);
+    m_mainPage->setUsername(username);
     QString title = "Chat - " + m_controller->getUsername();
     this->setWindowTitle(title);
     this->m_stackedWidget->setCurrentWidget(m_mainPage);
