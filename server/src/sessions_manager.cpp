@@ -111,6 +111,7 @@ void sessions_manager::remove_session(int64_t user_id)
 	auto it = sessions_.find(user_id);
 	if(it != sessions_.end())
 	{
+		it->second.lock()->reset_session_id();
 		sessions_.erase(it);
 		std::cout << "session: " << user_id << " removed" << std::endl;
 	}
@@ -307,7 +308,6 @@ void sessions_manager::handle_create_and_forward(int64_t sender_id, const server
 		}
 	);
 }
-
 
 void sessions_manager::handle_history_req(int64_t sender_id, int64_t chat_id)
 {

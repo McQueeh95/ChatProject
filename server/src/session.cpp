@@ -138,3 +138,9 @@ void session::set_session_id(const int64_t session_id)
 	this->session_id = session_id;
 	std::cout << "Session id was set to: " <<  this->session_id << std::endl;
 }
+
+void session::reset_session_id()
+{
+	this->session_id = -1;
+	std::cout << "Session id was reset to: " <<  this->session_id << std::endl;
+}

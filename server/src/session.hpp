@@ -42,5 +42,6 @@ public:
 	void send_message(const std::string& message, std::function<void()> on_sent);
 	void on_close(beast::error_code ec);
 	void set_session_id(const int64_t session_id);
+	void reset_session_id();
 };
 
