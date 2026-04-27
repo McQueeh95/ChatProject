@@ -117,6 +117,11 @@ qint64 AppController::getCurrentChatId()
     return m_currentChatId;
 }
 
+QString AppController::getUsername()
+{
+    return m_username;
+}
+
 void AppController::onJsonReceived(const QJsonObject& obj)
 {
     if(!obj.contains("type"))
@@ -264,7 +269,8 @@ void AppController::handleForwardedMessage(const QJsonObject &obj)
                                 chatPublicKey, msgDeliv.nonce);
     UiStruct::Message uiMsg = UiStruct::Message::fromNetwork(msgDeliv, decryptedText);
     m_messagesCache[msgDeliv.chatId].push_back(uiMsg);
-    newMessageReceived(uiMsg);
+    if(m_currentChatId == msgDeliv.chatId)
+        newMessageReceived(uiMsg);
 }
 
 void AppController::handleHistoryRes(const QJsonObject &obj)
@@ -323,7 +329,8 @@ void AppController::handleNewChatEvent(const QJsonObject &obj)
 
 void AppController::promotePhantomChat(const protocol::DelivAck &delAck)
 {
-    qint64 tempChatId = (delAck.peerId * -1);
+    qint64 tempChatId = -delAck.peerId;
+
     if(m_messagesCache.contains(tempChatId))
     {
         QList<UiStruct::Message> drafts = m_messagesCache.take(tempChatId);
@@ -333,29 +340,24 @@ void AppController::promotePhantomChat(const protocol::DelivAck &delAck)
         }
         m_messagesCache.insert(delAck.chatId, drafts);
     }
+
+    if (!m_pendingPhantoms.contains(delAck.peerId)) {
+        qDebug() << "Critical: Phantom chat for peer" << delAck.peerId << "was not found!";
+        return;
+    }
+    UiStruct::PhantomChat phantom = m_pendingPhantoms.take(delAck.peerId);
+
     protocol::ChatInfo newChat;
-    UiStruct::PhantomChat phantom = m_pendingPhantoms.take(newChat.peerId);
     newChat.chatId = delAck.chatId;
     newChat.peerId = delAck.peerId;
     newChat.peerUsername = phantom.username;
     newChat.publicKey = phantom.publicKey;
 
-    if(m_pendingPhantoms.contains(delAck.peerId))
-    {
-        newChat.publicKey = m_pendingPhantoms.value(delAck.peerId).publicKey;
-    }
-    else
-    {
-        qDebug() << "User was not found in search cache";
-    }
-
-    qDebug() << newChat.publicKey.toBase64();
     m_chats[delAck.chatId] = newChat;
     emit updateChats(newChat);
-    if(m_currentChatId == (delAck.peerId * -1))
+    if(m_currentChatId == tempChatId)
     {
         m_currentChatId = delAck.chatId;
-
         processChatSelection(newChat.chatId, newChat.peerId, newChat.peerUsername);
     }
 }

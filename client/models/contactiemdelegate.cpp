@@ -48,9 +48,8 @@ void ContactIemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
 
     painter->setPen(Qt::white);
     QFont nameFont = option.font;
-    nameFont.setPointSize(nameFont.pointSize() + 1);
+    nameFont.setPointSize(14);
     nameFont.setBold(true);
-    nameFont.setPixelSize(16);
     painter->setFont(nameFont);
     painter->drawText(nameRect, Qt::AlignVCenter | Qt::AlignLeft, username);
 

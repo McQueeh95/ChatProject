@@ -5,6 +5,7 @@
 #include "../models/approles.h"
 
 #include <QShortcut>
+#include <QKeyEvent>
 
 MainPage::MainPage(AppController *controller, QWidget *parent)
     : QWidget(parent)
@@ -138,6 +139,8 @@ void MainPage::setupConnections()
     connect(ui->sendMessageButton, &QPushButton::clicked, this, &MainPage::onMessageSubmitted);
     connect(ui->backButton, &QPushButton::clicked, this, &MainPage::hideChatScreen);
 
+    connect(ui->messageEdit, &QTextEdit::textChanged, this, &MainPage::adjustMessageHeight);
+
     connect(m_controller, &AppController::historyReceived, this, &MainPage::showChatHistory);
     connect(m_controller, &AppController::newMessageReceived, this, &MainPage::addNewMessage);
     connect(m_controller, &AppController::chatScreenRequested, this, &MainPage::showChatScreen);
@@ -152,6 +155,10 @@ void MainPage::setupConnections()
 
 void MainPage::setupViews()
 {
+    QList<qint32> sizes;
+    sizes << 250 << 1000;
+    ui->splitter->setSizes(sizes);
+
     m_chatsModel = new ContactListModel(this);
     ui->chatsList->setModel(m_chatsModel);
     ui->chatsList->setItemDelegate(new ChatDelegate(this));
@@ -167,16 +174,42 @@ void MainPage::setupViews()
     m_searchResults = new SearchViewModel(this);
 
     ui->messageEdit->installEventFilter(this);
-    ui->messageEdit->setLineWrapMode(QPlainTextEdit::WidgetWidth);
+    ui->messageEdit->setLineWrapMode(QTextEdit::WidgetWidth);
     ui->messageEdit->setWordWrapMode(QTextOption::WrapAtWordBoundaryOrAnywhere);
 
     ui->chatHintLabel->hide();
+    ui->messageEdit->document()->setDocumentMargin(0);
 }
 
 void MainPage::renameObjects()
 {
     ui->splitter->widget(0)->setObjectName("leftPanel");
     ui->splitter->widget(1)->setObjectName("rightPanel");
+}
+
+void MainPage::adjustMessageHeight()
+{
+    QTextDocument *doc = ui->messageEdit->document();
+
+    doc->setTextWidth(ui->messageEdit->viewport()->width());
+
+    int textHeight = qCeil(doc->size().height());
+    int padding = 20;
+    int newHeight = textHeight + padding;
+
+    int minHeight = 40;
+    int maxHeight = 150;
+
+    if (newHeight < minHeight) newHeight = minHeight;
+
+    if (newHeight <= maxHeight) {
+        ui->messageEdit->setFixedHeight(newHeight);
+        ui->messageEdit->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    }
+    else {
+        ui->messageEdit->setFixedHeight(maxHeight);
+        ui->messageEdit->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+    }
 }
 
 void MainPage::showSearchResult(const QList<protocol::UserSearch> &users)
@@ -213,6 +246,7 @@ void MainPage::showChatScreen(const QString &username)
 void MainPage::showNoMessagesYet(const QString &username)
 {
     ui->peerUsernameLabel->setText(username);
+    ui->peerUsernameLabel->show();
     ui->selectChatLabel->hide();
     ui->sendMessageButton->show();
     ui->messagesList->hide();

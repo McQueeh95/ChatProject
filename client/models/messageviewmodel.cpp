@@ -92,6 +92,10 @@ void MessageViewModel::appendMessage(UiStruct::Message msg)
         {
             msg.showDate = true;
         }
+        else
+        {
+            msg.showDate = false;
+        }
     }
     else
     {

@@ -46,7 +46,7 @@ void ChatDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, 
     painter->setPen(Qt::white);
     QFont boldFont("Inter");
     boldFont.setBold(true);
-    boldFont.setPointSize(12);
+    boldFont.setPointSize(13);
     painter->setFont(boldFont);
 
     QString initial = username.isEmpty() ? "?" : username.left(1).toUpper();
@@ -55,7 +55,7 @@ void ChatDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, 
     //Username
     QFont nameFont("Inter");
     painter->setPen(QColor("#ffffff"));
-    nameFont.setPointSize(11);
+    nameFont.setPointSize(12);
     nameFont.setBold(false);
     painter->setFont(nameFont);
 

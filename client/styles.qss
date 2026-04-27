@@ -1,50 +1,11 @@
-QPushButton#sendMessageButton{
-    background-color: transparent;
-    border: none;
-    padding: 0px 0px;
-    image: url(:/icons/icons/send_msg_icon.svg);
-}
-
-QPushButton#backButton{
-    background-color: transparent;
-    border: none;
-    padding: 0px 0px;
-    image: url(:/icons/icons/back_button.svg);
-}
+/*=================================================================
+    1. Global styles
+=================================================================*/
 
 QWidget{
     font-family: "Inter";
     font-size: 11pt;
     font-weight: normal;
-}
-
-QWidget#leftPanel{
-    background-color: #1e1e1e;
-    border-right: 1px solid #3e3e42;
-}
-
-QWidget#rightPanel {
-    background-color: #121212;
-}
-
-QListView#chatsList
-{
-    background-color: #1e1e1e;
-}
-
-QListView#messagesList
-{
-    background-color: #121212;
-    border: 0px;
-}
-
-QWidget#MainPage{
-    background-color: #121212;
-}
-
-
-QWidget#MainWindow{
-    background-color: #121212;
 }
 
 QPushButton{
@@ -64,26 +25,17 @@ QPushButton:pressed {
     background-color: #6c5cb5;
 }
 
-QPlainTextEdit#messageEdit{
-    background-color: #252526;
-    border-radius: 2px;
-}
-
 QLineEdit
 {
     background-color: #252526;
     color: #ffffff;
+    border-radius: 12px;
+    padding-left: 8px;
 }
 
 QLabel
 {
     color: #ffffff;
-}
-
-QLabel#peerUsernameLabel
-{
-    font-size: 12pt;
-    font-weight: bold;
 }
 
 /*=================================================================
@@ -131,9 +83,94 @@ QWidget#loginCard QLineEdit[error="true"], QWidget#registrationCard QLineEdit[er
     background-color: rgba(255, 85, 85, 0.1);
 }
 
+QWidget#loginCard QLineEdit::focus, QWidget#registrationCard QLineEdit::focus{
+    border: 1px solid #8774e1;
+}
+
 /*=================================================================
-    3.
+    3.Main Widget
 =================================================================*/
+QWidget#leftPanel{
+    background-color: #1e1e1e;
+}
+
+QTextEdit#messageEdit{
+    background-color: #1e1e1e;
+    border-radius: 12px;
+    border: none;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    padding-left: 8px;
+    padding-right: 8px;
+    color: #ffffff;
+    font-size: 12pt;
+}
+
+QWidget#rightPanel {
+    background-color: #121212;
+}
+
+QListView#chatsList
+{
+    background-color: #1e1e1e;
+    border: none;
+    outline: none;
+}
+
+QLineEdit#searchEdit
+{
+    font-size: 12pt;
+    border-radius: 12px;
+    padding-left: 8px;
+}
+
+QLabel#peerUsernameLabel
+{
+    font-size: 13pt;
+    font-weight: bold;
+}
+
+QLabel#chatHintLabel, QLabel#selectChatLabel
+{
+    font-size: 14pt;
+    font-weight: bold;
+    color: grey;
+}
+
+QListView#messagesList
+{
+    background-color: #121212;
+    border: none;
+    outline: none;
+}
+
+QWidget#MainPage{
+    background-color: #121212;
+}
+
+
+QWidget#MainWindow{
+    background-color: #121212;
+}
+
+QPushButton#sendMessageButton{
+    background-color: transparent;
+    border: none;
+    padding: 0px 0px;
+    image: url(:/icons/icons/send_msg_icon.svg);
+}
+
+QPushButton#backButton{
+    background-color: transparent;
+    border: none;
+    padding: 0px 0px;
+    image: url(:/icons/icons/back_button.svg);
+}
+
+QListView ChatList
+{
+    borded: none;
+}
 
 QSplitter::handle{
     image: none;
@@ -144,14 +181,31 @@ QSplitter::handle:hover {
     width: 1px;
 }
 
-
-
-
-QListView::item:hover {
+QScrollBar:vertical {
+    border: none;
     background-color: transparent;
+    width: 8px;
+    margin: 0px 0px 0px 0px;
 }
 
-QListView::item:selected {
-    background-color: transparent;
+QScrollBar::handle:vertical {
+    background-color: #3a3b40;
+    min-height: 30px;
+    border-radius: 4px;
 }
 
+QScrollBar::handle:vertical:hover {
+    background-color: #55555d;
+}
+
+QScrollBar::add-line:vertical,
+QScrollBar::sub-line:vertical {
+    border: none;
+    background: none;
+    height: 0px;
+}
+
+QScrollBar::add-page:vertical,
+QScrollBar::sub-page:vertical {
+    background: none;
+}

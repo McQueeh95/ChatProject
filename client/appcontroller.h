@@ -25,6 +25,7 @@ public:
     void searchUsers(const QString &query);
 
     qint64 getCurrentChatId();
+    QString getUsername();
 
 signals:
     void loginSuccess(qint64 userId, QList<protocol::ChatInfo> chatsList);

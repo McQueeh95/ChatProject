@@ -61,7 +61,7 @@ void MessageDelegate::paint(QPainter *painter, const QStyleOptionViewItem &optio
     if(showDateHeader)
     {
         QFont dateFont("Inter");
-        dateFont.setPointSize(9);
+        dateFont.setPointSize(10);
         dateFont.setBold(true);
         painter->setFont(dateFont);
         QFontMetrics dateFm(dateFont);
@@ -83,7 +83,7 @@ void MessageDelegate::paint(QPainter *painter, const QStyleOptionViewItem &optio
 
     QTextDocument doc;
     QFont font("Inter");
-    font.setPointSize(11);
+    font.setPointSize(12);
     doc.setDefaultFont(font);
 
     QTextOption textOption;
@@ -96,7 +96,7 @@ void MessageDelegate::paint(QPainter *painter, const QStyleOptionViewItem &optio
     doc.setTextWidth(maxBubbleWidth - 20);
 
     QFont timeFont("Inter");
-    timeFont.setPointSize(8);
+    timeFont.setPointSize(9);
     QFontMetrics timeFm(timeFont);
     int timeWidth = timeFm.horizontalAdvance(time);
 
