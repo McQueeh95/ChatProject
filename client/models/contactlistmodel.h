@@ -26,6 +26,8 @@ public:
 
     void appendChat(const protocol::ChatInfo &chat);
 
+    void clear();
+
 
 private:
     QList<protocol::ChatInfo> m_chats;

@@ -119,6 +119,15 @@ void MainPage::onSearchInput(const QString &text)
 
 }
 
+void MainPage::onLogout()
+{
+    m_profilePopUp->hide();
+    hideChatScreen();
+    ui->searchEdit->clear();
+    m_chatsModel->clear();
+    m_controller->logout();
+}
+
 void MainPage::addNewChat(const protocol::ChatInfo &chat)
 {
     m_chatsModel->appendChat(chat);
@@ -146,6 +155,8 @@ void MainPage::setupConnections()
     connect(ui->profileButton, &QPushButton::clicked, this, &MainPage::showPopUp);
 
     connect(ui->messageEdit, &QTextEdit::textChanged, this, &MainPage::adjustMessageHeight);
+
+    connect(m_profilePopUp, &ProfilePopUp::logout, this, &MainPage::onLogout);
 
     connect(m_controller, &AppController::historyReceived, this, &MainPage::showChatHistory);
     connect(m_controller, &AppController::newMessageReceived, this, &MainPage::addNewMessage);

@@ -47,9 +47,13 @@ public:
     }
 
     bool isEmpty() const { return m_data == nullptr; }
+
     const char* dataChar() const { return static_cast<char*>(m_data); }
+
     const unsigned char* dataUCHar() const {return static_cast<unsigned char*>(m_data); }
+
     size_t size() const {return m_size; }
+
     void clear()
     {
         if(m_data)

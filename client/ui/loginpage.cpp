@@ -58,6 +58,12 @@ void LoginPage::onCreateAccountClicked()
     emit registrationRequested();
 }
 
+void LoginPage::clearInput()
+{
+    ui->usernameEdit->clear();
+    ui->passwordEdit->clear();
+}
+
 void LoginPage::handleErrorInput()
 {
     ui->usernameEdit->setProperty("error", true);

@@ -54,3 +54,12 @@ void ContactListModel::appendChat(const protocol::ChatInfo &chat)
 
     endInsertRows();
 }
+
+void ContactListModel::clear()
+{
+    beginResetModel();
+
+    m_chats.clear();
+
+    endResetModel();
+}

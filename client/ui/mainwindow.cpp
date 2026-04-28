@@ -34,6 +34,7 @@ MainWindow::MainWindow(AppController *controller, QWidget *parent)
 
     connect(controller, &AppController::loginSuccess, this, &MainWindow::onLoginSuccess);
     connect(controller, &AppController::registrationSuccess, this, &MainWindow::onRegistrationSuccess);
+    connect(controller, &AppController::performLogout, this, &MainWindow::showLoginPage);
 }
 
 MainWindow::~MainWindow()
@@ -53,11 +54,11 @@ void MainWindow::showLoginPage()
 
 void MainWindow::onLoginSuccess(qint64 userId, const QList<protocol::ChatInfo> chats, const QString &username)
 {
+    m_loginPage->clearInput();
     m_mainPage->setChats(chats);
     m_mainPage->setUserId(userId);
     m_mainPage->setUsername(username);
-    QString title = "Chat - " + m_controller->getUsername();
-    this->setWindowTitle(title);
+    qDebug() << "changing window to login";
     this->m_stackedWidget->setCurrentWidget(m_mainPage);
 }
 

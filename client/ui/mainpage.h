@@ -55,6 +55,7 @@ private slots:
     void onChatClicked(const QModelIndex& index);
     void onMessageSubmitted();
     void onSearchInput(const QString &text);
+    void onLogout();
 
     //Controller slots
     void showChatHistory(qint64 chatId, const QList<UiStruct::Message>& messages);

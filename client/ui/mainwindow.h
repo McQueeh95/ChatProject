@@ -22,13 +22,10 @@ class MainWindow : public QMainWindow
 public:
     MainWindow(AppController *controller, QWidget *parent = nullptr);
     ~MainWindow();
-    void uuidDoesntExist();
-    NetworkClient& getClient();
     AppController *m_controller;
     LoginPage *m_loginPage;
 
 private:
-    AppController* m_contoler;
     QStackedWidget* m_stackedWidget;
     RegistrationPage* m_registrationPage;
     MainPage* m_mainPage;

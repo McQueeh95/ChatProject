@@ -18,6 +18,12 @@ public:
 
 private:
     Ui::ProfilePopUp *ui;
+
+private slots:
+    void logoutRequsted();
+
+signals:
+    void logout();
 };
 
 #endif // PROFILEPOPUP_H

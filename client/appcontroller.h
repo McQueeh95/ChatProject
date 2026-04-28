@@ -8,6 +8,20 @@
 #include "securebuffer.h"
 #include "uitypes.h"
 
+struct SessionState
+{
+    qint64 userId = 0;
+    qint64 currentChatId = 0;
+    qint64 phantomTargetId = 0;
+    QString username;
+    QHash<qint64, protocol::ChatInfo> chats;
+    QHash<qint64, QList<UiStruct::Message>> messagesCache;
+    QHash<qint64, UiStruct::PhantomChat> pendingPhantoms;
+    QHash<qint64, protocol::UserSearch> searchCache;
+    SecureBuffer pendingPassword;
+    SecureBuffer pendingLocalKey;
+};
+
 class AppController: public QObject
 {
     Q_OBJECT
@@ -23,6 +37,7 @@ public:
     void sendMessage(const QString &text);
     void sendHistoryReq(qint64 chatId);
     void searchUsers(const QString &query);
+    void logout();
 
     qint64 getCurrentChatId();
     QString getUsername();
@@ -32,6 +47,7 @@ signals:
     void loginFailure();
     void registrationSuccess(qint64 userId, const QString &username);
     void registrationFailure();
+    void performLogout();
 
     void historyReceived(qint64 chatId, QList<UiStruct::Message> messagesList);
     void newMessageReceived(const UiStruct::Message &msg);
@@ -68,17 +84,18 @@ private:
 
     CryptoService* m_cryptoService;
     NetworkClient* m_networkClient;
-    SecureBuffer m_pendingPassword;
+
+    QScopedPointer<SessionState> m_session;
+    /*SecureBuffer m_pendingPassword;
     SecureBuffer m_pendingLocalKey;
     QHash<qint64, protocol::ChatInfo> m_chats;
     QString m_username;
     qint64 m_userId = 0;
     qint64 m_currentChatId = 0;
     qint64 m_phantomTargetId = 0;
-    //QHash<qint64, QList<protocol::MsgDeliv>> m_messagesCache;
     QHash<qint64, QList<UiStruct::Message>> m_messagesCache;
     QHash<qint64, UiStruct::PhantomChat> m_pendingPhantoms;
-    QHash<qint64, protocol::UserSearch> m_searchCache;
+    QHash<qint64, protocol::UserSearch> m_searchCache;*/
 };
 
 #endif // APPCONTROLLER_H

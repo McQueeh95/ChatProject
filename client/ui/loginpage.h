@@ -14,6 +14,7 @@ class LoginPage : public QWidget
 
 public:
     explicit LoginPage(AppController* controller, QWidget *parent = nullptr);
+    void clearInput();
     ~LoginPage();
 
 private slots:

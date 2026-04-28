@@ -6,6 +6,7 @@ ProfilePopUp::ProfilePopUp(QWidget *parent)
     , ui(new Ui::ProfilePopUp)
 {
     ui->setupUi(this);
+    connect(ui->logoutButton, &QPushButton::clicked, this, &ProfilePopUp::logoutRequsted);
 }
 
 ProfilePopUp::~ProfilePopUp()
@@ -16,4 +17,10 @@ ProfilePopUp::~ProfilePopUp()
 void ProfilePopUp::setUsername(const QString &name)
 {
     ui->nameLabel->setText("Logged in as: " + name);
+}
+
+void ProfilePopUp::logoutRequsted()
+{
+    ui->nameLabel->clear();
+    emit logout();
 }

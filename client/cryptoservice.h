@@ -48,6 +48,7 @@ public:
     void decryptSecretKey(const QByteArray& encryptedVault, const QByteArray& nonce, const unsigned char* key);
     EncryptedMessage encryptMessage(const QString& text, const QByteArray& peerPublicKey);
     QString decryptMessage(const QByteArray &cipheredText, const QByteArray& peerPublicKey, const QByteArray &nonce);
+    void clearSecretKey();
 
     static constexpr size_t MASTER_KEY_LEN = 32;
     static constexpr size_t AUTH_KEY_LEN = 32;
@@ -56,7 +57,6 @@ signals:
 
 private:
     unsigned char* m_secretKey = nullptr;
-    //unsigned char m_secretKey[crypto_box_SECRETKEYBYTES];
 };
 
 #endif // CRYPTOSERVICE_H

@@ -12,21 +12,27 @@ AppController::AppController() {
 
 void AppController::requestSalt(const QString& username, const QString& password)
 {
-    m_pendingPassword.load(password);
-    m_username = username;
+    m_session.reset(new SessionState());
+
+    m_session->pendingPassword.load(password);
+    m_session->username = username;
 
     protocol::SaltReq saltReq;
 
     saltReq.username = username;
     QJsonObject jsonToSend = saltReq.toJson();
 
+
     if(m_networkClient != nullptr)
         m_networkClient->sendJson(jsonToSend);
+    qDebug() << "reques Salt sent json";
 }
 
 void AppController::createUser(const QString& username, const QString& password)
 {
-    m_username = username;
+    m_session.reset(new SessionState());
+
+    m_session->username = username;
 
     RegistrationData generatedData = m_cryptoService->generateNewAccount(password);
 
@@ -46,10 +52,12 @@ void AppController::createUser(const QString& username, const QString& password)
 
 void AppController::loadHistory(qint64 chatId)
 {
+    if(!m_session) return;
+
     //Chat exist in cache no need to ask server
-    if(m_messagesCache.contains(chatId))
+    if(m_session->messagesCache.contains(chatId))
     {
-        emit historyReceived(chatId, m_messagesCache[chatId]);
+        emit historyReceived(chatId, m_session->messagesCache[chatId]);
     }
     //Chat doesn't exist ask server
     else if(chatId > 0)
@@ -60,25 +68,27 @@ void AppController::loadHistory(qint64 chatId)
 
 void AppController::processChatSelection(qint64 chatId, qint64 userId, const QString &username)
 {
+    if(!m_session) return;
+
     emit chatScreenRequested(username);
     if(chatId == 0 && userId > 0)
     {
         chatId = findChatIdByUserId(userId);
     }
 
-    m_currentChatId = (chatId > 0) ? chatId : (userId * (-1));
-    if(m_currentChatId > 0)
+    m_session->currentChatId = (chatId > 0) ? chatId : (userId * (-1));
+    if(m_session->currentChatId > 0)
     {
-        loadHistory(m_currentChatId);
+        loadHistory(m_session->currentChatId);
     }
-    else if(m_currentChatId < 0)
+    else if(m_session->currentChatId < 0)
     {
         UiStruct::PhantomChat phantom;
         phantom.tempChatId = (userId * -1);
         phantom.username = username;
-        phantom.publicKey = m_searchCache[userId].publicKey;
+        phantom.publicKey = m_session->searchCache[userId].publicKey;
 
-        m_pendingPhantoms.insert(userId, phantom);
+        m_session->pendingPhantoms.insert(userId, phantom);
         emit noMessagesYet(username);
     }
 }
@@ -112,14 +122,31 @@ void AppController::searchUsers(const QString &query)
     m_networkClient->sendJson(jsonToSend);
 }
 
+void AppController::logout()
+{
+    m_cryptoService->clearSecretKey();
+
+    QJsonObject jsonToSend = protocol::LogoutReq::toJson();
+    m_networkClient->sendJson(jsonToSend);
+
+    if(m_session)
+        m_session.reset();
+
+    emit performLogout();
+}
+
 qint64 AppController::getCurrentChatId()
 {
-    return m_currentChatId;
+    if(m_session)
+        return m_session->currentChatId;
+    return 0;
 }
 
 QString AppController::getUsername()
 {
-    return m_username;
+    if(m_session)
+        return m_session->username;
+    return QString();
 }
 
 void AppController::onJsonReceived(const QJsonObject& obj)
@@ -145,7 +172,10 @@ void AppController::onJsonReceived(const QJsonObject& obj)
 
 qint64 AppController::findChatIdByUserId(qint64 targetUserId)
 {
-    for(const auto &c: m_chats)
+    if(!m_session)
+        return 0;
+
+    for(const auto &c: m_session->chats)
     {
         if(c.peerId == targetUserId)
             return c.chatId;
@@ -155,63 +185,79 @@ qint64 AppController::findChatIdByUserId(qint64 targetUserId)
 
 QJsonObject AppController::makeMessageJson(qint64 localId, const QString &text)
 {
-    if(m_currentChatId > 0)
+    if(!m_session)
+        return {};
+
+    if(m_session->currentChatId > 0)
     {
-        EncryptedMessage msg = m_cryptoService->encryptMessage(text, m_chats[m_currentChatId].publicKey);
+        EncryptedMessage msg = m_cryptoService->encryptMessage(text, m_session->chats[m_session->currentChatId].publicKey);
         protocol::ForwardReq forReq;
-        forReq.chatId = m_currentChatId;
+        forReq.chatId = m_session->currentChatId;
         forReq.localId = localId;
         forReq.payload = msg.cipherText;
         forReq.nonce = msg.nonce;
 
         return forReq.toJson();
     }
-    else if(m_currentChatId < 0)
+    else if(m_session->currentChatId < 0)
     {
         protocol::StartChatReq startChatReq;
-        startChatReq.targetId = (m_currentChatId * -1);
+        startChatReq.targetId = -m_session->currentChatId;
         startChatReq.msgLocalId = localId;
 
-        EncryptedMessage msg = m_cryptoService->encryptMessage(text, m_pendingPhantoms[startChatReq.targetId].publicKey);
+        EncryptedMessage msg = m_cryptoService->encryptMessage(text, m_session->pendingPhantoms[startChatReq.targetId].publicKey);
 
         startChatReq.payload = msg.cipherText;
         startChatReq.nonce = msg.nonce;
 
         return startChatReq.toJson();
     }
+
+    return {};
 }
 
 UiStruct::Message AppController::makeUiDraft(qint64 localId, const QString &text)
 {
+    if(!m_session)
+        return{};
+
     UiStruct::Message uiDraft;
-    uiDraft.chatId = m_currentChatId;
+    //uiDraft.chatId = m_currentChatId;
+    uiDraft.chatId = m_session->currentChatId;
     uiDraft.localId = localId;
     uiDraft.text = text;
-    uiDraft.senderId = m_userId;
+    uiDraft.senderId = m_session->userId;
     uiDraft.displayDate = QDateTime::currentDateTime().toString("dd.MM.yyyy");
     return uiDraft;
 }
 
 void AppController::processLocalMessage(const UiStruct::Message &message)
 {
+    if(!m_session)
+        return;
+
     //Add message to chat to show in the UI
-    m_messagesCache[message.chatId].push_back(message);
+    m_session->messagesCache[message.chatId].push_back(message);
 
     //If chat still opened
-    if(m_currentChatId == message.chatId)
+    if(m_session->currentChatId == message.chatId)
         emit localMessageCreated(message);
 }
 
 void AppController::handleSaltRes(const QJsonObject &obj)
 {
+    if(!m_session)
+        return;
+
     protocol::SaltRes saltRes = protocol::SaltRes::fromJson(obj);
     if(!saltRes.salt.isEmpty())
     {
-        DerivedKeys keys = m_cryptoService->generateHashedPassword(m_pendingPassword.dataChar(), m_pendingPassword.size(), saltRes.salt);
-        m_pendingLocalKey.load(keys.localEncryptKey);
+        DerivedKeys keys = m_cryptoService->generateHashedPassword(m_session->pendingPassword.dataChar(),
+                                                                   m_session->pendingPassword.size(), saltRes.salt);
+        m_session->pendingLocalKey.load(keys.localEncryptKey);
 
         protocol::LoginReq loginReq;
-        loginReq.username = m_username;
+        loginReq.username = m_session->username;
         loginReq.authKey = keys.authKey;
 
         QJsonObject jsonToSend = loginReq.toJson();
@@ -225,15 +271,19 @@ void AppController::handleSaltRes(const QJsonObject &obj)
 
 void AppController::handleLoginRes(const QJsonObject &obj)
 {
+    if(!m_session)
+        return;
+
     protocol::LoginRes loginRes = protocol::LoginRes::fromJson(obj);
+    qDebug() << "started login";
     if(loginRes.status == "ok")
     {
         protocol::UserInfo user = loginRes.userInfo;
 
-        m_userId = user.userId;
-        m_chats = loginRes.chats;
+        m_session->userId = user.userId;
+        m_session->chats = loginRes.chats;
 
-        QList<protocol::ChatInfo> chatsList = m_chats.values();
+        QList<protocol::ChatInfo> chatsList = m_session->chats.values();
         for(const auto &c: chatsList)
         {
             qDebug() << c.publicKey.toBase64();
@@ -241,8 +291,9 @@ void AppController::handleLoginRes(const QJsonObject &obj)
         std::sort(chatsList.begin(), chatsList.end(), [](const protocol::ChatInfo& a, const protocol::ChatInfo& b)
                   {return a.peerUsername < b.peerUsername;});
 
-        m_cryptoService->decryptSecretKey(user.encryptedVault, user.vaultNonce, m_pendingLocalKey.dataUCHar());
-        emit loginSuccess(m_userId, chatsList, m_username);
+        m_cryptoService->decryptSecretKey(user.encryptedVault, user.vaultNonce, m_session->pendingLocalKey.dataUCHar());
+        qDebug() << "decrypted secret key";
+        emit loginSuccess(m_session->userId, chatsList, m_session->username);
     }
     else
         emit loginFailure();
@@ -250,12 +301,15 @@ void AppController::handleLoginRes(const QJsonObject &obj)
 
 void AppController::handleRegistrationRes(const QJsonObject &obj)
 {
+    if(!m_session)
+        return;
+
     protocol::RegRes regRes = protocol::RegRes::fromJson(obj);
     if(regRes.status == "ok")
     {
-        m_userId = regRes.userId;
+        m_session->userId = regRes.userId;
 
-        emit registrationSuccess(m_userId, m_username);
+        emit registrationSuccess(m_session->userId, m_session->username);
     }
     else
         emit registrationFailure();
@@ -263,21 +317,29 @@ void AppController::handleRegistrationRes(const QJsonObject &obj)
 
 void AppController::handleForwardedMessage(const QJsonObject &obj)
 {
+    if(!m_session)
+        return;
+
     protocol::MsgDeliv msgDeliv = protocol::MsgDeliv::fromJson(obj);
-    QByteArray chatPublicKey = m_chats[msgDeliv.chatId].publicKey;
+
+    QByteArray chatPublicKey = m_session->chats[msgDeliv.chatId].publicKey;
     QString decryptedText = m_cryptoService->decryptMessage(msgDeliv.payload,
                                 chatPublicKey, msgDeliv.nonce);
+
     UiStruct::Message uiMsg = UiStruct::Message::fromNetwork(msgDeliv, decryptedText);
-    m_messagesCache[msgDeliv.chatId].push_back(uiMsg);
-    if(m_currentChatId == msgDeliv.chatId)
+    m_session->messagesCache[msgDeliv.chatId].push_back(uiMsg);
+    if(m_session->currentChatId == msgDeliv.chatId)
         newMessageReceived(uiMsg);
 }
 
 void AppController::handleHistoryRes(const QJsonObject &obj)
 {
+    if(!m_session)
+        return;
+
     protocol::HistoryRes hisRes = protocol::HistoryRes::fromJson(obj);
     qint64 chatId = hisRes.chatId;
-    QByteArray chatPublicKey = m_chats[chatId].publicKey;
+    QByteArray chatPublicKey = m_session->chats[chatId].publicKey;
 
     QList<UiStruct::Message> uiMessages;
 
@@ -289,23 +351,29 @@ void AppController::handleHistoryRes(const QJsonObject &obj)
         uiMessages.append(UiStruct::Message::fromNetwork(netMsg, decryptedText));
     }
 
-    m_messagesCache[chatId] = uiMessages;
+    m_session->messagesCache[chatId] = uiMessages;
     loadHistory(chatId);
 }
 
 void AppController::handleSearchRes(const QJsonObject &obj)
 {
+    if(!m_session)
+        return;
+
     protocol::SearchRes searchRes = protocol::SearchRes::fromJson(obj);
-    m_searchCache.clear();
+    m_session->searchCache.clear();
     for(const auto &s: searchRes.foundUsers)
     {
-        m_searchCache.insert(s.userId, s);
+        m_session->searchCache.insert(s.userId, s);
     }
     emit foundUsers(searchRes.foundUsers);
 }
 
 void AppController::handleMessagAck(const QJsonObject &obj)
 {
+    if(!m_session)
+        return;
+
     protocol::DelivAck delAck = protocol::DelivAck::fromJson(obj);
     if(delAck.status != "ok"){
         qDebug() << "Message delivery failed: " << delAck.errorMsg;
@@ -322,30 +390,36 @@ void AppController::handleMessagAck(const QJsonObject &obj)
 
 void AppController::handleNewChatEvent(const QJsonObject &obj)
 {
+    if(!m_session)
+        return;
+
     protocol::ChatInfo newChat = protocol::ChatInfo::fromJson(obj);
-    m_chats[newChat.chatId] = newChat;
+    m_session->chats[newChat.chatId] = newChat;
     emit updateChats(newChat);
 }
 
 void AppController::promotePhantomChat(const protocol::DelivAck &delAck)
 {
+    if(!m_session)
+        return;
+
     qint64 tempChatId = -delAck.peerId;
 
-    if(m_messagesCache.contains(tempChatId))
+    if(m_session->messagesCache.contains(tempChatId))
     {
-        QList<UiStruct::Message> drafts = m_messagesCache.take(tempChatId);
+        QList<UiStruct::Message> drafts = m_session->messagesCache.take(tempChatId);
         for(auto& msg : drafts)
         {
             msg.chatId = delAck.chatId;
         }
-        m_messagesCache.insert(delAck.chatId, drafts);
+        m_session->messagesCache.insert(delAck.chatId, drafts);
     }
 
-    if (!m_pendingPhantoms.contains(delAck.peerId)) {
+    if (!m_session->pendingPhantoms.contains(delAck.peerId)) {
         qDebug() << "Critical: Phantom chat for peer" << delAck.peerId << "was not found!";
         return;
     }
-    UiStruct::PhantomChat phantom = m_pendingPhantoms.take(delAck.peerId);
+    UiStruct::PhantomChat phantom = m_session->pendingPhantoms.take(delAck.peerId);
 
     protocol::ChatInfo newChat;
     newChat.chatId = delAck.chatId;
@@ -353,20 +427,23 @@ void AppController::promotePhantomChat(const protocol::DelivAck &delAck)
     newChat.peerUsername = phantom.username;
     newChat.publicKey = phantom.publicKey;
 
-    m_chats[delAck.chatId] = newChat;
+    m_session->chats[delAck.chatId] = newChat;
     emit updateChats(newChat);
-    if(m_currentChatId == tempChatId)
+    if(m_session->currentChatId == tempChatId)
     {
-        m_currentChatId = delAck.chatId;
+        m_session->currentChatId = delAck.chatId;
         processChatSelection(newChat.chatId, newChat.peerId, newChat.peerUsername);
     }
 }
 
 void AppController::confirmDeliveryMessage(const protocol::DelivAck &delAck)
 {
-    if(!m_messagesCache.contains(delAck.chatId)) return;
+    if(!m_session)
+        return;
 
-    QList<UiStruct::Message> &messages = m_messagesCache[delAck.chatId];
+    if(!m_session->messagesCache.contains(delAck.chatId)) return;
+
+    QList<UiStruct::Message> &messages = m_session->messagesCache[delAck.chatId];
     for(qint64 i = messages.size() - 1; i >= 0; i--)
     {
         if(messages[i].localId == delAck.localId)
@@ -374,7 +451,7 @@ void AppController::confirmDeliveryMessage(const protocol::DelivAck &delAck)
             messages[i].messageId = delAck.realId;
             messages[i].displayTime = UiStruct::Message::formatTime(delAck.timestamp);
 
-            if(messages[i].chatId == m_currentChatId)
+            if(messages[i].chatId == m_session->currentChatId)
             {
                 emit msgConfirmed(messages[i]);
             }

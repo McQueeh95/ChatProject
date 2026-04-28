@@ -124,3 +124,12 @@ QString CryptoService::decryptMessage(const QByteArray &cipheredText, const QByt
     }
     return QString::fromUtf8(decryptedBytes);
 }
+
+void CryptoService::clearSecretKey()
+{
+    if(m_secretKey)
+    {
+        sodium_free(m_secretKey);
+        m_secretKey = nullptr;
+    }
+}

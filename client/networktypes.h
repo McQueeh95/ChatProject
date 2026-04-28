@@ -294,6 +294,16 @@ namespace protocol
         }
     };
 
+    struct LogoutReq
+    {
+        static QJsonObject toJson()
+        {
+            QJsonObject json;
+            json["type"] = static_cast<qint8>(messageType::LOGOUT);
+            return json;
+        }
+    };
+
     struct HistoryReq
     {
         qint64 chatId;
