@@ -88,6 +88,9 @@ void RegistrationPage::onSignUpClicked()
         handleDifferentPasswords();
         return;
     }
+    ui->usernameEdit->clear();
+    ui->passwordEdit->clear();
+    ui->confirmPasswordEdit->clear();
     ui->errorLabel->hide();
     m_controller->createUser(username, password);
 }
