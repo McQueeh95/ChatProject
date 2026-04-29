@@ -14,7 +14,9 @@ struct SessionState
     qint64 currentChatId = 0;
     qint64 phantomTargetId = 0;
     QString username;
-    QHash<qint64, protocol::ChatInfo> chats;
+    //QHash<qint64, protocol::ChatInfo> chats;
+    QHash<qint64, QByteArray> publicKeys;
+    QHash<qint64, UiStruct::ChatPreview> chats;
     QHash<qint64, QList<UiStruct::Message>> messagesCache;
     QHash<qint64, UiStruct::PhantomChat> pendingPhantoms;
     QHash<qint64, protocol::UserSearch> searchCache;
@@ -43,20 +45,20 @@ public:
     QString getUsername();
 
 signals:
-    void loginSuccess(qint64 userId, QList<protocol::ChatInfo> chatsList, const QString& username);
+    void loginSuccess(qint64 userId, QList<UiStruct::ChatPreview> chatsList, const QString& username);
     void loginFailure();
     void registrationSuccess(qint64 userId, const QString &username);
     void registrationFailure();
     void performLogout();
 
-    void historyReceived(qint64 chatId, QList<UiStruct::Message> messagesList);
+    void historyReceived(QList<UiStruct::Message> messagesList);
     void newMessageReceived(const UiStruct::Message &msg);
     void localMessageCreated(const UiStruct::Message &msg);
     void msgConfirmed(const UiStruct::Message &msg);
     void foundUsers(const QList<protocol::UserSearch> &users);
     void chatScreenRequested(const QString &username);
     void noMessagesYet(const QString &username);
-    void updateChats(const protocol::ChatInfo &chat);
+    void updateChats(QList<UiStruct::ChatPreview> chatsList);
     void phantomChatResolved(qint64 newChatId);
 
 private slots:
@@ -78,8 +80,7 @@ private:
     void handleSearchRes(const QJsonObject &obj);
     void handleMessagAck(const QJsonObject &obj);
     void handleNewChatEvent(const QJsonObject &obj);
-    void promotePhantomChat(const protocol::DelivAck &delAck);
-    void confirmDeliveryMessage(const protocol::DelivAck &delAck);
+    void handleDeliveryAck(const protocol::DelivAck &delAck);
     UiStruct::Message mapToUi(const protocol::MsgDeliv &netMsg, const QByteArray &peerPublicKey);
 
     CryptoService* m_cryptoService;

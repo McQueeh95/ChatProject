@@ -13,7 +13,6 @@ int ContactListModel::rowCount(const QModelIndex &parent) const
     if (parent.isValid())
         return 0;
     return m_chats.size();
-    // FIXME: Implement me!
 }
 
 QVariant ContactListModel::data(const QModelIndex &index, int role) const
@@ -24,7 +23,7 @@ QVariant ContactListModel::data(const QModelIndex &index, int role) const
     if (index.row() < 0 || index.row() >= m_chats.size())
         return QVariant();
 
-    const protocol::ChatInfo &chat = m_chats.at(index.row());
+    const UiStruct::ChatPreview &chat = m_chats.at(index.row());
     if(role == Qt::DisplayRole)
     {
         return chat.peerUsername;
@@ -33,26 +32,24 @@ QVariant ContactListModel::data(const QModelIndex &index, int role) const
     {
         return chat.chatId;
     }
+    if(role == AppRoles::LastMsgRole)
+    {
+        return chat.text;
+    }
+    if(role == AppRoles::DateTimeRole)
+    {
+        return chat.displayDateTime;
+    }
 
     return QVariant();
 
 }
 
-void ContactListModel::setChats(const QList<protocol::ChatInfo> &chats)
+void ContactListModel::setChats(const QList<UiStruct::ChatPreview> &chats)
 {
     beginResetModel();
     m_chats = chats;
     endResetModel();
-}
-
-void ContactListModel::appendChat(const protocol::ChatInfo &chat)
-{
-    int newRow = m_chats.size();
-    beginInsertRows(QModelIndex(), newRow, newRow);
-
-    m_chats.append(chat);
-
-    endInsertRows();
 }
 
 void ContactListModel::clear()

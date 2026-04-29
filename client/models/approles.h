@@ -17,6 +17,8 @@ namespace AppRoles
     {
         ChatIdRole = Qt::UserRole + 100,
         UserIdRole = Qt::UserRole + 200,
+        LastMsgRole = Qt::UserRole + 300,
+        DateTimeRole = Qt::UserRole + 400
     };
 }
 

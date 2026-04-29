@@ -3,6 +3,7 @@
 #include "networktypes.h"
 
 namespace UiStruct {
+
     struct Message
     {
         qint64 messageId = 0;
@@ -19,6 +20,7 @@ namespace UiStruct {
             QDateTime dt = QDateTime::fromString(isoTime, Qt::ISODate);
             if(dt.isValid())
             {
+                dt.toLocalTime();
                 return dt.toString("HH:mm");
             }
             else
@@ -33,6 +35,7 @@ namespace UiStruct {
             QDateTime dt = QDateTime::fromString(isoTime, Qt::ISODate);
             if(dt.isValid())
             {
+                dt.toLocalTime();
                 return dt.toString("dd.MM.yyyy");
             }
             else
@@ -64,6 +67,58 @@ namespace UiStruct {
         qint64 tempChatId;
         QString username;
         QByteArray publicKey;
+    };
+
+    struct ChatPreview
+    {
+        qint64 chatId;
+        qint64 peerId;
+        QString peerUsername;
+        QString text;
+        QDateTime dt;
+        QString displayDateTime;
+
+        static QString formatDateTime(QDateTime dt)
+        {
+            dt = dt.toLocalTime();
+
+            if(dt.isValid())
+            {
+                QDate msgDate = dt.date();
+                QDate today = QDate::currentDate();
+
+                if(msgDate == today)
+                {
+                    return dt.toString("HH:mm");
+                }
+                else if(msgDate.year() == today.year())
+                {
+                    return dt.toString("dd.MM");
+                }
+                else
+                {
+                    return dt.toString("dd.MM.yy");
+                }
+            }
+            else
+            {
+                return "--:--:";
+            }
+            return "--:--:";
+        }
+
+        static ChatPreview fromNetwork(const protocol::ChatInfo &netChat, const QString &decryptedText)
+        {
+            ChatPreview uiChat;
+            uiChat.chatId = netChat.chatId;
+            uiChat.peerId = netChat.peerId;
+            uiChat.peerUsername = netChat.peerUsername;
+            uiChat.text = decryptedText;
+            uiChat.dt = QDateTime::fromString(netChat.timeStamp, Qt::ISODate);
+            uiChat.displayDateTime = formatDateTime(uiChat.dt);
+
+            return uiChat;
+        }
     };
 }
 

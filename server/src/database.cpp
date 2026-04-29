@@ -47,14 +47,25 @@ void database::prepare_statements()
     connection_.prepare("get_searched_users", "SELECT id, username, public_key FROM users WHERE username ILIKE $1 || '%' AND id != $2");
 
     connection_.prepare("get_user_chats", 
-                        "SELECT c.id AS chat_id , u.id AS peer_id, u.username AS peer_name, "
-                        "u.public_key AS public_key FROM chats c "
-                            "JOIN users u ON u.id = CASE  "
-                                    "WHEN "
-                                    "c.user1_id = $1 THEN c.user2_id "
-                                    "ELSE c.user1_id " 
-                                    "END "
-                                "WHERE c.user1_id = $1 OR c.user2_id = $1;");
+                        R"SQL( WITH LastMessage AS (
+                            SELECT chat_id, encrypted_payload, nonce, created_at, 
+                                ROW_NUMBER() OVER(PARTITION BY chat_id ORDER BY created_at DESC) as rn 
+                            FROM messages
+                        )
+                        SELECT c.id AS chat_id, 
+                        u.id AS peer_id, 
+                        u.username AS peer_name, 
+                        u.public_key AS public_key, 
+                        lm.encrypted_payload AS last_msg, 
+                        lm.created_at AS last_timestamp,  
+                        lm.nonce AS nonce 
+                        FROM chats c 
+                        JOIN users u ON u.id = CASE  
+                                                WHEN c.user1_id = $1 THEN c.user2_id 
+                                                ELSE c.user1_id 
+                                                END 
+                        LEFT JOIN LastMessage lm ON c.id = lm.chat_id AND lm.rn = 1         
+                        WHERE c.user1_id = $1 OR c.user2_id = $1;)SQL");
     
     connection_.prepare("get_messages", "SELECT * FROM (SELECT id, chat_id, sender_id, encrypted_payload, nonce, created_at, is_read "
         "FROM messages WHERE chat_id = $1 ORDER BY id DESC LIMIT 50) AS sub ORDER BY id ASC" );
@@ -252,7 +263,10 @@ std::vector<db_protocol::user_chat> database::get_user_chats(int64_t user_id)
                 row[0].as<int64_t>(),
                 row[1].as<int64_t>(),
                 row[2].as<std::string>(),
-                row[3].as<std::string>()
+                row[3].as<std::string>(),
+                row[4].as<std::string>(),
+                row[5].as<std::string>(),
+                row[6].as<std::string>()
             });
         }
     }

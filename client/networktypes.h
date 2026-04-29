@@ -32,15 +32,23 @@ namespace protocol
         qint64 peerId;
         QString peerUsername;
         QByteArray publicKey;
+        QByteArray lastMsg;
+        QString timeStamp;
+        QByteArray nonce;
 
         static ChatInfo fromJson(const QJsonObject& json)
         {
             ChatInfo chat;
+            QString lastMsgString = json["last_msg"].toVariant().toString();
             QString publicKeyString = json["public_key"].toVariant().toString();
+            QString nonceString = json["nonce"].toVariant().toString();
             chat.chatId = json["chat_id"].toVariant().toLongLong();
             chat.peerId = json["peer_id"].toVariant().toLongLong();
             chat.peerUsername = json["peer_username"].toVariant().toString();
             chat.publicKey = QByteArray::fromBase64(publicKeyString.toLatin1());
+            chat.lastMsg = QByteArray::fromBase64(lastMsgString.toLatin1());
+            chat.timeStamp = json["timestamp"].toVariant().toString();
+            chat.nonce = QByteArray::fromBase64(nonceString.toLatin1());
             return chat;
         }
     };

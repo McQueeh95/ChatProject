@@ -108,16 +108,21 @@ void MessageViewModel::appendMessage(UiStruct::Message msg)
 
 void MessageViewModel::updateMessage(const UiStruct::Message &msg)
 {
-    beginResetModel();
     for(qint64 i = m_messages.size() - 1; i >= 0; i--)
     {
         if(m_messages[i].localId == msg.localId)
         {
             m_messages[i].displayTime = msg.displayTime;
+            m_messages[i].displayDate = msg.displayDate;
             m_messages[i].messageId = msg.messageId;
+
+            QModelIndex idx = index(i, 0);
+
+            emit dataChanged(idx, idx);
+
+            break;
         }
     }
-    endResetModel();
 }
 
 void MessageViewModel::clearMessages()

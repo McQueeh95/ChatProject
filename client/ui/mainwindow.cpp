@@ -52,7 +52,7 @@ void MainWindow::showLoginPage()
     this->m_stackedWidget->setCurrentWidget(m_loginPage);
 }
 
-void MainWindow::onLoginSuccess(qint64 userId, const QList<protocol::ChatInfo> chats, const QString &username)
+void MainWindow::onLoginSuccess(qint64 userId, const QList<UiStruct::ChatPreview> chats, const QString &username)
 {
     m_loginPage->clearInput();
     m_mainPage->setChats(chats);

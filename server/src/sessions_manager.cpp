@@ -50,8 +50,17 @@ namespace {
 	{
 		server_protocol::chat_info net_chat;
 		net_chat.chat_id = db_chat.chat_id;
+		std::cout << "chat id: " << net_chat.chat_id << std::endl; 
 		net_chat.peer_username = db_chat.peer_username;
+		std::cout << "peer username: " << net_chat.peer_username << std::endl; 
 		net_chat.public_key = db_chat.public_key;
+		std::cout << "public key: " << net_chat.public_key << std::endl; 
+		net_chat.last_msg = db_chat.last_msg;
+		std::cout << "last msg: " << net_chat.last_msg << std::endl; 
+		net_chat.timestamp = db_chat.timestamp;
+		std::cout << "timestamp: " << net_chat.timestamp << std::endl; 
+		net_chat.nonce = db_chat.nonce;
+		std::cout << "nonce: " << net_chat.nonce << std::endl; 
 		return net_chat;
 	}
 
@@ -111,9 +120,9 @@ void sessions_manager::remove_session(int64_t user_id)
 	auto it = sessions_.find(user_id);
 	if(it != sessions_.end())
 	{
+		std::cout << "session: " << user_id << " removed" << std::endl;
 		it->second.lock()->reset_session_id();
 		sessions_.erase(it);
-		std::cout << "session: " << user_id << " removed" << std::endl;
 	}
 }
 

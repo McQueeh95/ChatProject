@@ -31,7 +31,7 @@ MainPage::~MainPage()
     delete ui;
 }
 
-void MainPage::setChats(const QList<protocol::ChatInfo>& chats)
+void MainPage::setChats(const QList<UiStruct::ChatPreview>& chats)
 {
 
     m_chatsModel->setChats(chats);
@@ -79,16 +79,16 @@ void MainPage::onMessageSubmitted()
     if(!text.isEmpty())
     {
         m_controller->sendMessage(text);
+        ui->searchEdit->clear();
         ui->messageEdit->clear();
+        ui->messagesList->show();
+        ui->chatHintLabel->hide();
     }
 }
 
-void MainPage::showChatHistory(qint64 chatId, const QList<UiStruct::Message> &messages)
+void MainPage::showChatHistory(const QList<UiStruct::Message> &messages)
 {
-    if(chatId == m_controller->getCurrentChatId())
-    {
-        m_messages->setMessages(messages);
-    }
+    m_messages->setMessages(messages);
 }
 
 void MainPage::addNewMessage(const UiStruct::Message &msg)
@@ -98,10 +98,7 @@ void MainPage::addNewMessage(const UiStruct::Message &msg)
 
 void MainPage::changeViewStatus(const UiStruct::Message &msg)
 {
-    if(msg.chatId == m_controller->getCurrentChatId())
-    {
-        m_messages->updateMessage(msg);
-    }
+    m_messages->updateMessage(msg);
 }
 
 void MainPage::onSearchInput(const QString &text)
@@ -128,9 +125,9 @@ void MainPage::onLogout()
     m_controller->logout();
 }
 
-void MainPage::addNewChat(const protocol::ChatInfo &chat)
+void MainPage::addNewChat(QList<UiStruct::ChatPreview> chatsList)
 {
-    m_chatsModel->appendChat(chat);
+    m_chatsModel->setChats(chatsList);
 }
 
 void MainPage::callSearch()

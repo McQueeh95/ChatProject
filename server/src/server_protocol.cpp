@@ -201,7 +201,10 @@ namespace server_protocol
             {"chat_id", msg.chat_id},
             {"peer_id", msg.peer_id},
             {"peer_username", msg.peer_username},
-            {"public_key", msg.public_key}
+            {"public_key", msg.public_key},
+            {"last_msg", msg.last_msg},
+            {"timestamp", msg.timestamp},
+            {"nonce", msg.nonce}
         };
     }
 

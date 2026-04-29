@@ -140,6 +140,9 @@ namespace server_protocol
         int64_t peer_id;
         std::string peer_username;
         std::string public_key;
+        std::string last_msg;
+        std::string timestamp;
+        std::string nonce;
 
         friend void tag_invoke(boost::json::value_from_tag, boost::json::value& jv, 
             const chat_info& msg);

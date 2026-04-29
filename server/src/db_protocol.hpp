@@ -27,6 +27,9 @@ namespace db_protocol
         int64_t peer_id;
         std::string peer_username;
         std::string public_key;
+        std::string last_msg;
+        std::string timestamp;
+        std::string nonce;
     };
 
     struct found_user

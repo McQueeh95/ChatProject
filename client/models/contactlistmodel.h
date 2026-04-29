@@ -3,6 +3,7 @@
 
 #include <QAbstractListModel>
 #include "../networktypes.h"
+#include "../uitypes.h"
 //#include "ui_contactmodelwidget.h"
 
 class ContactListModel : public QAbstractListModel
@@ -22,15 +23,15 @@ public:
 
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
 
-    void setChats(const QList<protocol::ChatInfo> &chats);
+    void setChats(const QList<UiStruct::ChatPreview> &chats);
 
-    void appendChat(const protocol::ChatInfo &chat);
+    void appendChat(const UiStruct::ChatPreview &chat);
 
     void clear();
 
 
 private:
-    QList<protocol::ChatInfo> m_chats;
+    QList<UiStruct::ChatPreview> m_chats;
 };
 
 #endif // CONTACTLISTMODEL_H

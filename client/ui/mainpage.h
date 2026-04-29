@@ -22,7 +22,7 @@ public:
     explicit MainPage(AppController* controller, QWidget *parent = nullptr);
     ~MainPage();
 
-    void setChats(const QList<protocol::ChatInfo>& chats);
+    void setChats(const QList<UiStruct::ChatPreview>& chats);
     void setUserId(qint64 userId);
     void setUsername(const QString& username);
 
@@ -41,7 +41,7 @@ private:
     void showChatScreen(const QString &username);
     void hideChatScreen();
 
-    void addNewChat(const protocol::ChatInfo &chat);
+    void addNewChat(QList<UiStruct::ChatPreview> chatsList);
     void callSearch();
 
     void setupConnections();
@@ -58,7 +58,7 @@ private slots:
     void onLogout();
 
     //Controller slots
-    void showChatHistory(qint64 chatId, const QList<UiStruct::Message>& messages);
+    void showChatHistory(const QList<UiStruct::Message>& messages);
     void addNewMessage(const UiStruct::Message &msg);
     void changeViewStatus(const UiStruct::Message &msg);
     void showSearchResult(const QList<protocol::UserSearch> &users);

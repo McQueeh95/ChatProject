@@ -34,7 +34,7 @@ private:
 private slots:
     void showRegistrationPage();
     void showLoginPage();
-    void onLoginSuccess(qint64 userId, const QList<protocol::ChatInfo> chats, const QString &username);
+    void onLoginSuccess(qint64 userId, const QList<UiStruct::ChatPreview> chats, const QString &username);
     void onRegistrationSuccess(qint64 userId, const QString &username);
 
 };
