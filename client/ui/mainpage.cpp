@@ -261,6 +261,7 @@ void MainPage::showChatScreen(const QString &username)
 
 void MainPage::showNoMessagesYet(const QString &username)
 {
+    m_messages->clearMessages();
     ui->peerUsernameLabel->setText(username);
     ui->peerUsernameLabel->show();
     ui->selectChatLabel->hide();

@@ -70,6 +70,9 @@ private:
     QJsonObject makeMessageJson(qint64 localId, const QString &text);
     UiStruct::Message makeUiDraft(qint64 localId, const QString &text);
     void processLocalMessage(const UiStruct::Message &message);
+    QList<UiStruct::ChatPreview> getSortedChats();
+
+    void onSaltReceived(const QByteArray &salt);
 
     //Handles server's responses
     void handleSaltRes (const QJsonObject &obj);
@@ -87,16 +90,6 @@ private:
     NetworkClient* m_networkClient;
 
     QScopedPointer<SessionState> m_session;
-    /*SecureBuffer m_pendingPassword;
-    SecureBuffer m_pendingLocalKey;
-    QHash<qint64, protocol::ChatInfo> m_chats;
-    QString m_username;
-    qint64 m_userId = 0;
-    qint64 m_currentChatId = 0;
-    qint64 m_phantomTargetId = 0;
-    QHash<qint64, QList<UiStruct::Message>> m_messagesCache;
-    QHash<qint64, UiStruct::PhantomChat> m_pendingPhantoms;
-    QHash<qint64, protocol::UserSearch> m_searchCache;*/
 };
 
 #endif // APPCONTROLLER_H

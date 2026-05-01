@@ -21,7 +21,6 @@ QVariant MessageViewModel::data(const QModelIndex &index, int role) const
         return QVariant();
 
     const UiStruct::Message message = m_messages.at(index.row());
-    //const protocol::MsgDeliv message = m_messages.at(index.row());
 
     if(role == Qt::DisplayRole)
     {
@@ -68,6 +67,10 @@ void MessageViewModel::setMessages(const QList<UiStruct::Message> &messages)
         {
             m_messages[i].showDate = true;
             lastDate = m_messages[i].displayDate;
+        }
+        else
+        {
+            m_messages[i].showDate = false;
         }
     }
 

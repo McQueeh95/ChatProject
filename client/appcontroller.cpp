@@ -99,10 +99,10 @@ void AppController::sendMessage(const QString &text)
 
     UiStruct::Message uiDraft = makeUiDraft(localId, text);
 
+    QJsonObject jsonToSend = makeMessageJson(localId, text);
+
     processLocalMessage(uiDraft);
 
-
-    QJsonObject jsonToSend = makeMessageJson(localId, text);
     m_networkClient->sendJson(jsonToSend);
 }
 
@@ -207,7 +207,8 @@ QJsonObject AppController::makeMessageJson(qint64 localId, const QString &text)
         startChatReq.msgLocalId = localId;
 
         EncryptedMessage msg = m_cryptoService->encryptMessage(text, m_session->pendingPhantoms[startChatReq.targetId].publicKey);
-
+        if(msg.cipherText.isEmpty())
+            return {};
         startChatReq.payload = msg.cipherText;
         startChatReq.nonce = msg.nonce;
 
@@ -223,7 +224,6 @@ UiStruct::Message AppController::makeUiDraft(qint64 localId, const QString &text
         return{};
 
     UiStruct::Message uiDraft;
-    //uiDraft.chatId = m_currentChatId;
     uiDraft.chatId = m_session->currentChatId;
     uiDraft.localId = localId;
     uiDraft.text = text;
@@ -238,7 +238,6 @@ void AppController::processLocalMessage(const UiStruct::Message &message)
         return;
 
     m_session->messagesCache[message.chatId].push_back(message);
-
 
     UiStruct::ChatPreview &chat = m_session->chats[message.chatId];
     chat.text = message.text;
@@ -280,17 +279,28 @@ void AppController::processLocalMessage(const UiStruct::Message &message)
     }
 
     //Add message to chat to show in the UI
-
-    QList<UiStruct::ChatPreview> uiList = m_session->chats.values();
-    std::sort(uiList.begin(), uiList.end(), [](const UiStruct::ChatPreview& a, const UiStruct::ChatPreview& b)
-              {return a.dt > b.dt;});
-    emit updateChats(uiList);
+    emit updateChats(getSortedChats());
 
     //If chat still opened
     if(m_session->currentChatId == message.chatId)
     {
         emit localMessageCreated(message);
     }
+}
+
+QList<UiStruct::ChatPreview> AppController::getSortedChats()
+{
+    QList<UiStruct::ChatPreview> uiList = m_session->chats.values();
+    std::sort(uiList.begin(), uiList.end(), [](const UiStruct::ChatPreview& a, const UiStruct::ChatPreview& b)
+              {return a.dt > b.dt;});
+    return uiList;
+}
+
+void AppController::onSaltReceived(const QByteArray &salt)
+{
+    DerivedKeys keys = m_cryptoService->generateHashedPassword(m_session->pendingPassword.dataChar(),
+                                                               m_session->pendingPassword.size(), salt);
+    m_session->pendingLocalKey.load(keys.localEncryptKey);
 }
 
 void AppController::handleSaltRes(const QJsonObject &obj)
@@ -329,29 +339,18 @@ void AppController::handleLoginRes(const QJsonObject &obj)
     {
         protocol::UserInfo user = loginRes.userInfo;
         m_session->userId = user.userId;
-
-        qDebug() << "User info: "<< user.encryptedVault.toBase64() << user.vaultNonce.toBase64();
         m_cryptoService->decryptSecretKey(user.encryptedVault, user.vaultNonce, m_session->pendingLocalKey.dataUCHar());
 
         QList<protocol::ChatInfo> networkChats = loginRes.chats.values();
         for(const auto &c: networkChats)
         {
             m_session->publicKeys.insert(c.chatId, c.publicKey);
-            qDebug() << "Peer id and user public key" << c.chatId << c.publicKey.toBase64();
-            qDebug() << "Decrypting: " << c.lastMsg.toBase64() << "for: " << c.chatId << "using" << c.publicKey.toBase64() << "and" << c.nonce.toBase64();
             QString msgText = m_cryptoService->decryptMessage(c.lastMsg, c.publicKey, c.nonce);
             UiStruct::ChatPreview chat = UiStruct::ChatPreview::fromNetwork(c, msgText);
             m_session->chats.insert(chat.chatId, chat);
         }
 
-        QList<UiStruct::ChatPreview> uiChatList = m_session->chats.values();
-
-        std::sort(uiChatList.begin(), uiChatList.end(), [](const UiStruct::ChatPreview& a, const UiStruct::ChatPreview& b)
-                  {return a.dt > b.dt;});
-
-        qDebug() << "chats sorted";
-
-        emit loginSuccess(m_session->userId, uiChatList, m_session->username);
+        emit loginSuccess(m_session->userId, getSortedChats(), m_session->username);
     }
     else
         emit loginFailure();
@@ -455,10 +454,7 @@ void AppController::handleNewChatEvent(const QJsonObject &obj)
     m_session->publicKeys.insert(newChat.chatId, newChat.publicKey);
     m_session->chats.insert(uiNewChat.chatId, uiNewChat);
 
-    QList<UiStruct::ChatPreview> uiList = m_session->chats.values();
-    std::sort(uiList.begin(), uiList.end(), [](const UiStruct::ChatPreview& a, const UiStruct::ChatPreview& b)
-              {return a.dt > b.dt;});
-    emit updateChats(uiList);
+    emit updateChats(getSortedChats());
 }
 
 void AppController::handleDeliveryAck(const protocol::DelivAck &delAck)
@@ -498,11 +494,7 @@ void AppController::handleDeliveryAck(const protocol::DelivAck &delAck)
         chat.displayDateTime = UiStruct::ChatPreview::formatDateTime(chat.dt);
     }
 
-    QList<UiStruct::ChatPreview> uiList = m_session->chats.values();
-    std::sort(uiList.begin(), uiList.end(), [](const UiStruct::ChatPreview& a, const UiStruct::ChatPreview& b) {
-        return a.dt > b.dt;
-    });
-    emit updateChats(uiList);
+    emit updateChats(getSortedChats());
 
     if(m_session->messagesCache.contains(delAck.chatId))
     {

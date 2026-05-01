@@ -106,6 +106,8 @@ EncryptedMessage CryptoService::encryptMessage(const QString &text, const QByteA
                         reinterpret_cast<const unsigned char*>(peerPublicKey.constData()), m_secretKey) != 0)
     {
         qDebug() << "message encryption failed";
+        msg.cipherText.clear();
+        msg.nonce.clear();
     }
     return msg;
 }

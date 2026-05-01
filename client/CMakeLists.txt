@@ -21,6 +21,7 @@ find_package(Qt6 REQUIRED COMPONENTS Core)
 find_package(Qt6 REQUIRED COMPONENTS Core)
 find_package(Qt6 REQUIRED COMPONENTS Core)
 find_package(Qt6 REQUIRED COMPONENTS Core)
+find_package(Qt6 REQUIRED COMPONENTS Core)
 find_path(SODIUM_INCLUDE_DIRS NAMES sodium.h HINTS /usr/include /usr/local/include)
 find_library(SODIUM_LIBRARIES NAMES sodium HINTS /usr/lib64 /usr/lib /usr/local/lib)
 
@@ -65,6 +66,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
 
 
 
+
     )
 # Define target properties for Android with Qt 6 as:
 #    set_property(TARGET client APPEND PROPERTY QT_ANDROID_PACKAGE_SOURCE_DIR
@@ -91,6 +93,7 @@ target_link_libraries(client PRIVATE Qt6::Core)
 target_link_libraries(client PRIVATE Qt6::Core)
 target_include_directories(client PRIVATE /usr/local/include ${SODIUM_INCLUDE_DIRS})
 target_link_libraries(client PRIVATE ${SODIUM_LIBRARIES})
+target_link_libraries(client PRIVATE Qt6::Core)
 target_link_libraries(client PRIVATE Qt6::Core)
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.

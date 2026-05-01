@@ -22,20 +22,19 @@ class MainWindow : public QMainWindow
 public:
     MainWindow(AppController *controller, QWidget *parent = nullptr);
     ~MainWindow();
-    AppController *m_controller;
-    LoginPage *m_loginPage;
 
 private:
+    Ui::MainWindow *ui;
     QStackedWidget* m_stackedWidget;
+    LoginPage *m_loginPage;
     RegistrationPage* m_registrationPage;
     MainPage* m_mainPage;
-    Ui::MainWindow *ui;
+    AppController *m_controller;
 
 private slots:
     void showRegistrationPage();
     void showLoginPage();
     void onLoginSuccess(qint64 userId, const QList<UiStruct::ChatPreview> chats, const QString &username);
     void onRegistrationSuccess(qint64 userId, const QString &username);
-
 };
 #endif // MAINWINDOW_H
