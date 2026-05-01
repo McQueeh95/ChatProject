@@ -1,26 +1,36 @@
 #include "networkclient.h"
 #include <QDateTime>
 
-NetworkClient::NetworkClient(QObject *parent) : QObject(parent)
+NetworkClient::NetworkClient(const QUrl &serverUrl, QObject *parent) : QObject(parent)
 {
-    //connect(&m_webSocket, &QWebSocket::disconnected, this, &NetworkClient::onDisconnected);
-    connect(&m_webSocket, &QWebSocket::textMessageReceived, this, &NetworkClient::onTextMessageReceived);
+    m_webSocket = new QWebSocket(QString(), QWebSocketProtocol::VersionLatest, this);
+
+    m_serverUrl = serverUrl;
+    connectToServer();
+    m_reconnectTimer = new QTimer(this);
+    m_reconnectTimer->setInterval(5000);
+
+    connect(m_reconnectTimer, &QTimer::timeout, this, &NetworkClient::connectToServer);
+    connect(m_webSocket, &QWebSocket::textMessageReceived, this, &NetworkClient::onTextMessageReceived);
+    connect(m_webSocket, &QWebSocket::disconnected, this, &NetworkClient::onDisconnected);
+    connect(m_webSocket, &QWebSocket::connected, this, &NetworkClient::onConnected);
 }
 
 void NetworkClient::sendJson(const QJsonObject& json)
 {
-    if(m_webSocket.state() == QAbstractSocket::ConnectedState && !json.empty())
+    if(m_webSocket->state() == QAbstractSocket::ConnectedState && !json.empty())
     {
         QString toSend = QJsonDocument(json).toJson(QJsonDocument::Compact);
-        m_webSocket.sendTextMessage(toSend);
+        m_webSocket->sendTextMessage(toSend);
     }
     else
         qDebug() << "Error sending Json(send json)";
 }
 
-void NetworkClient::connectToServer(const QUrl &url)
+void NetworkClient::connectToServer()
 {
-    m_webSocket.open(url);
+    qDebug() << "Trying to connect";
+    m_webSocket->open(m_serverUrl);
 }
 
 void NetworkClient::onTextMessageReceived(const QString& rawString)
@@ -46,7 +56,19 @@ void NetworkClient::onTextMessageReceived(const QString& rawString)
     emit jsonReceived(obj);
 }
 
+void NetworkClient::onDisconnected()
+{
+    m_reconnectTimer->start();
+    emit connectionLost();
+}
+
+void NetworkClient::onConnected()
+{
+    m_reconnectTimer->stop();
+    emit connectionRestored();
+}
+
 bool NetworkClient::isConnected()
 {
-    return(m_webSocket.state() == QAbstractSocket::ConnectedState);
+    return(m_webSocket->state() == QAbstractSocket::ConnectedState);
 }

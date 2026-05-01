@@ -3,10 +3,9 @@
 #include <QDateTime>
 
 AppController::AppController() {
-    m_networkClient = new NetworkClient(this);
+    m_networkClient = new NetworkClient(QUrl("ws://127.0.0.1:8080"), this);
     m_cryptoService = new CryptoService(this);
 
-    m_networkClient->connectToServer(QUrl("ws://127.0.0.1:8080"));
     connect(m_networkClient, &NetworkClient::jsonReceived, this, &AppController::onJsonReceived);
 }
 
