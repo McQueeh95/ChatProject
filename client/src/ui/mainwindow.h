@@ -5,7 +5,7 @@
 #include <QStackedWidget>
 #include "registrationpage.h"
 #include "../network/networkclient.h"
-#include "../appcontroller.h"
+#include "../core/appcontroller.h"
 #include "loginpage.h"
 #include "mainpage.h"
 

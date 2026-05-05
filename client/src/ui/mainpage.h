@@ -2,9 +2,9 @@
 #define MAINPAGE_H
 
 #include <QWidget>
-#include "../networktypes.h"
-#include "../models/contactlistmodel.h"
-#include "../appcontroller.h"
+#include "../types/networktypes.h"
+#include "../models/chatviewmodel.h"
+#include "../core/appcontroller.h"
 #include "../models/messageviewmodel.h"
 #include "../models/searchviewmodel.h"
 #include <QTimer>
@@ -32,7 +32,7 @@ protected:
 private:
     Ui::MainPage *ui;
     AppController *m_controller;
-    ContactListModel *m_chatsModel;
+    ChatViewModel *m_chatsModel;
     MessageViewModel *m_messages;
     SearchViewModel *m_searchResults;
     QTimer *m_searchTimer;

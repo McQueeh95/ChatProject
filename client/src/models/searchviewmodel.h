@@ -4,7 +4,7 @@
 #include <QAbstractListModel>
 #include <QObject>
 #include <QWidget>
-#include "../networktypes.h"
+#include "../types/networktypes.h"
 
 class SearchViewModel : public QAbstractListModel
 {

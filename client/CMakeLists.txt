@@ -29,44 +29,34 @@ find_package(PkgConfig REQUIRED)
 pkg_check_modules(SODIUM REQUIRED libsodium)
 
 set(PROJECT_SOURCES
-        main.cpp
-        ui/mainwindow.cpp
-        ui/mainwindow.h
-        ui/mainwindow.ui
-
+        src/main.cpp
+        src/ui/mainwindow.cpp
+        src/ui/mainwindow.h
+        src/ui/mainwindow.ui
 )
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     qt_add_executable(client
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
-        ui/registrationpage.h ui/registrationpage.cpp ui/registrationpage.ui
-
-        network/networkclient.h network/networkclient.cpp
-        models/contactiemdelegate.h
-        models/contactiemdelegate.h models/contactiemdelegate.cpp
-        models/contactlistmodel.h models/contactlistmodel.cpp
-        appcontroller.h appcontroller.cpp
-        networktypes.h
-        ui/loginpage.h ui/loginpage.cpp ui/loginpage.ui
+        src/ui/registrationpage.h src/ui/registrationpage.cpp src/ui/registrationpage.ui
+        src/network/networkclient.h src/network/networkclient.cpp
+        src/models/chatviewmodel.h src/models/chatviewmodel.cpp
+        src/core/appcontroller.h src/core/appcontroller.cpp
+        src/types/networktypes.h
+        src/ui/loginpage.h src/ui/loginpage.cpp src/ui/loginpage.ui
         resources.qrc
-        styles.qss
-        ui/mainpage.h ui/mainpage.cpp ui/mainpage.ui
-        models/chatdelegate.h models/chatdelegate.cpp
-        models/messagedelegate.h models/messagedelegate.cpp
-        models/messageviewmodel.h models/messageviewmodel.cpp
-        models/approles.h
-        models/searchviewmodel.h models/searchviewmodel.cpp
-        cryptoservice.h cryptoservice.cpp
-        securebuffer.h
-        uitypes.h
-        ui/profilepopup.h ui/profilepopup.cpp ui/profilepopup.ui
-
-
-
-
-
-
+        assets/styles.qss
+        src/ui/mainpage.h src/ui/mainpage.cpp src/ui/mainpage.ui
+        src/models/chatdelegate.h src/models/chatdelegate.cpp
+        src/models/messagedelegate.h src/models/messagedelegate.cpp
+        src/models/messageviewmodel.h src/models/messageviewmodel.cpp
+        src/models/approles.h
+        src/models/searchviewmodel.h src/models/searchviewmodel.cpp
+        src/crypto/cryptoservice.h src/crypto/cryptoservice.cpp
+        src/crypto/securebuffer.h
+        src/types/uitypes.h
+        src/ui/profilepopup.h src/ui/profilepopup.cpp src/ui/profilepopup.ui
     )
 # Define target properties for Android with Qt 6 as:
 #    set_property(TARGET client APPEND PROPERTY QT_ANDROID_PACKAGE_SOURCE_DIR

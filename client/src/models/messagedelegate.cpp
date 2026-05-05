@@ -1,7 +1,7 @@
 #include "messagedelegate.h"
 #include <QPainter>
 #include <QFontMetrics>
-#include <QWidget> // Обов'язково для option.widget
+#include <QWidget>
 #include <QTextDocument>
 #include <QTextOption>
 #include <QListView>

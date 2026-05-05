@@ -180,21 +180,21 @@ QPushButton#sendMessageButton{
     background-color: transparent;
     border: none;
     padding: 0px 0px;
-    image: url(:/icons/icons/send_msg_icon.svg);
+    image: url(:/icons/assets/icons/send_msg_icon.svg);
 }
 
 QPushButton#backButton{
     background-color: transparent;
     border: none;
     padding: 0px 0px;
-    image: url(:/icons/icons/back_button.svg);
+    image: url(:/icons/assets/icons/back_button.svg);
 }
 
 QPushButton#profileButton{
     background-color: transparent;
     border: none;
     padding: 0px 0px;
-    image: url(:/icons/icons/profile_button.svg);
+    image: url(:/icons/assets/icons/profile_button.svg);
 }
 
 QPushButton#logoutButton

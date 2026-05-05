@@ -2,7 +2,6 @@
 #include <QClipboard>
 #include "mainwindow.h"
 #include "./ui_mainwindow.h"
-#include "../models/contactiemdelegate.h"
 
 
 MainWindow::MainWindow(AppController *controller, QWidget *parent)

@@ -19,11 +19,11 @@ int main(int argc, char *argv[])
 
     QApplication a(argc, argv);
 
-    QFontDatabase::addApplicationFont(":/fonts/fonts/Inter_18pt-Black.ttf");
-    QFontDatabase::addApplicationFont(":/fonts/Inter_18pt-Bold.ttf");
+    QFontDatabase::addApplicationFont(":/fonts/assets/fonts/Inter_18pt-Black.ttf");
+    QFontDatabase::addApplicationFont(":/fonts/assets/fonts/Inter_18pt-Bold.ttf");
 
     a.setStyle(QStyleFactory::create("Fusion"));
-    QFile styleFile(":/theme/styles.qss");
+    QFile styleFile(":/theme/assets/styles.qss");
 
     if(styleFile.open(QFile::ReadOnly | QFile::Text))
     {

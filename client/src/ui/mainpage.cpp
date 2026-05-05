@@ -182,7 +182,7 @@ void MainPage::setupViews()
     sizes << 280 << 1000;
     ui->splitter->setSizes(sizes);
 
-    m_chatsModel = new ContactListModel(this);
+    m_chatsModel = new ChatViewModel(this);
     ui->chatsList->setModel(m_chatsModel);
     ui->chatsList->setItemDelegate(new ChatDelegate(this));
     ui->chatsList->setMouseTracking(true);

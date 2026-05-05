@@ -2,7 +2,7 @@
 #define LOGINPAGE_H
 
 #include <QWidget>
-#include "../appcontroller.h"
+#include "../core/appcontroller.h"
 
 namespace Ui {
 class LoginPage;

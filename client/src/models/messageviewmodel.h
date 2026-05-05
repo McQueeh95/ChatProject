@@ -3,7 +3,7 @@
 
 #include <QAbstractListModel>
 #include <QObject>
-#include "../uitypes.h"
+#include "../types/uitypes.h"
 
 class MessageViewModel : public QAbstractListModel
 {

@@ -1,21 +1,19 @@
-#include "contactlistmodel.h"
+#include "chatviewmodel.h"
 #include <QSize>
 #include "approles.h"
 
-ContactListModel::ContactListModel(QObject *parent)
+ChatViewModel::ChatViewModel(QObject *parent)
     : QAbstractListModel(parent)
 {}
 
-int ContactListModel::rowCount(const QModelIndex &parent) const
+int ChatViewModel::rowCount(const QModelIndex &parent) const
 {
-    // For list models only the root node (an invalid parent) should return the list's size. For all
-    // other (valid) parents, rowCount() should return 0 so that it does not become a tree model.
     if (parent.isValid())
         return 0;
     return m_chats.size();
 }
 
-QVariant ContactListModel::data(const QModelIndex &index, int role) const
+QVariant ChatViewModel::data(const QModelIndex &index, int role) const
 {
     if (!index.isValid())
         return QVariant();
@@ -45,14 +43,14 @@ QVariant ContactListModel::data(const QModelIndex &index, int role) const
 
 }
 
-void ContactListModel::setChats(const QList<UiStruct::ChatPreview> &chats)
+void ChatViewModel::setChats(const QList<UiStruct::ChatPreview> &chats)
 {
     beginResetModel();
     m_chats = chats;
     endResetModel();
 }
 
-void ContactListModel::clear()
+void ChatViewModel::clear()
 {
     beginResetModel();
 

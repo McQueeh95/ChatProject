@@ -2,11 +2,11 @@
 #define APPCONTROLLER_H
 
 #include <QObject>
-#include "network/networkclient.h"
-#include "networktypes.h"
-#include "cryptoservice.h"
-#include "securebuffer.h"
-#include "uitypes.h"
+#include "../network/networkclient.h"
+#include "../types/networktypes.h"
+#include "../crypto/cryptoservice.h"
+#include "../crypto/securebuffer.h"
+#include "../types/uitypes.h"
 
 struct SessionState
 {
