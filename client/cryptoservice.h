@@ -45,6 +45,7 @@ public:
 
     RegistrationData generateNewAccount(const QString &password);
     DerivedKeys generateHashedPassword(const char* password, size_t pwdLen, const QByteArray& salt);
+    QByteArray generateSessionToken();
     void decryptSecretKey(const QByteArray& encryptedVault, const QByteArray& nonce, const unsigned char* key);
     EncryptedMessage encryptMessage(const QString& text, const QByteArray& peerPublicKey);
     QString decryptMessage(const QByteArray &cipheredText, const QByteArray& peerPublicKey, const QByteArray &nonce);
@@ -53,6 +54,7 @@ public:
     static constexpr size_t MASTER_KEY_LEN = 32;
     static constexpr size_t AUTH_KEY_LEN = 32;
     static constexpr size_t LOCAL_ENC_KEY_LEN = 32;
+    static constexpr size_t SESSION_TOKEN_LEN = 32;
 signals:
 
 private:

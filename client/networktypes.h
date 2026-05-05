@@ -24,7 +24,9 @@ namespace protocol
         START_CHAT_REQ = 12,
         NEW_CHAT_EVENT = 13,
         SALT_REQ = 14,
-        SALT_RES = 15
+        SALT_RES = 15,
+        RECON_REQ = 16,
+        RECON_RES = 17
     };
 
     struct ChatInfo{
@@ -165,12 +167,14 @@ namespace protocol
     {
         QString username;
         QByteArray authKey;
+        QByteArray sessionToken;
         QJsonObject toJson() const
         {
             QJsonObject json;
             json["type"] = static_cast<qint8>(messageType::LOGIN);
             json["username"] = username;
             json["auth_key"] = QString::fromLatin1(authKey.toBase64());
+            json["session_token"] = QString::fromLatin1(sessionToken.toBase64());
             qDebug() << "LoginReq authKey: " << authKey;
             return json;
         }
@@ -186,6 +190,7 @@ namespace protocol
         QByteArray publicKey;
         QByteArray encryptedVault;
         QByteArray vaultNonce;
+        QByteArray sessionToken;
 
         QJsonObject toJson() const
         {
@@ -197,6 +202,7 @@ namespace protocol
             json["public_key"] = QString::fromLatin1(publicKey.toBase64());
             json["encrypted_vault"] = QString::fromLatin1(encryptedVault.toBase64());
             json["vault_nonce"] = QString::fromLatin1(vaultNonce.toBase64());
+            json["session_token"] = QString::fromLatin1(sessionToken.toBase64());
             return json;
         }
     };
@@ -395,6 +401,41 @@ namespace protocol
             }
             return msg;
         }
+    };
+
+    struct ReconnectReq
+    {
+        QByteArray sessionToken;
+
+        QJsonObject toJson()
+        {
+            QJsonObject json;
+            json["type"] = static_cast<qint8>(messageType::RECON_REQ);
+            json["session_token"] = QString::fromLatin1(sessionToken.toBase64());
+            return json;
+        }
+    };
+
+    struct ReconnectRes
+    {
+        QString status;
+        qint64 user_id;
+        QString errorMsg;
+        static ReconnectRes fromJson(const QJsonObject& json)
+        {
+            ReconnectRes reconnectRes;
+            reconnectRes.status = json["status"].toVariant().toString();
+            if(reconnectRes.status == "ok")
+            {
+                reconnectRes.user_id = json["user_id"].toVariant().toLongLong();
+            }
+            else
+            {
+                reconnectRes.errorMsg = json["error_msg"].toVariant().toString();
+            }
+            return reconnectRes;
+        }
+
     };
 }
 

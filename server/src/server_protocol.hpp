@@ -26,13 +26,16 @@ namespace server_protocol
         START_CHAT_REQ = 12,
         NEW_CHAT_EVENT = 13,
         SALT_REQ = 14,
-        SALT_RES = 15
+        SALT_RES = 15,
+        RECON_REQ = 16,
+        RECON_RES = 17
     };
 
     struct login_req
     {
         std::string username;
         std::string auth_key;
+        std::string session_token;
         friend login_req tag_invoke(boost::json::value_to_tag<login_req>, 
             const boost::json::value& jv);
     };
@@ -45,6 +48,7 @@ namespace server_protocol
         std::string public_key;
         std::string ecnrypted_vault;
         std::string vault_nonce;
+        std::string session_token;
         friend reg_req tag_invoke(boost::json::value_to_tag<reg_req>, 
             const boost::json::value& jv);
     };
@@ -237,5 +241,23 @@ namespace server_protocol
     struct new_chat_event
     {
         
+    };
+
+    struct recon_req
+    {
+        std::string session_token;
+
+        friend recon_req tag_invoke(boost::json::value_to_tag<recon_req>, 
+            const boost::json::value &jv);
+    };
+
+    struct recon_res
+    {
+        std::string status;
+        int64_t user_id;
+        std::string error_msg;
+
+        friend void tag_invoke(boost::json::value_from_tag, boost::json::value &jv,
+            const recon_res& msg);
     };
 }

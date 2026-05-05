@@ -7,7 +7,7 @@ AppController::AppController() {
     m_cryptoService = new CryptoService(this);
 
     connect(m_networkClient, &NetworkClient::jsonReceived, this, &AppController::onJsonReceived);
-    connect(m_networkClient, &NetworkClient::networkSateChanged, this, &AppController::networkStateChanged);
+    connect(m_networkClient, &NetworkClient::networkSateChanged, this, &AppController::onNetworkStateChanged);
 }
 
 void AppController::requestSalt(const QString& username, const QString& password)
@@ -43,11 +43,15 @@ void AppController::createUser(const QString& username, const QString& password)
     regReq.publicKey = generatedData.publicKey;
     regReq.encryptedVault = generatedData.encryptedVault;
     regReq.vaultNonce = generatedData.vaultNonce;
+    regReq.sessionToken = m_cryptoService->generateSessionToken();
 
     QJsonObject jsonToSend = regReq.toJson();
 
     if(m_networkClient != nullptr)
+    {
         m_networkClient->sendJson(jsonToSend);
+        m_session->sessionToken = regReq.sessionToken;
+    }
 }
 
 void AppController::loadHistory(qint64 chatId)
@@ -168,6 +172,7 @@ void AppController::onJsonReceived(const QJsonObject& obj)
         case protocol::messageType::DELIV_ACK: handleMessagAck(obj); break;
         case protocol::messageType::SEARCH_RES: handleSearchRes(obj); break;
         case protocol::messageType::NEW_CHAT_EVENT: handleNewChatEvent(obj); break;
+        case protocol::messageType::RECON_RES: handleReconnected(obj); break;
     }
 }
 
@@ -303,6 +308,31 @@ void AppController::onSaltReceived(const QByteArray &salt)
     m_session->pendingLocalKey.load(keys.localEncryptKey);
 }
 
+void AppController::onNetworkStateChanged(bool state)
+{
+    qDebug() << "State changed";
+    if(state == true)
+    {
+        if(m_session && !m_session->sessionToken.isEmpty())
+        {
+            protocol::ReconnectReq reconnectReq;
+            reconnectReq.sessionToken = m_session->sessionToken;
+            QJsonObject jsonToSend = reconnectReq.toJson();
+            m_networkClient->sendJson(jsonToSend);
+            qDebug() << "sending recon req, session token:" << m_session->sessionToken.toBase64();
+        }
+        else
+        {
+            emit networkStateChanged(state);
+        }
+    }
+    else if(state == false)
+    {
+        qDebug() << "State changed: false";
+        emit networkStateChanged(state);
+    }
+}
+
 void AppController::handleSaltRes(const QJsonObject &obj)
 {
     if(!m_session)
@@ -318,10 +348,12 @@ void AppController::handleSaltRes(const QJsonObject &obj)
         protocol::LoginReq loginReq;
         loginReq.username = m_session->username;
         loginReq.authKey = keys.authKey;
+        loginReq.sessionToken = m_cryptoService->generateSessionToken();
 
         QJsonObject jsonToSend = loginReq.toJson();
 
         m_networkClient->sendJson(jsonToSend);
+        m_session->sessionToken = loginReq.sessionToken;
     }
     else{
         emit loginFailure();
@@ -455,6 +487,18 @@ void AppController::handleNewChatEvent(const QJsonObject &obj)
     m_session->chats.insert(uiNewChat.chatId, uiNewChat);
 
     emit updateChats(getSortedChats());
+}
+
+void AppController::handleReconnected(const QJsonObject &obj)
+{
+    if(!m_session)
+        return;
+
+    protocol::ReconnectRes reconnectRes = protocol::ReconnectRes::fromJson(obj);
+    if(reconnectRes.user_id > 0)
+    {
+        emit networkStateChanged(true);
+    }
 }
 
 void AppController::handleDeliveryAck(const protocol::DelivAck &delAck)

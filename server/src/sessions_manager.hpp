@@ -42,10 +42,12 @@ private:
 	void send_reg_res(std::weak_ptr<session> session_ptr, std::optional<int64_t> user_id_opt);
 	void handle_search(int64_t sender_id, const server_protocol::search_req &search_req);
 	void handle_logout(int64_t user_id);
+	void handle_reconnect_req(std::weak_ptr<session> session_ptr, const server_protocol::recon_req &recon_req);
 	void send_search_res(int64_t sender_id, std::vector<db_protocol::found_user> users);
 	void handle_history_req(int64_t sender_id, int64_t chat_id);
 	void send_history(int64_t sender_id, int64_t chat_id, std::vector<db_protocol::message> db_messages);
 	void send_new_chat_event(int64_t receiver_id, int64_t chat_id, int64_t sender_id, std::string sender_username, std::string public_key);
+	void send_recon_res(std::weak_ptr<session> session_ptr, std::optional<int64_t> user_id);
 	
 public:
 	//No copy semantics

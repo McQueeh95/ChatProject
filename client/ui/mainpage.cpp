@@ -57,6 +57,11 @@ bool MainPage::eventFilter(QObject *obj, QEvent *event)
         {
             if(!(keyEvent->modifiers() & Qt::ShiftModifier))
             {
+                if(!ui->sendMessageButton->isEnabled())
+                {
+                    return true;
+                }
+
                 onMessageSubmitted();
                 return true;
             }

@@ -28,15 +28,15 @@ void database::prepare_statements()
 {
     connection_.prepare("get_salt", "SELECT salt FROM users WHERE username = $1");
 
-    connection_.prepare("login", "SELECT auth_key, id, encrypted_vault, vault_nonce FROM users WHERE username = $1");
+    connection_.prepare("login", "UPDATE users SET session_token = $1 WHERE username = $2 RETURNING auth_key, id, encrypted_vault, vault_nonce");
     
     connection_.prepare("get_recepeint_id", "SELECT user1_id, user2_id FROM chats WHERE id = $1");
 
     connection_.prepare("insert_msg", "INSERT INTO messages (chat_id, sender_id, encrypted_payload, nonce) "
         "VALUES ($1, $2, $3, $4) RETURNING id, created_at");
 
-    connection_.prepare("create_user", "INSERT INTO users (username, auth_key, salt, public_key, encrypted_vault, vault_nonce) "
-        "VALUES ($1, $2, $3, $4, $5, $6) RETURNING id");
+    connection_.prepare("create_user", "INSERT INTO users (username, auth_key, salt, public_key, encrypted_vault, vault_nonce, session_token) "
+        "VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id");
 
     connection_.prepare("upsert_chat", "INSERT INTO chats (user1_id, user2_id) "
         "VALUES ($1, $2) "
@@ -73,6 +73,8 @@ void database::prepare_statements()
     connection_.prepare("get_username", "SELECT username FROM users WHERE id = $1");
 
     connection_.prepare("get_public_key", "SELECT public_key FROM users WHERE id = $1");
+
+    connection_.prepare("get_id_by_token", "SELECT id FROM users WHERE session_token = $1");
 }
 
 database::~database()
@@ -89,14 +91,14 @@ void database::post_task(std::function<void()> task)
 
 std::optional<int64_t> database::create_user(const std::string &username, const std::string &auth_key, 
         const std::string &salt, const std::string & public_key, 
-        const std::string &encrypted_vault, const std::string &vault_nonce)
+        const std::string &encrypted_vault, const std::string &vault_nonce, const std::string &session_token)
 {
     try{
         pqxx::work w(connection_);
         pqxx::result r(
             w.exec(pqxx::prepped("create_user"), 
             pqxx::params{
-                username, auth_key, salt, public_key, encrypted_vault, vault_nonce})
+                username, auth_key, salt, public_key, encrypted_vault, vault_nonce, session_token})
         );
         w.commit();
 
@@ -128,13 +130,13 @@ std::string database::get_salt(const std::string &username)
     }
 }
 
-std::optional<db_protocol::user_info> database::login(const std::string &username, const std::string &auth_key)
+std::optional<db_protocol::user_info> database::login(const std::string &username, const std::string &auth_key, const std::string &session_token)
 {
     std::cout << "database::login" << std::endl;
     try {
         pqxx::nontransaction n(connection_);
         pqxx::result r(
-            n.exec(pqxx::prepped("login"), pqxx::params{username})
+            n.exec(pqxx::prepped("login"), pqxx::params{session_token, username})
         );
 
         if(r.empty()) 
@@ -340,6 +342,26 @@ std::optional<std::string> database::get_public_key(int64_t user_id)
     catch(const std::exception &e)
     {
         std::cerr << "DB error(get_public_key): " << e.what() << std::endl;
+        return std::nullopt;
+    }
+}
+
+std::optional<int64_t> database::get_id_by_token(std::string session_token)
+{
+    try
+    {
+        pqxx::nontransaction n(connection_);
+        pqxx::result r(
+            n.exec(pqxx::prepped("get_id_by_token"), pqxx::params(session_token))
+        );
+        if(r.empty()) return std::nullopt;
+
+        int64_t user_id = r[0][0].as<int64_t>();
+        return user_id;
+    }
+    catch(const std::exception &e)
+    {
+        std::cerr << "DB error(get_id_by_token): " << e.what() << std::endl;
         return std::nullopt;
     }
 }

@@ -27,9 +27,9 @@ class database
     void post_task(std::function<void()> task);
     std::optional<int64_t> create_user(const std::string &username, const std::string &auth_key, 
         const std::string &salt, const std::string & public_key, 
-        const std::string &encrypted_vault, const std::string &vault_nonce);
+        const std::string &encrypted_vault, const std::string &vault_nonce, const std::string &session_token);
     std::string get_salt(const std::string &username);
-    std::optional<db_protocol::user_info> login(const std::string &username, const std::string &password);
+    std::optional<db_protocol::user_info> login(const std::string &username, const std::string &password, const std::string &session_token);
     std::optional<int64_t> get_recepeint_id(int64_t chat_id, int64_t sender_id);
     std::optional<db_protocol::message> insert_msg(int64_t chat_id, int64_t sender_id, const std::string& text, const std::string &nonce);
     std::optional<int64_t> upsert_chat(int64_t user1_id, int64_t user2_id);
@@ -38,5 +38,6 @@ class database
     std::vector<db_protocol::message> get_messages(int64_t chat_id);
     std::optional<std::string> get_username(int64_t user_id);
     std::optional<std::string> get_public_key(int64_t user_id);
+    std::optional<int64_t> get_id_by_token(std::string session_token);
 
 };

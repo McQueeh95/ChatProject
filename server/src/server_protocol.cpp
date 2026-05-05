@@ -17,7 +17,8 @@ namespace server_protocol
 
         return {
             json::value_to<std::string>(obj.at("username")),
-            json::value_to<std::string>(obj.at("auth_key"))
+            json::value_to<std::string>(obj.at("auth_key")),
+            json::value_to<std::string>(obj.at("session_token"))
         };
 
     }
@@ -31,7 +32,8 @@ namespace server_protocol
             json::value_to<std::string>(obj.at("salt")),
             json::value_to<std::string>(obj.at("public_key")),
             json::value_to<std::string>(obj.at("encrypted_vault")),
-            json::value_to<std::string>(obj.at("vault_nonce"))
+            json::value_to<std::string>(obj.at("vault_nonce")),
+            json::value_to<std::string>(obj.at("session_token"))
         };
 
     }
@@ -244,6 +246,30 @@ namespace server_protocol
         return{
             json::value_to<std::string>(obj.at("username"))
         };
+    }
+
+    recon_req tag_invoke(json::value_to_tag<recon_req>, const json::value &jv)
+    {
+        const auto& obj = jv.as_object();
+        return{
+            json::value_to<std::string>(obj.at("session_token"))
+        };
+    }
+
+    void tag_invoke(json::value_from_tag, json::value &jv, const recon_res& msg)
+    {
+        json::object obj;
+        obj["type"] = static_cast<uint8_t>(server_protocol::message_type::RECON_RES);
+        obj["status"] = msg.status;
+        if(msg.status == "ok")
+        {
+            obj["user_id"] = msg.user_id;
+        }
+        else 
+        {
+            obj["error_msg"] = msg.error_msg;
+        }
+        jv = std::move(obj);
     }
 
 }

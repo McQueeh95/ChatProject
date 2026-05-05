@@ -41,14 +41,13 @@ RegistrationData CryptoService::generateNewAccount(const QString &password)
 
     //Encryption of secret key to store on sercer
     data.vaultNonce.resize(crypto_secretbox_NONCEBYTES);
-    unsigned char cipheredSecretKey[crypto_secretbox_MACBYTES + 32];
     randombytes_buf(data.vaultNonce.data(), sizeof(data.vaultNonce));
 
-    crypto_secretbox_easy(cipheredSecretKey, m_secretKey, crypto_box_SECRETKEYBYTES, reinterpret_cast<const unsigned char*>(data.vaultNonce.constData()),
+    data.encryptedVault.resize(crypto_secretbox_MACBYTES + 32);
+    crypto_secretbox_easy(reinterpret_cast<unsigned char*>(data.encryptedVault.data()),
+                          m_secretKey, crypto_box_SECRETKEYBYTES, reinterpret_cast<const unsigned char*>(data.vaultNonce.constData()),
                           localEncryptKey);
     sodium_memzero(localEncryptKey, sizeof(localEncryptKey));
-
-    data.encryptedVault = QByteArray(reinterpret_cast<unsigned char*>(cipheredSecretKey));
 
     return data;
 }
@@ -81,6 +80,14 @@ DerivedKeys CryptoService::generateHashedPassword(const char* password, size_t p
     sodium_memzero(masterkey, MASTER_KEY_LEN);
 
     return keys;
+}
+
+QByteArray CryptoService::generateSessionToken()
+{
+    QByteArray sessionToken;
+    sessionToken.resize(SESSION_TOKEN_LEN);
+    randombytes_buf(sessionToken.data(), sessionToken.size());
+    return sessionToken;
 }
 
 void CryptoService::decryptSecretKey(const QByteArray &encryptedVault, const QByteArray& nonce, const unsigned char* key)

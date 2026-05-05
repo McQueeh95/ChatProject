@@ -21,6 +21,7 @@ struct SessionState
     QHash<qint64, protocol::UserSearch> searchCache;
     SecureBuffer pendingPassword;
     SecureBuffer pendingLocalKey;
+    QByteArray sessionToken;
 };
 
 class AppController: public QObject
@@ -74,6 +75,7 @@ private:
     QList<UiStruct::ChatPreview> getSortedChats();
 
     void onSaltReceived(const QByteArray &salt);
+    void onNetworkStateChanged(bool state);
 
     //Handles server's responses
     void handleSaltRes (const QJsonObject &obj);
@@ -84,7 +86,9 @@ private:
     void handleSearchRes(const QJsonObject &obj);
     void handleMessagAck(const QJsonObject &obj);
     void handleNewChatEvent(const QJsonObject &obj);
+    void handleReconnected(const QJsonObject &obj);
     void handleDeliveryAck(const protocol::DelivAck &delAck);
+
     UiStruct::Message mapToUi(const protocol::MsgDeliv &netMsg, const QByteArray &peerPublicKey);
 
     CryptoService* m_cryptoService;

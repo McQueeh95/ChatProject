@@ -111,6 +111,7 @@ std::optional<sessions_manager::decoded_packet> sessions_manager::decode_packet(
 
 void sessions_manager::add_session(int64_t user_id, std::weak_ptr<session> session)
 {
+	//REFACTOR: ADD SETTING SESSION ID HERE 
 	std::cout << user_id << " was added!" << std::endl;
 	sessions_[user_id] = session;
 }
@@ -132,7 +133,8 @@ void sessions_manager::on_auth_attempt(std::weak_ptr<session> session_ptr, const
 	auto packet = decode_packet(raw);
 	if(!packet || (packet->type != server_protocol::message_type::LOGIN &&
 					packet->type != server_protocol::message_type::REG &&
-				packet->type != server_protocol::message_type::SALT_REQ)) return;
+				packet->type != server_protocol::message_type::SALT_REQ &&
+			packet->type != server_protocol::message_type::RECON_REQ)) return;
 	//login 
 	std::cout << "Started login" << std::endl;
 	auto type = packet->type;
@@ -152,6 +154,12 @@ void sessions_manager::on_auth_attempt(std::weak_ptr<session> session_ptr, const
 		auto msg = boost::json::value_to<server_protocol::salt_req>(packet->jv);
 		handle_salt_req(session_ptr, msg);
 	}
+	else if(type == server_protocol::message_type::RECON_REQ)
+	{
+		std::cout << "RECON REQ" << std::endl;
+		auto msg = boost::json::value_to<server_protocol::recon_req>(packet->jv);
+		handle_reconnect_req(session_ptr, msg);
+	}
 }
 
 void sessions_manager::handle_login(std::weak_ptr<session> session_ptr, const server_protocol::login_req &login_msg)
@@ -160,7 +168,7 @@ void sessions_manager::handle_login(std::weak_ptr<session> session_ptr, const se
 		server_protocol::user_info user_net{};
 		std::vector<server_protocol::chat_info> chats;
 
-		auto user_db = db_->login(msg.username, msg.auth_key);
+		auto user_db = db_->login(msg.username, msg.auth_key, msg.session_token);
 		if(user_db)
 		{
 			user_net = map_user_db_to_net(*user_db);
@@ -182,7 +190,7 @@ void sessions_manager::handle_reg(std::weak_ptr<session> session_ptr, const serv
 	db_->post_task([this, msg = std::move(reg_msg), session_ptr](){
 		std::cout << "before reg db" << std::endl;
 		std::optional<int64_t> user_id_opt = db_->create_user(msg.username, msg.auth_key, 
-			msg.salt, msg.public_key, msg.ecnrypted_vault, msg.vault_nonce);
+			msg.salt, msg.public_key, msg.ecnrypted_vault, msg.vault_nonce, msg.session_token);
 		std::cout << "after reg db" << std::endl;
 		boost::asio::post(this->ioc_main_, [this, session_ptr, user_id_opt](){
 			this->send_reg_res(session_ptr, user_id_opt);
@@ -197,6 +205,17 @@ void sessions_manager::handle_salt_req(std::weak_ptr<session> session_ptr, const
 		std::cout << "handle_salt_req salt: " << user_salt << std::endl;
 		boost::asio::post(this->ioc_main_, [this, session_ptr, user_salt](){
 			this->send_salt_res(session_ptr, user_salt);
+		});
+	});
+}
+
+void sessions_manager::handle_reconnect_req(std::weak_ptr<session> session_ptr, const server_protocol::recon_req &recon_req)
+{
+	std::string session_token = recon_req.session_token;
+	db_->post_task([this, session_token, session_ptr](){
+		auto user_id = db_->get_id_by_token(session_token);
+		boost::asio::post(this->ioc_main_, [this, user_id, session_ptr](){
+			send_recon_res(session_ptr, user_id);
 		});
 	});
 }
@@ -249,6 +268,7 @@ void sessions_manager::on_data(int64_t sender_id, const std::string& raw)
 			handle_history_req(sender_id, msg.chat_id);
 			break;
 		}
+		
 	}
 
 	} catch(const std::exception& e)
@@ -456,6 +476,8 @@ void sessions_manager::handle_search(int64_t sender_id, const server_protocol::s
 	});
 }
 
+
+
 void sessions_manager::send_search_res(int64_t sender_id, std::vector<db_protocol::found_user> db_users)
 {
 	std::vector<server_protocol::user_search> net_users;
@@ -485,4 +507,26 @@ void sessions_manager::send_new_chat_event(int64_t receiver_id, int64_t chat_id,
 
 	std::string raw_data = boost::json::serialize(jv);
 	deliver(receiver_id, raw_data);
+}
+
+void sessions_manager::send_recon_res(std::weak_ptr<session> session_ptr, std::optional<int64_t> user_id)
+{
+	auto s = session_ptr.lock();
+	if(!s) return;
+
+	server_protocol::recon_res recon_res;
+	if(user_id)
+	{
+		std::cout << "id: " << *user_id; 
+		recon_res.status = "ok";
+		recon_res.user_id = *user_id;
+		this->add_session(recon_res.user_id, session_ptr);
+		s->set_session_id(recon_res.user_id);
+	}
+	else {
+		recon_res.status = "error";
+		recon_res.error_msg = "error finding user by given token";
+	}
+	auto jv = json::value_from(recon_res);
+	s->send(json::serialize(jv));
 }
