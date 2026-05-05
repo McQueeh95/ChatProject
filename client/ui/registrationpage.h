@@ -36,6 +36,8 @@ signals:
 private slots:
     void onLoginClicked();
     void onRegistrationFailure();
+    void onNetworkStateChanged(bool state);
+
 public slots:
     void onSignUpClicked();
 };

@@ -22,6 +22,8 @@ private slots:
     void onLoginSucces();
     void onLoginFailure();
     void onCreateAccountClicked();
+
+    void onNetworkStateChanged(bool state);
 signals:
     void registrationRequested();
     void successfullLogin();

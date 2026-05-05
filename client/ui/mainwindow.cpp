@@ -14,20 +14,19 @@ MainWindow::MainWindow(AppController *controller, QWidget *parent)
 
     this->resize(1200, 800);
 
-    m_stackedWidget = new QStackedWidget(this);
-    setCentralWidget(m_stackedWidget);
+    ui->networkErrorLabel->hide();
 
     m_loginPage = new LoginPage(m_controller, this);
-    this->m_stackedWidget->addWidget(m_loginPage);
+    ui->stackedWidget->addWidget(m_loginPage);
 
 
     m_registrationPage = new RegistrationPage(m_controller, this);
-    this->m_stackedWidget->addWidget(m_registrationPage);
+    ui->stackedWidget->addWidget(m_registrationPage);
 
     m_mainPage = new MainPage(m_controller, this);
-    this->m_stackedWidget->addWidget(m_mainPage);
+    ui->stackedWidget->addWidget(m_mainPage);
 
-    this->m_stackedWidget->setCurrentWidget(m_loginPage);
+    ui->stackedWidget->setCurrentWidget(m_loginPage);
 
     connect(m_loginPage, &LoginPage::registrationRequested, this, &MainWindow::showRegistrationPage);
     connect(m_registrationPage, &RegistrationPage::loginRequested, this, &MainWindow::showLoginPage);
@@ -35,6 +34,7 @@ MainWindow::MainWindow(AppController *controller, QWidget *parent)
     connect(controller, &AppController::loginSuccess, this, &MainWindow::onLoginSuccess);
     connect(controller, &AppController::registrationSuccess, this, &MainWindow::onRegistrationSuccess);
     connect(controller, &AppController::performLogout, this, &MainWindow::showLoginPage);
+    connect(controller, &AppController::networkStateChanged, this, &MainWindow::onNetworkStateChanged);
 }
 
 MainWindow::~MainWindow()
@@ -44,12 +44,12 @@ MainWindow::~MainWindow()
 
 void MainWindow::showRegistrationPage()
 {
-    this->m_stackedWidget->setCurrentWidget(m_registrationPage);
+    ui->stackedWidget->setCurrentWidget(m_registrationPage);
 }
 
 void MainWindow::showLoginPage()
 {
-    this->m_stackedWidget->setCurrentWidget(m_loginPage);
+    ui->stackedWidget->setCurrentWidget(m_loginPage);
 }
 
 void MainWindow::onLoginSuccess(qint64 userId, const QList<UiStruct::ChatPreview> chats, const QString &username)
@@ -58,16 +58,25 @@ void MainWindow::onLoginSuccess(qint64 userId, const QList<UiStruct::ChatPreview
     m_mainPage->setChats(chats);
     m_mainPage->setUserId(userId);
     m_mainPage->setUsername(username);
-    qDebug() << "changing window to login";
-    this->m_stackedWidget->setCurrentWidget(m_mainPage);
+    ui->stackedWidget->setCurrentWidget(m_mainPage);
 }
 
 void MainWindow::onRegistrationSuccess(qint64 userId, const QString &username)
 {
     m_mainPage->setUserId(userId);
     m_mainPage->setUsername(username);
-    QString title = "Chat - " + m_controller->getUsername();
-    this->setWindowTitle(title);
-    this->m_stackedWidget->setCurrentWidget(m_mainPage);
+    ui->stackedWidget->setCurrentWidget(m_mainPage);
+}
+
+void MainWindow::onNetworkStateChanged(bool state)
+{
+    if(state == false)
+    {
+        ui->networkErrorLabel->show();
+    }
+    else
+    {
+        ui->networkErrorLabel->hide();
+    }
 }
 

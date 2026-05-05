@@ -25,6 +25,10 @@ QPushButton:pressed {
     background-color: #6c5cb5;
 }
 
+QPushButton:disabled {
+    background-color: #B4A9EB;
+}
+
 QLineEdit
 {
     background-color: #252526;
@@ -36,6 +40,15 @@ QLineEdit
 QLabel
 {
     color: #ffffff;
+}
+
+QLabel#networkErrorLabel
+{
+    background-color: #fb8c00;
+    color: #ffffff;
+    border: 1px solid #fb8c00;
+    border-radius: 8px;
+    padding: 4px;
 }
 
 /*=================================================================

@@ -25,6 +25,7 @@ private slots:
     void connectToServer();
 signals:
     void jsonReceived(const QJsonObject& obj);
+    void networkSateChanged(bool state);
     void connectionLost();
     void connectionRestored();
 };

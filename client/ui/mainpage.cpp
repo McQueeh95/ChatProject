@@ -70,6 +70,7 @@ void MainPage::onChatClicked(const QModelIndex &index)
     QString username = index.data(Qt::DisplayRole).toString();
     qint64 chatId = index.data(AppRoles::ChatIdRole).toLongLong();
     qint64 userId = index.data(AppRoles::UserIdRole).toLongLong();
+    m_messages->clearMessages();
     m_controller->processChatSelection(chatId, userId, username);
 }
 
@@ -163,6 +164,7 @@ void MainPage::setupConnections()
     connect(m_controller, &AppController::foundUsers, this, &MainPage::showSearchResult);
     connect(m_controller, &AppController::updateChats, this, &MainPage::addNewChat);
     connect(m_controller, &AppController::noMessagesYet, this, &MainPage::showNoMessagesYet);
+    connect(m_controller, &AppController::networkStateChanged, this, &MainPage::onNetworkStateChanged);
 
     connect(m_searchTimer, &QTimer::timeout, this, &MainPage::callSearch);
 }
@@ -280,4 +282,10 @@ void MainPage::showPopUp()
     globalPos.setX(globalPos.x() + 10);
     m_profilePopUp->move(globalPos);
     m_profilePopUp->show();
+}
+
+void MainPage::onNetworkStateChanged(bool state)
+{
+    ui->sendMessageButton->setEnabled(state);
+    ui->searchEdit->setEnabled(state);
 }

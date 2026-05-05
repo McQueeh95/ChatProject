@@ -64,6 +64,7 @@ private slots:
     void showSearchResult(const QList<protocol::UserSearch> &users);
     void showNoMessagesYet(const QString &username);
     void showPopUp();
+    void onNetworkStateChanged(bool state);
 };
 
 #endif // MAINPAGE_H

@@ -7,6 +7,7 @@ AppController::AppController() {
     m_cryptoService = new CryptoService(this);
 
     connect(m_networkClient, &NetworkClient::jsonReceived, this, &AppController::onJsonReceived);
+    connect(m_networkClient, &NetworkClient::networkSateChanged, this, &AppController::networkStateChanged);
 }
 
 void AppController::requestSalt(const QString& username, const QString& password)

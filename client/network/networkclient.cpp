@@ -59,13 +59,13 @@ void NetworkClient::onTextMessageReceived(const QString& rawString)
 void NetworkClient::onDisconnected()
 {
     m_reconnectTimer->start();
-    emit connectionLost();
+    emit networkSateChanged(false);
 }
 
 void NetworkClient::onConnected()
 {
     m_reconnectTimer->stop();
-    emit connectionRestored();
+    emit networkSateChanged(true);
 }
 
 bool NetworkClient::isConnected()

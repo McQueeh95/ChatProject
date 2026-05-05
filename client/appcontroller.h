@@ -14,7 +14,6 @@ struct SessionState
     qint64 currentChatId = 0;
     qint64 phantomTargetId = 0;
     QString username;
-    //QHash<qint64, protocol::ChatInfo> chats;
     QHash<qint64, QByteArray> publicKeys;
     QHash<qint64, UiStruct::ChatPreview> chats;
     QHash<qint64, QList<UiStruct::Message>> messagesCache;
@@ -60,6 +59,8 @@ signals:
     void noMessagesYet(const QString &username);
     void updateChats(QList<UiStruct::ChatPreview> chatsList);
     void phantomChatResolved(qint64 newChatId);
+
+    void networkStateChanged(bool state);
 
 private slots:
     void onJsonReceived(const QJsonObject& obj);

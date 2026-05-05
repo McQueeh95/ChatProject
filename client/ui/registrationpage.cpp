@@ -12,6 +12,7 @@ RegistrationPage::RegistrationPage(AppController *controller, QWidget *parent)
     ui->setupUi(this);
     ui->errorLabel->hide();
     connect(controller, &AppController::registrationFailure, this, &RegistrationPage::onRegistrationFailure);
+    connect(controller, &AppController::networkStateChanged, this, &RegistrationPage::onNetworkStateChanged);
     connect(ui->loginHereButton, &QPushButton::clicked, this, &RegistrationPage::onLoginClicked);
     connect(ui->signUpButton, &QPushButton::clicked, this, &RegistrationPage::onSignUpClicked);
     connect(ui->usernameEdit, &QLineEdit::textChanged, this, &RegistrationPage::clearErrorState);
@@ -43,6 +44,11 @@ void RegistrationPage::onRegistrationFailure()
 
     ui->errorLabel->setText("User with this name already exists");
     ui->errorLabel->show();
+}
+
+void RegistrationPage::onNetworkStateChanged(bool state)
+{
+    ui->signUpButton->setEnabled(state);
 }
 
 void RegistrationPage::onSignUpClicked()

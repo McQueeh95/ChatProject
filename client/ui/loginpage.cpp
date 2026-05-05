@@ -13,6 +13,7 @@ LoginPage::LoginPage(AppController* controller, QWidget *parent)
     connect(ui->loginButton, &QPushButton::clicked, this, &LoginPage::onLoginClicked);
     connect(controller, &AppController::loginSuccess, this, &LoginPage::onLoginSucces);
     connect(controller, &AppController::loginFailure, this, &LoginPage::onLoginFailure);
+    connect(controller, &AppController::networkStateChanged, this, &LoginPage::onNetworkStateChanged);
     connect(ui->usernameEdit, &QLineEdit::textChanged, this, &LoginPage::clearErrorState);
     connect(ui->passwordEdit, &QLineEdit::textChanged, this, &LoginPage::clearErrorState);
     connect(ui->createAccountButton, &QPushButton::clicked, this, &LoginPage::onCreateAccountClicked);
@@ -56,6 +57,11 @@ void LoginPage::onCreateAccountClicked()
 
     clearErrorState();
     emit registrationRequested();
+}
+
+void LoginPage::onNetworkStateChanged(bool state)
+{
+    ui->loginButton->setEnabled(state);
 }
 
 void LoginPage::clearInput()

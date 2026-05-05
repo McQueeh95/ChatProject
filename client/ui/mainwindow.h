@@ -36,5 +36,6 @@ private slots:
     void showLoginPage();
     void onLoginSuccess(qint64 userId, const QList<UiStruct::ChatPreview> chats, const QString &username);
     void onRegistrationSuccess(qint64 userId, const QString &username);
+    void onNetworkStateChanged(bool state);
 };
 #endif // MAINWINDOW_H
