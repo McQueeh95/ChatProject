@@ -1,6 +1,6 @@
 #pragma once
 
-#include "dependencies.hpp"
+#include "../dependencies.hpp"
 #include <memory>
 class sessions_manager;
 class session;

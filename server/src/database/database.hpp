@@ -1,30 +1,24 @@
 #pragma once
-#include <bitset>
 #include <boost/asio/executor_work_guard.hpp>
 #include <optional>
 #include <pqxx/pqxx>
 #include <boost/asio/io_context.hpp>
 #include <thread>
-#include "dependencies.hpp"
+#include "../dependencies.hpp"
 #include "db_protocol.hpp"
 #include <cstdint>
 #include <vector>
 
 class database
 {
-    private:
-    pqxx::connection connection_;
-    net::io_context ioc_;
-    boost::asio::executor_work_guard<net::io_context::executor_type> work_guard_;
-    std::thread db_thread_;
-    void prepare_statements();
+    
     public:
     database(const std::string& connection_string);
-    void start();
     ~database();
     database (const database&) = delete;
     database& operator= (const database&) = delete;
     void post_task(std::function<void()> task);
+    
     std::optional<int64_t> create_user(const std::string &username, const std::string &auth_key, 
         const std::string &salt, const std::string & public_key, 
         const std::string &encrypted_vault, const std::string &vault_nonce, const std::string &session_token);
@@ -38,6 +32,13 @@ class database
     std::vector<db_protocol::message> get_messages(int64_t chat_id);
     std::optional<std::string> get_username(int64_t user_id);
     std::optional<std::string> get_public_key(int64_t user_id);
-    std::optional<int64_t> get_id_by_token(std::string session_token);
-
+    std::optional<int64_t> get_id_by_token(const std::string &session_token);
+    
+    private:
+    void prepare_statements();
+    
+    pqxx::connection connection_;
+    net::io_context ioc_;
+    boost::asio::executor_work_guard<net::io_context::executor_type> work_guard_;
+    std::thread db_thread_;
 };

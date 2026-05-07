@@ -3,10 +3,8 @@
 #include <boost/asio/executor_work_guard.hpp>
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/post.hpp>
-#include <cstddef>
 #include <cstdint>
 #include <exception>
-#include <initializer_list>
 #include <iostream>
 #include <optional>
 #include <pqxx/prepared_statement.hxx>
@@ -22,59 +20,6 @@ database::database(const std::string& connection_string):
 
     prepare_statements();
     db_thread_ = std::thread([this]{ioc_.run();}); 
-}
-
-void database::prepare_statements()
-{
-    connection_.prepare("get_salt", "SELECT salt FROM users WHERE username = $1");
-
-    connection_.prepare("login", "UPDATE users SET session_token = $1 WHERE username = $2 RETURNING auth_key, id, encrypted_vault, vault_nonce");
-    
-    connection_.prepare("get_recepeint_id", "SELECT user1_id, user2_id FROM chats WHERE id = $1");
-
-    connection_.prepare("insert_msg", "INSERT INTO messages (chat_id, sender_id, encrypted_payload, nonce) "
-        "VALUES ($1, $2, $3, $4) RETURNING id, created_at");
-
-    connection_.prepare("create_user", "INSERT INTO users (username, auth_key, salt, public_key, encrypted_vault, vault_nonce, session_token) "
-        "VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id");
-
-    connection_.prepare("upsert_chat", "INSERT INTO chats (user1_id, user2_id) "
-        "VALUES ($1, $2) "
-        "ON CONFLICT (LEAST(user1_id, user2_id), GREATEST(user1_id, user2_id)) "
-        "DO UPDATE SET created_at = EXCLUDED.created_at "
-        "RETURNING id;");
-    
-    connection_.prepare("get_searched_users", "SELECT id, username, public_key FROM users WHERE username ILIKE $1 || '%' AND id != $2");
-
-    connection_.prepare("get_user_chats", 
-                        R"SQL( WITH LastMessage AS (
-                            SELECT chat_id, encrypted_payload, nonce, created_at, 
-                                ROW_NUMBER() OVER(PARTITION BY chat_id ORDER BY created_at DESC) as rn 
-                            FROM messages
-                        )
-                        SELECT c.id AS chat_id, 
-                        u.id AS peer_id, 
-                        u.username AS peer_name, 
-                        u.public_key AS public_key, 
-                        lm.encrypted_payload AS last_msg, 
-                        lm.created_at AS last_timestamp,  
-                        lm.nonce AS nonce 
-                        FROM chats c 
-                        JOIN users u ON u.id = CASE  
-                                                WHEN c.user1_id = $1 THEN c.user2_id 
-                                                ELSE c.user1_id 
-                                                END 
-                        LEFT JOIN LastMessage lm ON c.id = lm.chat_id AND lm.rn = 1         
-                        WHERE c.user1_id = $1 OR c.user2_id = $1;)SQL");
-    
-    connection_.prepare("get_messages", "SELECT * FROM (SELECT id, chat_id, sender_id, encrypted_payload, nonce, created_at, is_read "
-        "FROM messages WHERE chat_id = $1 ORDER BY id DESC LIMIT 50) AS sub ORDER BY id ASC" );
-    
-    connection_.prepare("get_username", "SELECT username FROM users WHERE id = $1");
-
-    connection_.prepare("get_public_key", "SELECT public_key FROM users WHERE id = $1");
-
-    connection_.prepare("get_id_by_token", "SELECT id FROM users WHERE session_token = $1");
 }
 
 database::~database()
@@ -346,7 +291,7 @@ std::optional<std::string> database::get_public_key(int64_t user_id)
     }
 }
 
-std::optional<int64_t> database::get_id_by_token(std::string session_token)
+std::optional<int64_t> database::get_id_by_token(const std::string &session_token)
 {
     try
     {
@@ -364,4 +309,57 @@ std::optional<int64_t> database::get_id_by_token(std::string session_token)
         std::cerr << "DB error(get_id_by_token): " << e.what() << std::endl;
         return std::nullopt;
     }
+}
+
+void database::prepare_statements()
+{
+    connection_.prepare("get_salt", "SELECT salt FROM users WHERE username = $1");
+
+    connection_.prepare("login", "UPDATE users SET session_token = $1 WHERE username = $2 RETURNING auth_key, id, encrypted_vault, vault_nonce");
+    
+    connection_.prepare("get_recepeint_id", "SELECT user1_id, user2_id FROM chats WHERE id = $1");
+
+    connection_.prepare("insert_msg", "INSERT INTO messages (chat_id, sender_id, encrypted_payload, nonce) "
+        "VALUES ($1, $2, $3, $4) RETURNING id, created_at");
+
+    connection_.prepare("create_user", "INSERT INTO users (username, auth_key, salt, public_key, encrypted_vault, vault_nonce, session_token) "
+        "VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id");
+
+    connection_.prepare("upsert_chat", "INSERT INTO chats (user1_id, user2_id) "
+        "VALUES ($1, $2) "
+        "ON CONFLICT (LEAST(user1_id, user2_id), GREATEST(user1_id, user2_id)) "
+        "DO UPDATE SET created_at = EXCLUDED.created_at "
+        "RETURNING id;");
+    
+    connection_.prepare("get_searched_users", "SELECT id, username, public_key FROM users WHERE username ILIKE $1 || '%' AND id != $2");
+
+    connection_.prepare("get_user_chats", 
+                        R"SQL( WITH LastMessage AS (
+                            SELECT chat_id, encrypted_payload, nonce, created_at, 
+                                ROW_NUMBER() OVER(PARTITION BY chat_id ORDER BY created_at DESC) as rn 
+                            FROM messages
+                        )
+                        SELECT c.id AS chat_id, 
+                        u.id AS peer_id, 
+                        u.username AS peer_name, 
+                        u.public_key AS public_key, 
+                        lm.encrypted_payload AS last_msg, 
+                        lm.created_at AS last_timestamp,  
+                        lm.nonce AS nonce 
+                        FROM chats c 
+                        JOIN users u ON u.id = CASE  
+                                                WHEN c.user1_id = $1 THEN c.user2_id 
+                                                ELSE c.user1_id 
+                                                END 
+                        LEFT JOIN LastMessage lm ON c.id = lm.chat_id AND lm.rn = 1         
+                        WHERE c.user1_id = $1 OR c.user2_id = $1;)SQL");
+    
+    connection_.prepare("get_messages", "SELECT * FROM (SELECT id, chat_id, sender_id, encrypted_payload, nonce, created_at, is_read "
+        "FROM messages WHERE chat_id = $1 ORDER BY id DESC LIMIT 50) AS sub ORDER BY id ASC" );
+    
+    connection_.prepare("get_username", "SELECT username FROM users WHERE id = $1");
+
+    connection_.prepare("get_public_key", "SELECT public_key FROM users WHERE id = $1");
+
+    connection_.prepare("get_id_by_token", "SELECT id FROM users WHERE session_token = $1");
 }

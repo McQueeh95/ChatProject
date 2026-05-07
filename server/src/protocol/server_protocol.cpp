@@ -1,11 +1,14 @@
-#include "server_protocol.hpp"
+/*#include "server_protocol.hpp"
 #include <boost/json.hpp>
 #include <boost/json/conversion.hpp>
 #include <boost/json/detail/value_to.hpp>
 #include <boost/json/object.hpp>
 #include <boost/json/value_from.hpp>
 #include <boost/json/value_to.hpp>
-#include <cstdint>
+#include <cstdint>*/
+#include "models.hpp"
+#include "requests.hpp"
+#include "responses.hpp"
 
 namespace json = boost::json;
 
@@ -61,16 +64,6 @@ namespace server_protocol
         };
     }
 
-    //json to read_ack_incoming
-    read_conf_req tag_invoke(json::value_to_tag<read_conf_req>, const json::value& jv)
-    {
-        const auto& obj = jv.as_object();
-        return{
-            json::value_to<int64_t>(obj.at("chat_id")),
-            json::value_to<int64_t>(obj.at("last_read_msg_id"))
-        };
-    }
-
     search_req tag_invoke(json::value_to_tag<search_req>, const json::value& jv)
     {
         const auto& obj = jv.as_object();
@@ -92,27 +85,6 @@ namespace server_protocol
             {"nonce", msg.nonce},
             {"timestamp", msg.timestamp},
             {"is_read", msg.is_read}
-        };
-    }
-
-    //ack_message to json
-    void tag_invoke(json::value_from_tag, json::value& jv, const status_res& msg)
-    {
-        jv = {
-            {"local_id", msg.local_id},
-            {"message_id", msg.message_id},
-            {"chat_id", msg.chat_id},
-            {"timestamp", msg.timestamp}
-        };
-    }
-
-    //ack_read_outgoing to json
-    void tag_invoke(json::value_from_tag, json::value& jv, const read_confirm_notif& msg)
-    {
-        jv = {
-            {"chat_id", msg.chat_id},
-            {"last_read_message_id", msg.last_read_message_id},
-            {"reader_id", msg.reader_id}
         };
     }
 

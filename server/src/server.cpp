@@ -1,8 +1,8 @@
 ﻿// server.cpp : Defines the entry point for the application.
 //
-#include "listener.hpp"
-#include "database.hpp"
-#include "sessions_manager.hpp"
+#include "network/listener.hpp"
+#include "database/database.hpp"
+#include "core/sessions_manager.hpp"
 #include <boost/asio/io_context.hpp>
 #include <memory>
 

@@ -1,7 +1,6 @@
 #pragma once
-#include "dependencies.hpp"
-#include "server_protocol.hpp"
-#include "sessions_manager.hpp"
+#include "../dependencies.hpp"
+#include "../core/sessions_manager.hpp"
 #include <deque>
 #include <memory>
 #include <queue>

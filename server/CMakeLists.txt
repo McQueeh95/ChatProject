@@ -11,13 +11,16 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 find_package(Boost REQUIRED COMPONENTS system json)
 find_package(libpqxx REQUIRED)
-add_executable (server "src/server.cpp" "src/server.hpp" 
-"src/session.cpp" "src/session.hpp" 
-"src/listener.cpp" "src/listener.hpp" 
-"src/dependencies.hpp" 
-"src/sessions_manager.cpp" "src/sessions_manager.hpp" 
-"src/database.hpp" "src/database.cpp"
-"src/server_protocol.hpp" "src/server_protocol.cpp")
+add_executable (server "src/server.cpp"
+"src/dependencies.hpp"
+"src/network/session.cpp" "src/network/session.hpp" 
+"src/network/listener.cpp" "src/network/listener.hpp" 
+"src/core/sessions_manager.cpp" "src/core/sessions_manager.hpp" 
+"src/database/database.hpp" "src/database/database.cpp"
+"src/database/db_protocol.hpp"
+"src/protocol/requests.hpp" "src/protocol/responses.hpp"
+"src/protocol/server_protocol.cpp"
+"src/protocol/mappers.hpp")
 
 target_link_libraries(server PRIVATE 
                     Boost::system
