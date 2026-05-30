@@ -11,6 +11,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 find_package(Boost REQUIRED COMPONENTS system json)
 find_package(libpqxx REQUIRED)
+
 add_executable (server "src/server.cpp"
 "src/dependencies.hpp"
 "src/network/session.cpp" "src/network/session.hpp" 
@@ -26,5 +27,26 @@ target_link_libraries(server PRIVATE
                     Boost::system
                     Boost::json
                     pqxx)
+
+# ===============================================
+# Tests
+# ===============================================
+find_package(GTest REQUIRED)
+
+add_executable(server_tests
+    tests/test_protocol.cpp
+    src/protocol/server_protocol.cpp
+)
+
+target_link_libraries(server_tests
+    PRIVATE
+    GTest::gtest_main
+    Boost::json
+)
+
+include(GoogleTest)
+gtest_discover_tests(server_tests)
+
+
 
 # TODO: Add tests and install targets if needed.

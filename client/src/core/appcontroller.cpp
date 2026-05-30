@@ -103,6 +103,10 @@ void AppController::sendMessage(const QString &text)
 
     UiStruct::Message uiDraft = makeUiDraft(localId, text);
 
+    if(text.isEmpty()){
+        qDebug() << "Error encrypting message. JSON was not send";
+        return;
+    }
     QJsonObject jsonToSend = makeMessageJson(localId, text);
 
     processLocalMessage(uiDraft);

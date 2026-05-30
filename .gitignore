@@ -49,3 +49,6 @@ CMakeUserPresets.json
 # === Server Boost.Beast ===
 /server/build/
 /server/out/
+
+client/tests/
+server/tests/

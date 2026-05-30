@@ -42,7 +42,7 @@ class CryptoService : public QObject
     Q_OBJECT
 public:
     explicit CryptoService(QObject *parent = nullptr);
-
+    ~CryptoService();
     RegistrationData generateNewAccount(const QString &password);
     DerivedKeys generateHashedPassword(const char* password, size_t pwdLen, const QByteArray& salt);
     QByteArray generateSessionToken();

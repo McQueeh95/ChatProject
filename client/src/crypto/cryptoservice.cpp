@@ -2,8 +2,18 @@
 #include <QDebug>
 
 CryptoService::CryptoService(QObject *parent)
-    : QObject{parent}
-{}
+    : QObject{parent}, m_secretKey(nullptr)
+{
+    if (sodium_init() < 0)
+    {
+        qDebug() << "CRITICAL: Libsodium initialization failed!";
+    }
+}
+
+CryptoService::~CryptoService()
+{
+    clearSecretKey();
+}
 
 RegistrationData CryptoService::generateNewAccount(const QString &password)
 {
@@ -20,6 +30,7 @@ RegistrationData CryptoService::generateNewAccount(const QString &password)
                       crypto_pwhash_ALG_DEFAULT) != 0)
     {
         qDebug() << "Out of memory crypto_pwhash";
+        return RegistrationData{};
     }
 
     data.authKey.resize(AUTH_KEY_LEN);
@@ -36,12 +47,13 @@ RegistrationData CryptoService::generateNewAccount(const QString &password)
 
     //Keypair generation
     data.publicKey.resize(crypto_box_PUBLICKEYBYTES);
+    clearSecretKey();
     m_secretKey = static_cast<unsigned char*>(sodium_malloc(crypto_box_SECRETKEYBYTES));
     crypto_box_keypair(reinterpret_cast<unsigned char*>(data.publicKey.data()), m_secretKey);
 
-    //Encryption of secret key to store on sercer
+    //Encryption of secret key to store on server
     data.vaultNonce.resize(crypto_secretbox_NONCEBYTES);
-    randombytes_buf(data.vaultNonce.data(), sizeof(data.vaultNonce));
+    randombytes_buf(data.vaultNonce.data(), data.vaultNonce.size());
 
     data.encryptedVault.resize(crypto_secretbox_MACBYTES + 32);
     crypto_secretbox_easy(reinterpret_cast<unsigned char*>(data.encryptedVault.data()),
@@ -92,6 +104,7 @@ QByteArray CryptoService::generateSessionToken()
 
 void CryptoService::decryptSecretKey(const QByteArray &encryptedVault, const QByteArray& nonce, const unsigned char* key)
 {
+    clearSecretKey();
     m_secretKey = static_cast<unsigned char*>(sodium_malloc(crypto_box_SECRETKEYBYTES));
     if(crypto_secretbox_open_easy(m_secretKey, reinterpret_cast<const unsigned char*>(encryptedVault.constData()),
                                encryptedVault.size(), reinterpret_cast<const unsigned char*>(nonce.constData()), (key)) != 0)
@@ -130,6 +143,7 @@ QString CryptoService::decryptMessage(const QByteArray &cipheredText, const QByt
                              reinterpret_cast<const unsigned char*>(peerPublicKey.constData()), m_secretKey) != 0)
     {
         qDebug() << "Message forged on decryption";
+        return QString();
     }
     return QString::fromUtf8(decryptedBytes);
 }

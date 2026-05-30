@@ -110,3 +110,23 @@ install(TARGETS client
 if(QT_VERSION_MAJOR EQUAL 6)
     qt_finalize_executable(client)
 endif()
+
+# ===============================================
+# Tests
+# ===============================================
+find_package(GTest REQUIRED)
+
+add_executable(client_tests
+    tests/test_crypto.cpp
+    src/crypto/cryptoservice.cpp
+)
+
+target_link_libraries(client_tests
+    PRIVATE
+    GTest::gtest_main
+    sodium
+    Qt6::Core
+)
+
+include(GoogleTest)
+gtest_discover_tests(client_tests)
