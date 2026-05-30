@@ -77,7 +77,7 @@ Note the C++ standards requirements for compilation:
 ## Complitation
 1. **Clone the repository:**
    ```bash
-   git clone [https://github.com/McQueeh95/ChatProject.git](https://github.com/McQueeh95/ChatProject.git)
+   git clone https://github.com/McQueeh95/ChatProject.git
    cd CharProject
    ```
 2. Build the Server:
