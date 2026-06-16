@@ -419,10 +419,25 @@ void AppController::handleForwardedMessage(const QJsonObject &obj)
     QString decryptedText = m_cryptoService->decryptMessage(msgDeliv.payload,
                                 chatPublicKey, msgDeliv.nonce);
 
-    UiStruct::Message uiMsg = UiStruct::Message::fromNetwork(msgDeliv, decryptedText);
-    m_session->messagesCache[msgDeliv.chatId].push_back(uiMsg);
-    if(m_session->currentChatId == msgDeliv.chatId)
-        newMessageReceived(uiMsg);
+    if(m_session->messagesCache.contains(msgDeliv.chatId)){
+        UiStruct::Message uiMsg = UiStruct::Message::fromNetwork(msgDeliv, decryptedText);
+        m_session->messagesCache[msgDeliv.chatId].push_back(uiMsg);
+        if(m_session->currentChatId == msgDeliv.chatId)
+            newMessageReceived(uiMsg);
+    }
+
+    if(m_session->chats.contains(msgDeliv.chatId))
+    {
+        UiStruct::ChatPreview &chat = m_session->chats[msgDeliv.chatId];
+
+        chat.text = decryptedText;
+
+
+        chat.dt = QDateTime::fromString(msgDeliv.timeStamp, Qt::ISODate).toLocalTime();
+        chat.displayDateTime = UiStruct::ChatPreview::formatDateTime(chat.dt);
+    }
+
+    emit updateChats(getSortedChats());
 }
 
 void AppController::handleHistoryRes(const QJsonObject &obj)
