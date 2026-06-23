@@ -102,15 +102,19 @@ QByteArray CryptoService::generateSessionToken()
     return sessionToken;
 }
 
-void CryptoService::decryptSecretKey(const QByteArray &encryptedVault, const QByteArray& nonce, const unsigned char* key)
+bool CryptoService::decryptSecretKey(const QByteArray &encryptedVault, const QByteArray& nonce, const unsigned char* key)
 {
     clearSecretKey();
     m_secretKey = static_cast<unsigned char*>(sodium_malloc(crypto_box_SECRETKEYBYTES));
     if(crypto_secretbox_open_easy(m_secretKey, reinterpret_cast<const unsigned char*>(encryptedVault.constData()),
                                encryptedVault.size(), reinterpret_cast<const unsigned char*>(nonce.constData()), (key)) != 0)
     {
+        clearSecretKey();
         qDebug() << "Message forged!";
+        return false;
     }
+
+    return true;
 }
 
 EncryptedMessage CryptoService::encryptMessage(const QString &text, const QByteArray &peerPublicKey)

@@ -46,7 +46,7 @@ public:
     RegistrationData generateNewAccount(const QString &password);
     DerivedKeys generateHashedPassword(const char* password, size_t pwdLen, const QByteArray& salt);
     QByteArray generateSessionToken();
-    void decryptSecretKey(const QByteArray& encryptedVault, const QByteArray& nonce, const unsigned char* key);
+    bool decryptSecretKey(const QByteArray& encryptedVault, const QByteArray& nonce, const unsigned char* key);
     EncryptedMessage encryptMessage(const QString& text, const QByteArray& peerPublicKey);
     QString decryptMessage(const QByteArray &cipheredText, const QByteArray& peerPublicKey, const QByteArray &nonce);
     void clearSecretKey();

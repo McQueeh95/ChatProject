@@ -270,6 +270,7 @@ void AppController::processLocalMessage(const UiStruct::Message &message)
             tempChat.displayDateTime = "sending...";
 
             m_session->chats.insert(tempChat.chatId, tempChat);
+            m_session->publicKeys.insert(tempChat.chatId, phantom.publicKey);
         }
         else
         {
@@ -375,7 +376,8 @@ void AppController::handleLoginRes(const QJsonObject &obj)
     {
         protocol::UserInfo user = loginRes.userInfo;
         m_session->userId = user.userId;
-        m_cryptoService->decryptSecretKey(user.encryptedVault, user.vaultNonce, m_session->pendingLocalKey.dataUCHar());
+        if(!m_cryptoService->decryptSecretKey(user.encryptedVault, user.vaultNonce, m_session->pendingLocalKey.dataUCHar()))
+            return;
 
         QList<protocol::ChatInfo> networkChats = loginRes.chats.values();
         for(const auto &c: networkChats)
@@ -424,6 +426,7 @@ void AppController::handleForwardedMessage(const QJsonObject &obj)
         m_session->messagesCache[msgDeliv.chatId].push_back(uiMsg);
         if(m_session->currentChatId == msgDeliv.chatId)
             newMessageReceived(uiMsg);
+        qDebug() << "First fork";
     }
 
     if(m_session->chats.contains(msgDeliv.chatId))
@@ -435,6 +438,7 @@ void AppController::handleForwardedMessage(const QJsonObject &obj)
 
         chat.dt = QDateTime::fromString(msgDeliv.timeStamp, Qt::ISODate).toLocalTime();
         chat.displayDateTime = UiStruct::ChatPreview::formatDateTime(chat.dt);
+        qDebug() << "Second fork";
     }
 
     emit updateChats(getSortedChats());
@@ -542,6 +546,12 @@ void AppController::handleDeliveryAck(const protocol::DelivAck &delAck)
                 msg.chatId = delAck.chatId;
             }
             m_session->messagesCache.insert(delAck.chatId, drafts);
+        }
+
+        if(m_session->publicKeys.contains(tempChatId))
+        {
+            QByteArray publicKey = m_session->publicKeys.take(tempChatId);
+            m_session->publicKeys.insert(delAck.chatId, publicKey);
         }
 
         if(m_session->currentChatId == tempChatId)
